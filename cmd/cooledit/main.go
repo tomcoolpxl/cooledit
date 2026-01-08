@@ -1,19 +1,19 @@
 package main
 
 import (
+	"flag"
 	"log"
-	"os"
 
 	"cooledit/internal/app"
 )
 
 func main() {
-	var path string
-	if len(os.Args) > 1 {
-		path = os.Args[1]
-	}
+	mouse := flag.Bool("mouse", false, "Enable mouse support")
+	flag.Parse()
 
-	if err := app.Run(path); err != nil {
+	path := flag.Arg(0)
+
+	if err := app.Run(path, *mouse); err != nil {
 		log.Fatal(err)
 	}
 }

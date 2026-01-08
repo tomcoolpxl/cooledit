@@ -61,13 +61,6 @@ func (m *Menubar) initDefaults() {
 			},
 		},
 		{
-			Title: "View",
-			Items: []MenuItem{
-				// TODO: Toggle Line Numbers, Toggle Wrap
-				{Label: "Toggle Menubar", Action: func(u *UI) { /* Toggle logic */ }},
-			},
-		},
-		{
 			Title: "Help",
 			Items: []MenuItem{
 				{Label: "About", Accelerator: "F1", Action: func(u *UI) { u.mode = ModeHelp }},

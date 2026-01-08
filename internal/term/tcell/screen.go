@@ -14,7 +14,7 @@ func New() *Screen {
 	return &Screen{}
 }
 
-func (s *Screen) Init() error {
+func (s *Screen) Init(enableMouse bool) error {
 	ts, err := tcell.NewScreen()
 	if err != nil {
 		return err
@@ -23,7 +23,9 @@ func (s *Screen) Init() error {
 		return err
 	}
 	ts.Clear()
-	ts.EnableMouse(tcell.MouseButtonEvents)
+	if enableMouse {
+		ts.EnableMouse(tcell.MouseButtonEvents)
+	}
 	s.screen = ts
 	return nil
 }

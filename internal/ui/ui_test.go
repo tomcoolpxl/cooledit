@@ -509,7 +509,6 @@ dispatch(ui, term.KeyEvent{Key: term.KeyF1})
 
 func TestMenuNavigationWrapping(t *testing.T) {
 	ui, _ := newTestUI(40, 5)
-	ui.showMenubar = true
 	
 	// Activate menu
 	dispatch(ui, term.KeyEvent{Key: term.KeyF10})
@@ -601,7 +600,6 @@ draw(ui)
 
 func TestExecuteMenuItems(t *testing.T) {
 	ui, _ := newTestUI(40, 10)
-	ui.showMenubar = true
 	
 	// Activate Menu
 	dispatch(ui, term.KeyEvent{Key: term.KeyF10})

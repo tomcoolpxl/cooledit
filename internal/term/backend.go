@@ -87,7 +87,7 @@ type MouseEvent struct {
 func (MouseEvent) isEvent() {}
 
 type Screen interface {
-	Init() error
+	Init(enableMouse bool) error
 	Fini()
 
 	Size() (width, height int)

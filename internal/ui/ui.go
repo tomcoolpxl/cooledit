@@ -53,7 +53,7 @@ func New(screen term.Screen, editor *core.Editor) *UI {
 		editor:      editor,
 		menubar:     NewMenubar(),
 		mode:        ModeNormal,
-		showMenubar: true,
+		showMenubar: false,
 	}
 }
 
@@ -102,6 +102,11 @@ func (u *UI) Run() error {
 				u.ctrlCArmed = false
 				if u.mode == ModeMessage {
 					u.mode = ModeNormal
+					continue
+				}
+				if u.mode == ModeNormal {
+					u.toggleMenuFocus()
+					continue
 				}
 				continue
 			}
@@ -132,13 +137,10 @@ func (u *UI) toggleMenuFocus() {
 		return
 	}
 	
-	if u.mode == ModeMenu {
-		u.mode = ModeNormal
-		u.menubar.Active = false
-	} else {
-		u.mode = ModeMenu
-		u.menubar.Active = true
-	}
+	// If visible, hide it
+	u.showMenubar = false
+	u.mode = ModeNormal
+	u.menubar.Active = false
 }
 
 func (u *UI) handleMenuKey(e term.KeyEvent) bool {
@@ -146,6 +148,7 @@ func (u *UI) handleMenuKey(e term.KeyEvent) bool {
 	case term.KeyEscape:
 		u.mode = ModeNormal
 		u.menubar.Active = false
+		u.showMenubar = false
 		return true
 	case term.KeyLeft:
 		u.menubar.PrevMenu()
@@ -173,6 +176,7 @@ func (u *UI) executeMenuItem() {
 	// Exit menu mode
 	u.mode = ModeNormal
 	u.menubar.Active = false
+	u.showMenubar = false
 	
 	if item.Action != nil {
 		item.Action(u)
@@ -239,6 +243,7 @@ func (u *UI) handleMouseEvent(e term.MouseEvent) {
 			if e.Button == term.MouseLeft {
 				u.mode = ModeNormal
 				u.menubar.Active = false
+				u.showMenubar = false
 			}
 		}
 		return
