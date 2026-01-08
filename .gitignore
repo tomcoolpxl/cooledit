@@ -1,3 +1,5 @@
+hello.txt
+test.txt
 # Build and binary outputs
 bin/
 *.exe

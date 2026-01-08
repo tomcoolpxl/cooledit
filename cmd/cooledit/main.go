@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -32,7 +34,7 @@ func main() {
 
 		status.SetText(
 			fmt.Sprintf(
-				" cooledit | %s%s | %s | %s | Ln %d, Col %d | Esc quit | F2 mark saved ",
+				" cooledit | %s%s | %s | %s | Ln %d, Col %d | Ctrl+S save | Esc quit ",
 				filename,
 				mod,
 				encoding,
@@ -43,9 +45,69 @@ func main() {
 		)
 	}
 
-	editor.SetMovedFunc(func() {
+	// ---------- Layout (DECLARE EARLY) ----------
+
+	layout := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(editor, 0, 1, true).
+		AddItem(status, 1, 0, false)
+
+	// ---------- File I/O ----------
+
+	loadFile := func(path string) error {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		editor.SetText(string(data), false)
+		filename = path
+		modified = false
 		updateStatus()
-	})
+		return nil
+	}
+
+	saveFile := func(path string) error {
+		data := editor.GetText()
+		if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+			return err
+		}
+		filename = path
+		modified = false
+		updateStatus()
+		return nil
+	}
+
+	// ---------- Save As dialog ----------
+
+	showSaveAs := func() {
+		input := tview.NewInputField().
+			SetLabel("Save as: ").
+			SetText(filename)
+
+		modal := tview.NewFlex().
+			SetDirection(tview.FlexRow).
+			AddItem(input, 1, 0, true)
+
+		input.SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEnter {
+				path := input.GetText()
+				if path != "" {
+					if err := saveFile(path); err != nil {
+						log.Println("Save failed:", err)
+					}
+				}
+			}
+			app.SetRoot(layout, true)
+			app.SetFocus(editor)
+		})
+
+		app.SetRoot(modal, true)
+		app.SetFocus(input)
+	}
+
+	// ---------- Callbacks ----------
+
+	editor.SetMovedFunc(updateStatus)
 
 	editor.SetChangedFunc(func() {
 		modified = true
@@ -57,24 +119,33 @@ func main() {
 		case tcell.KeyEsc:
 			app.Stop()
 			return nil
-		case tcell.KeyF2:
-			// Temporary: simulate a successful save.
-			modified = false
-			updateStatus()
+
+		case tcell.KeyCtrlS:
+			if filename == "[No Name]" {
+				showSaveAs()
+			} else {
+				if err := saveFile(filename); err != nil {
+					log.Println("Save failed:", err)
+				}
+			}
 			return nil
 		}
 		return ev
 	})
 
-	layout := tview.NewFlex()
-	layout.SetDirection(tview.FlexRow)
-	layout.AddItem(editor, 0, 1, true)
-	layout.AddItem(status, 1, 0, false)
-
-	updateStatus()
+	// ---------- Startup ----------
 
 	app.SetRoot(layout, true)
 	app.SetFocus(editor)
+
+	if len(os.Args) > 1 {
+		path, _ := filepath.Abs(os.Args[1])
+		if err := loadFile(path); err != nil {
+			log.Println("Open failed:", err)
+		}
+	}
+
+	updateStatus()
 
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
