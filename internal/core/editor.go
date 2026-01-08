@@ -2,7 +2,6 @@ package core
 
 import (
 	"path/filepath"
-	"time"
 
 	"cooledit/internal/core/buffer"
 	"cooledit/internal/fileio"
@@ -21,12 +20,15 @@ type FileState struct {
 }
 
 type Editor struct {
-	buf         buffer.Buffer
-	vp          Viewport
-	file        FileState
-	modified    bool
-	quitPending bool
-	quitAt      time.Time
+	buf      buffer.Buffer
+	vp       Viewport
+	file     FileState
+	modified bool
+}
+
+type Result struct {
+	Quit    bool
+	Message string
 }
 
 func NewEditor() *Editor {
@@ -40,16 +42,10 @@ func NewEditor() *Editor {
 	}
 }
 
-type Result struct {
-	Quit    bool
-	Message string
-}
-
 func (e *Editor) LoadFile(fd *fileio.FileData) {
 	e.buf = buffer.NewLineBufferFromLines(fd.Lines)
 	e.vp = Viewport{}
 	e.modified = false
-
 	e.file = FileState{
 		Path:     fd.Path,
 		BaseName: fd.BaseName,
@@ -60,16 +56,22 @@ func (e *Editor) LoadFile(fd *fileio.FileData) {
 
 func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	switch c := cmd.(type) {
-	case CmdQuit:
-		now := time.Now()
-		if e.quitPending && now.Sub(e.quitAt) < 2*time.Second {
-			return Result{Quit: true}
+
+	case CmdSave:
+		if e.file.Path == "" {
+			return Result{Message: "No file name. Use Save As."}
 		}
-		e.quitPending = true
-		e.quitAt = now
-		return Result{}
+		if !e.modified {
+			return Result{Message: "No changes to save"}
+		}
+		if err := fileio.Save(e.file.Path, e.buf.Lines(), e.file.EOL, e.file.Encoding); err != nil {
+			return Result{Message: "Save failed: " + err.Error()}
+		}
+		e.modified = false
+		return Result{Message: "File saved"}
 
 	case CmdSaveAs:
+		// overwrite confirmation handled in UI
 		if err := fileio.Save(c.Path, e.buf.Lines(), e.file.EOL, e.file.Encoding); err != nil {
 			return Result{Message: "Save failed: " + err.Error()}
 		}
@@ -77,9 +79,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		e.file.BaseName = filepath.Base(c.Path)
 		e.modified = false
 		return Result{Message: "File saved"}
-	}
 
-	switch c := cmd.(type) {
 	case CmdInsertRune:
 		e.modified = true
 		e.buf.InsertRune(c.Rune)
@@ -153,15 +153,12 @@ func (e *Editor) EnsureVisible(w, h int) {
 	if h < 1 {
 		h = 1
 	}
-
 	cy, cx := e.buf.Cursor()
-
 	if cy < e.vp.TopLine {
 		e.vp.TopLine = cy
 	} else if cy >= e.vp.TopLine+h {
 		e.vp.TopLine = cy - h + 1
 	}
-
 	if cx < e.vp.LeftCol {
 		e.vp.LeftCol = cx
 	} else if cx >= e.vp.LeftCol+w {
