@@ -17,11 +17,26 @@ func main() {
 	status := tview.NewTextView()
 	status.SetDynamicColors(false)
 
+	filename := "[No Name]"
+	encoding := "UTF-8"
+	eol := "LF"
+	modified := false
+
 	updateStatus := func() {
 		_, _, row, col := editor.GetCursor()
+
+		mod := ""
+		if modified {
+			mod = " [Modified]"
+		}
+
 		status.SetText(
 			fmt.Sprintf(
-				" cooledit | [No Name] | UTF-8 | LF | Ln %d, Col %d | Esc to quit ",
+				" cooledit | %s%s | %s | %s | Ln %d, Col %d | Esc quit | F2 mark saved ",
+				filename,
+				mod,
+				encoding,
+				eol,
 				row+1,
 				col+1,
 			),
@@ -33,12 +48,19 @@ func main() {
 	})
 
 	editor.SetChangedFunc(func() {
+		modified = true
 		updateStatus()
 	})
 
 	editor.SetInputCapture(func(ev *tcell.EventKey) *tcell.EventKey {
-		if ev.Key() == tcell.KeyEsc {
+		switch ev.Key() {
+		case tcell.KeyEsc:
 			app.Stop()
+			return nil
+		case tcell.KeyF2:
+			// Temporary: simulate a successful save.
+			modified = false
+			updateStatus()
 			return nil
 		}
 		return ev
