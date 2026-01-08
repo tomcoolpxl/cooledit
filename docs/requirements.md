@@ -4,7 +4,7 @@
 
 Projectname: cooledit
 
-The goal is to develop a **terminal text editor** similar in functionality and simplicity to *nano*, addressing *nano*’s UI and keyboard shortcut issues. It will be written in **Go**, using **tview** for the terminal UI. The editor should be easy to use both for beginners and experienced users, with a clean status bar, optional menubar, and predictable shortcuts.
+The goal is to develop a **terminal text editor** similar in functionality and simplicity to *nano*, addressing *nano*’s UI and keyboard shortcut issues. It will be written in vanilla **Go**. The editor should be easy to use both for beginners and experienced users, with a clean status bar, optional menubar, and predictable shortcuts.
 
 The editor will **not include syntax highlighting**. Optional features include a line numbers column and an always-visible menubar.
 
@@ -214,9 +214,8 @@ Not in initial scope but candidates:
 
 ## 11. Platform & Technical
 
-**11.1 Use Golang + tview**
+**11.1 Use Golang**
 
-* tview for terminal UI components (text view, menus, forms).
 * Efficient text buffer implementation.
 
 **11.2 Performance**
