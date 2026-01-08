@@ -130,3 +130,53 @@ func (a *BackspaceAction) Undo(e *Editor) {
 		e.buf.InsertRune(a.DeletedRune)
 	}
 }
+
+type CutLineAction struct {
+	Line        int
+	Runes       []rune
+	CursorLine  int
+	CursorCol   int
+}
+
+func (a *CutLineAction) Apply(e *Editor) {
+	e.buf.DeleteLine(a.Line)
+}
+
+func (a *CutLineAction) Undo(e *Editor) {
+	e.buf.InsertLine(a.Line, a.Runes)
+	e.buf.SetCursor(a.CursorLine, a.CursorCol)
+}
+
+type ReplaceLinesAction struct {
+	StartLine     int
+	OldLines      [][]rune
+	NewLines      [][]rune
+	BeforeLine    int
+	BeforeCol     int
+	AfterLine     int
+	AfterCol      int
+}
+
+func (a *ReplaceLinesAction) Apply(e *Editor) {
+	// Remove old
+	for i := 0; i < len(a.OldLines); i++ {
+		e.buf.DeleteLine(a.StartLine)
+	}
+	// Insert new
+	for i := len(a.NewLines) - 1; i >= 0; i-- {
+		e.buf.InsertLine(a.StartLine, a.NewLines[i])
+	}
+	e.buf.SetCursor(a.AfterLine, a.AfterCol)
+}
+
+func (a *ReplaceLinesAction) Undo(e *Editor) {
+	// Remove new
+	for i := 0; i < len(a.NewLines); i++ {
+		e.buf.DeleteLine(a.StartLine)
+	}
+	// Insert old
+	for i := len(a.OldLines) - 1; i >= 0; i-- {
+		e.buf.InsertLine(a.StartLine, a.OldLines[i])
+	}
+	e.buf.SetCursor(a.BeforeLine, a.BeforeCol)
+}

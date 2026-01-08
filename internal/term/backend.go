@@ -9,6 +9,7 @@ const (
 	KeyEnter
 	KeyBackspace
 	KeyDelete
+	KeyInsert
 	KeyEscape
 	KeyTab
 

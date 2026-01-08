@@ -170,6 +170,41 @@ func (b *LineBuffer) SetCursor(line, col int) {
 	b.preferredCol = col
 }
 
+func (b *LineBuffer) DeleteLine(line int) []rune {
+	if line < 0 || line >= len(b.lines) {
+		return nil
+	}
+	runes := b.lines[line]
+	b.lines = append(b.lines[:line], b.lines[line+1:]...)
+	if len(b.lines) == 0 {
+		b.lines = [][]rune{make([]rune, 0)}
+	}
+	if b.line >= len(b.lines) {
+		b.line = len(b.lines) - 1
+		b.clampCol()
+	} else if b.line == line {
+		b.clampCol()
+	}
+	return runes
+}
+
+func (b *LineBuffer) InsertLine(line int, runes []rune) {
+	if line < 0 {
+		line = 0
+	}
+	if line > len(b.lines) {
+		line = len(b.lines)
+	}
+
+	b.lines = append(b.lines, nil)
+	copy(b.lines[line+1:], b.lines[line:])
+	b.lines[line] = runes
+
+	if b.line >= line {
+		b.line++
+	}
+}
+
 func (b *LineBuffer) LineLen(line int) int {
 	if line < 0 || line >= len(b.lines) {
 		return 0

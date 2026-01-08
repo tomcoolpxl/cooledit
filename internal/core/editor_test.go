@@ -8,8 +8,15 @@ import (
 	"cooledit/internal/fileio"
 )
 
+type mockClipboard struct {
+	text string
+}
+
+func (m *mockClipboard) Get() (string, error)  { return m.text, nil }
+func (m *mockClipboard) Set(text string) error { m.text = text; return nil }
+
 func newTestEditor() *Editor {
-	return NewEditor()
+	return NewEditor(&mockClipboard{})
 }
 
 func TestInsertMarksModified(t *testing.T) {

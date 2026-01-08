@@ -5,7 +5,7 @@ import (
 )
 
 func TestUndoInsertRune(t *testing.T) {
-	e := NewEditor()
+	e := NewEditor(nil)
 	
 e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 	if lines := e.Lines(); len(lines) != 1 || len(lines[0]) != 1 || lines[0][0] != 'a' {
@@ -24,7 +24,7 @@ e.Apply(CmdRedo{}, 10)
 }
 
 func TestUndoInsertNewline(t *testing.T) {
-	e := NewEditor()
+	e := NewEditor(nil)
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 	e.Apply(CmdInsertNewline{}, 10)
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
@@ -48,7 +48,7 @@ e.Apply(CmdUndo{}, 10) // Undo 'b'
 }
 
 func TestUndoBackspaceChar(t *testing.T) {
-	e := NewEditor()
+	e := NewEditor(nil)
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 	e.Apply(CmdBackspace{}, 10)
 	
@@ -65,7 +65,7 @@ e.Apply(CmdUndo{}, 10)
 }
 
 func TestUndoBackspaceMerge(t *testing.T) {
-	e := NewEditor()
+	e := NewEditor(nil)
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 	e.Apply(CmdInsertNewline{}, 10)
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
@@ -98,7 +98,7 @@ e.Apply(CmdUndo{}, 10)
 
 func TestModifiedStateWithUndo(t *testing.T) {
 
-	e := NewEditor()
+	e := NewEditor(nil)
 
 	// Initial: Modified=false (SavedPtr=0, Ptr=0)
 
@@ -150,7 +150,7 @@ func TestModifiedStateWithUndo(t *testing.T) {
 
 func TestUndoRedoMultiStep(t *testing.T) {
 
-	e := NewEditor()
+	e := NewEditor(nil)
 
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 
@@ -188,7 +188,7 @@ func TestUndoRedoMultiStep(t *testing.T) {
 
 func TestRedoTruncation(t *testing.T) {
 
-	e := NewEditor()
+	e := NewEditor(nil)
 
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 
@@ -228,7 +228,7 @@ func TestRedoTruncation(t *testing.T) {
 
 func TestUndoToSavedState(t *testing.T) {
 
-	e := NewEditor()
+	e := NewEditor(nil)
 
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 

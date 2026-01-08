@@ -15,6 +15,9 @@ type Buffer interface {
 	Lines() [][]rune
 	Cursor() (line, col int)
 	SetCursor(line, col int)
+
+	DeleteLine(line int) []rune
+	InsertLine(line int, runes []rune)
 	
 	// Helper for Undo/Redo to inspect state
 	LineLen(line int) int

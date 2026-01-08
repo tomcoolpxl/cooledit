@@ -49,7 +49,9 @@ func (m *Menubar) initDefaults() {
 			Items: []MenuItem{
 				{Label: "Undo", Accelerator: "Ctrl+Z", Command: core.CmdUndo{}},
 				{Label: "Redo", Accelerator: "Ctrl+Y", Command: core.CmdRedo{}},
-				// Cut/Copy/Paste not implemented yet
+				{Label: "Cut", Accelerator: "Ctrl+X", Command: core.CmdCut{}},
+				{Label: "Copy", Accelerator: "Ctrl+C", Command: core.CmdCopy{}},
+				{Label: "Paste", Accelerator: "Ctrl+V", Command: core.CmdPaste{}},
 			},
 		},
 		{

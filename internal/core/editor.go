@@ -19,12 +19,18 @@ type FileState struct {
 	Encoding string
 }
 
+type Clipboard interface {
+	Get() (string, error)
+	Set(text string) error
+}
+
 type Editor struct {
-	buf    buffer.Buffer
-	vp     Viewport
-	file   FileState
-	undo   *UndoStack
-	search SearchState
+	buf       buffer.Buffer
+	vp        Viewport
+	file      FileState
+	undo      *UndoStack
+	search    SearchState
+	clipboard Clipboard
 }
 
 type Result struct {
@@ -32,7 +38,7 @@ type Result struct {
 	Message string
 }
 
-func NewEditor() *Editor {
+func NewEditor(cb Clipboard) *Editor {
 	return &Editor{
 		buf: buffer.NewLineBuffer(),
 		file: FileState{
@@ -40,7 +46,8 @@ func NewEditor() *Editor {
 			EOL:      "\n",
 			Encoding: "UTF-8",
 		},
-		undo: NewUndoStack(),
+		undo:      NewUndoStack(),
+		clipboard: cb,
 	}
 }
 
@@ -129,6 +136,101 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 		return Result{Message: "Not found (prev): " + e.search.LastQuery}
 	
+	case CmdCopy:
+		line, _ := e.buf.Cursor()
+		content := string(e.buf.Lines()[line])
+		if e.clipboard != nil {
+			if err := e.clipboard.Set(content); err != nil {
+				return Result{Message: "Copy failed: " + err.Error()}
+			}
+		}
+		return Result{Message: "Line copied"}
+
+	case CmdCut:
+		line, col := e.buf.Cursor()
+		content := e.buf.Lines()[line]
+		if e.clipboard != nil {
+			if err := e.clipboard.Set(string(content)); err != nil {
+				return Result{Message: "Cut failed: " + err.Error()}
+			}
+		}
+		action := &CutLineAction{
+			Line:       line,
+			Runes:      content,
+			CursorLine: line,
+			CursorCol:  col,
+		}
+		e.undo.Push(action)
+		action.Apply(e)
+		return Result{Message: "Line cut"}
+
+	case CmdPaste:
+		text := c.Text
+		if text == "" && e.clipboard != nil {
+			var err error
+			text, err = e.clipboard.Get()
+			if err != nil {
+				return Result{Message: "Paste failed: " + err.Error()}
+			}
+		}
+		if text == "" {
+			return Result{Message: "Clipboard empty"}
+		}
+
+		// For now, simpler multi-line paste:
+		// We use ReplaceLinesAction to make it one undo block
+		line, col := e.buf.Cursor()
+		lines := e.buf.Lines()
+		
+		var newLines [][]rune
+		// Split text into lines
+		var current []rune
+		for _, r := range text {
+			if r == '\n' {
+				newLines = append(newLines, current)
+				current = nil
+			} else if r == '\r' {
+				continue
+			} else {
+				current = append(current, r)
+			}
+		}
+		newLines = append(newLines, current)
+
+		if len(newLines) == 1 {
+			// Single line paste at cursor
+			for _, r := range newLines[0] {
+				e.Apply(CmdInsertRune{Rune: r}, viewHeight)
+			}
+		} else {
+			// Multi-line paste. 
+			// We'll replace the current line with (prefix + first line) ... (last line + suffix)
+			prefix := append([]rune{}, lines[line][:col]...)
+			suffix := append([]rune{}, lines[line][col:]...)
+
+			var inserted [][]rune
+			inserted = append(inserted, append(prefix, newLines[0]...))
+			for i := 1; i < len(newLines)-1; i++ {
+				inserted = append(inserted, newLines[i])
+			}
+			lastIdx := len(newLines) - 1
+			finalLine := append(newLines[lastIdx], suffix...)
+			inserted = append(inserted, finalLine)
+
+			action := &ReplaceLinesAction{
+				StartLine:  line,
+				OldLines:   [][]rune{lines[line]},
+				NewLines:   inserted,
+				BeforeLine: line,
+				BeforeCol:  col,
+				AfterLine:  line + len(newLines) - 1,
+				AfterCol:   len(newLines[lastIdx]),
+			}
+			e.undo.Push(action)
+			action.Apply(e)
+		}
+		return Result{Message: "Pasted"}
+
 	case CmdClick:
 		e.buf.SetCursor(c.Line, c.Col)
 

@@ -19,7 +19,7 @@ func RunWithScreen(path string, enableMouse bool, screen term.Screen) error {
 	}
 	defer screen.Fini()
 
-	editor := core.NewEditor()
+	editor := core.NewEditor(&ui.SystemClipboard{})
 
 	if path != "" {
 		fd, err := fileio.Open(path)

@@ -69,6 +69,17 @@ func (CmdFindNext) isCommand() {}
 type CmdFindPrev struct{}
 func (CmdFindPrev) isCommand() {}
 
+type CmdCopy struct{}
+func (CmdCopy) isCommand() {}
+
+type CmdCut struct{}
+func (CmdCut) isCommand() {}
+
+type CmdPaste struct {
+	Text string
+}
+func (CmdPaste) isCommand() {}
+
 type CmdClick struct {
 	Line, Col int
 }

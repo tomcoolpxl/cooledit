@@ -12,7 +12,7 @@ import (
 
 func newTestUI(w, h int) (*UI, *FakeScreen) {
 	screen := NewFakeScreen(w, h)
-	editor := core.NewEditor()
+	editor := core.NewEditor(nil)
 	ui := New(screen, editor)
 	ui.showMenubar = false // Disable by default for tests to match old layout assumptions
 	return ui, screen
@@ -60,14 +60,6 @@ func dispatch(ui *UI, ev term.Event) {
 		if e.Key == term.KeyEscape {
 			if ui.mode == ModeMessage {
 				ui.mode = ModeNormal
-			}
-			return
-		}
-
-		if e.Key == term.KeyRune && e.Rune == 'c' && (e.Modifiers&term.ModCtrl) != 0 {
-			if ui.handleCtrlC(e) {
-				ui.quitNow = true // Simulate Run loop exit
-				return
 			}
 			return
 		}
@@ -549,41 +541,6 @@ func TestMouseEdgeCases(t *testing.T) {
 	
 	if ui.mode != ModePrompt {
 		t.Fatalf("prompt click exited prompt mode")
-	}
-}
-
-func TestCtrlCExpiration(t *testing.T) {
-	ui, screen := newTestUI(40, 5)
-	
-	// First Ctrl+C
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'c', Modifiers: term.ModCtrl})
-	if !ui.ctrlCArmed {
-		t.Fatalf("expected ctrlCArmed true")
-	}
-	draw(ui)
-	// Check message "Press Ctrl+C again..." (P)
-	if screen.Cell(0, 3) != 'P' {
-		t.Fatalf("expected status message")
-	}
-	
-	// Force expire
-	ui.ctrlCUntil = time.Now().Add(-1 * time.Second)
-	
-	// Second Ctrl+C (should act as First because expired)
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'c', Modifiers: term.ModCtrl})
-	
-	if !ui.ctrlCArmed {
-		t.Fatalf("expected ctrlCArmed true (re-armed)")
-	}
-	// Should NOT have quit (quitNow false)
-	if ui.quitNow {
-		t.Fatalf("should not quit if expired")
-	}
-	
-	// Third Ctrl+C (immediate) -> Quit
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'c', Modifiers: term.ModCtrl})
-	if !ui.quitNow {
-		t.Fatalf("expected quitNow true")
 	}
 }
 

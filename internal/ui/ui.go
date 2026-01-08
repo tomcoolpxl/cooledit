@@ -41,10 +41,6 @@ type UI struct {
 	// used by quit flow
 	quitAfterSave bool
 	quitNow       bool
-
-	// ctrl-c force quit
-	ctrlCArmed bool
-	ctrlCUntil time.Time
 }
 
 func New(screen term.Screen, editor *core.Editor) *UI {
@@ -99,7 +95,6 @@ func (u *UI) Run() error {
 			}
 
 			if e.Key == term.KeyEscape {
-				u.ctrlCArmed = false
 				if u.mode == ModeMessage {
 					u.mode = ModeNormal
 					continue
@@ -109,10 +104,6 @@ func (u *UI) Run() error {
 					continue
 				}
 				continue
-			}
-
-			if u.handleCtrlC(e) {
-				return nil
 			}
 
 			cmd := u.translateKey(e)
@@ -273,28 +264,6 @@ func (u *UI) handleMouseEvent(e term.MouseEvent) {
 	}
 }
 
-func (u *UI) handleCtrlC(e term.KeyEvent) bool {
-	if !(e.Key == term.KeyRune && e.Rune == 'c' && (e.Modifiers&term.ModCtrl) != 0) {
-		return false
-	}
-
-	now := time.Now()
-	if u.ctrlCArmed && now.Before(u.ctrlCUntil) {
-		return true
-	}
-
-	u.ctrlCArmed = true
-	u.ctrlCUntil = now.Add(2 * time.Second)
-
-	if u.editor.Modified() {
-		u.enterMessage("UNSAVED changes - press Ctrl+C again to quit")
-	} else {
-		u.enterMessage("Press Ctrl+C again to quit")
-	}
-
-	return false
-}
-
 func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	switch {
 	case e.Key == term.KeyF1:
@@ -316,6 +285,21 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		(e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
 		u.enterSaveAs(false)
 		return nil
+
+	case e.Key == term.KeyRune && e.Rune == 'c' && e.Modifiers == term.ModCtrl:
+		return core.CmdCopy{}
+
+	case e.Key == term.KeyRune && e.Rune == 'x' && e.Modifiers == term.ModCtrl:
+		return core.CmdCut{}
+
+	case (e.Key == term.KeyDelete && e.Modifiers == term.ModShift):
+		return core.CmdCut{}
+
+	case e.Key == term.KeyRune && e.Rune == 'v' && e.Modifiers == term.ModCtrl:
+		return core.CmdPaste{}
+
+	case (e.Key == term.KeyInsert && e.Modifiers == term.ModShift):
+		return core.CmdPaste{}
 
 	case e.Key == term.KeyRune && e.Rune == 'z' && (e.Modifiers&term.ModCtrl) != 0:
 		return core.CmdUndo{}

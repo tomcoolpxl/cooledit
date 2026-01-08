@@ -41,6 +41,8 @@ func translateKeyEvent(ev *tcell.EventKey) term.KeyEvent {
 		k = term.KeyBackspace
 	case tcell.KeyDelete:
 		k = term.KeyDelete
+	case tcell.KeyInsert:
+		k = term.KeyInsert
 	case tcell.KeyEscape:
 		k = term.KeyEscape
 	case tcell.KeyTab:
