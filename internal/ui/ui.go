@@ -45,6 +45,9 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyRune && e.Modifiers == 0:
 		return core.CmdInsertRune{Rune: e.Rune}
 
+	case e.Key == term.KeyEnter:
+		return core.CmdInsertNewline{}
+
 	case e.Key == term.KeyBackspace:
 		return core.CmdBackspace{}
 
@@ -53,6 +56,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyRight:
 		return core.CmdMoveRight{}
+
+	case e.Key == term.KeyUp:
+		return core.CmdMoveUp{}
+
+	case e.Key == term.KeyDown:
+		return core.CmdMoveDown{}
 
 	case e.Key == term.KeyHome:
 		return core.CmdMoveHome{}
@@ -74,17 +83,20 @@ func (u *UI) draw() {
 	u.screen.HideCursor()
 	u.clear(w, h)
 
-	content := u.editor.Content()
-	for i, r := range content {
-		if i >= w {
-			break
+	lines := u.editor.Lines()
+	for y := 0; y < len(lines) && y < h; y++ {
+		line := lines[y]
+		for x, r := range line {
+			if x >= w {
+				break
+			}
+			u.screen.SetCell(x, y, r)
 		}
-		u.screen.SetCell(i, 0, r)
 	}
 
-	col := u.editor.CursorCol()
-	if col < w {
-		u.screen.ShowCursor(col, 0)
+	cy, cx := u.editor.Cursor()
+	if cy < h && cx < w {
+		u.screen.ShowCursor(cx, cy)
 	}
 
 	u.screen.Show()

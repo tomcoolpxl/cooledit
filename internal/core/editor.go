@@ -36,43 +36,50 @@ func (e *Editor) Apply(cmd Command) Result {
 	case CmdInsertRune:
 		e.quitPending = false
 		e.buf.InsertRune(c.Rune)
-		return Result{}
+
+	case CmdInsertNewline:
+		e.quitPending = false
+		e.buf.InsertNewline()
 
 	case CmdBackspace:
 		e.quitPending = false
 		e.buf.Backspace()
-		return Result{}
 
 	case CmdMoveLeft:
 		e.quitPending = false
 		e.buf.MoveLeft()
-		return Result{}
 
 	case CmdMoveRight:
 		e.quitPending = false
 		e.buf.MoveRight()
-		return Result{}
+
+	case CmdMoveUp:
+		e.quitPending = false
+		e.buf.MoveUp()
+
+	case CmdMoveDown:
+		e.quitPending = false
+		e.buf.MoveDown()
 
 	case CmdMoveHome:
 		e.quitPending = false
 		e.buf.MoveHome()
-		return Result{}
 
 	case CmdMoveEnd:
 		e.quitPending = false
 		e.buf.MoveEnd()
-		return Result{}
 
 	default:
 		e.quitPending = false
-		return Result{}
 	}
+
+	return Result{}
 }
 
-func (e *Editor) Content() []rune {
-	return e.buf.Content()
+func (e *Editor) Lines() [][]rune {
+	return e.buf.Lines()
 }
 
-func (e *Editor) CursorCol() int {
-	return e.buf.CursorCol()
+func (e *Editor) Cursor() (int, int) {
+	return e.buf.Cursor()
 }

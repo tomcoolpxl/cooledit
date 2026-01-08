@@ -2,13 +2,16 @@ package buffer
 
 type Buffer interface {
 	InsertRune(r rune)
+	InsertNewline()
 	Backspace()
 
 	MoveLeft()
 	MoveRight()
+	MoveUp()
+	MoveDown()
 	MoveHome()
 	MoveEnd()
 
-	Content() []rune
-	CursorCol() int
+	Lines() [][]rune
+	Cursor() (line, col int)
 }
