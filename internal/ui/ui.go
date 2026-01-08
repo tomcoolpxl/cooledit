@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"cooledit/internal/core"
 	"cooledit/internal/term"
 )
@@ -69,6 +71,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyEnd:
 		return core.CmdMoveEnd{}
 
+	case e.Key == term.KeyPageUp:
+		return core.CmdPageUp{}
+
+	case e.Key == term.KeyPageDown:
+		return core.CmdPageDown{}
+
 	case e.Key == term.KeyRune &&
 		e.Rune == 'c' &&
 		e.Modifiers&term.ModCtrl != 0:
@@ -83,23 +91,73 @@ func (u *UI) draw() {
 	u.screen.HideCursor()
 	u.clear(w, h)
 
+	viewH := h - 1
+	if viewH < 1 {
+		viewH = 1
+	}
+	viewW := w
+	if viewW < 1 {
+		viewW = 1
+	}
+
+	u.editor.EnsureVisible(viewW, viewH)
+	vp := u.editor.Viewport()
+
 	lines := u.editor.Lines()
-	for y := 0; y < len(lines) && y < h; y++ {
-		line := lines[y]
-		for x, r := range line {
-			if x >= w {
+
+	for sy := 0; sy < viewH; sy++ {
+		docY := vp.TopLine + sy
+		if docY < 0 || docY >= len(lines) {
+			continue
+		}
+		line := lines[docY]
+		start := vp.LeftCol
+		if start > len(line) {
+			start = len(line)
+		}
+		for sx := 0; sx < viewW; sx++ {
+			docX := start + sx
+			if docX >= len(line) {
 				break
 			}
-			u.screen.SetCell(x, y, r)
+			u.screen.SetCell(sx, sy, line[docX])
 		}
 	}
 
 	cy, cx := u.editor.Cursor()
-	if cy < h && cx < w {
-		u.screen.ShowCursor(cx, cy)
+	sx := cx - vp.LeftCol
+	sy := cy - vp.TopLine
+	if sy >= 0 && sy < viewH && sx >= 0 && sx < viewW {
+		u.screen.ShowCursor(sx, sy)
 	}
 
+	u.drawStatusBar(w, h, vp)
 	u.screen.Show()
+}
+
+func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
+	if h < 1 {
+		return
+	}
+	row := h - 1
+
+	cy, cx := u.editor.Cursor()
+	mod := ""
+	if u.editor.Modified() {
+		mod = "*"
+	}
+
+	status := fmt.Sprintf("[No Name]%s  Ln %d, Col %d   Top %d, Left %d",
+		mod, cy+1, cx+1, vp.TopLine, vp.LeftCol,
+	)
+
+	for i := 0; i < w; i++ {
+		ch := ' '
+		if i < len(status) {
+			ch = rune(status[i])
+		}
+		u.screen.SetCell(i, row, ch)
+	}
 }
 
 func (u *UI) clear(w, h int) {
