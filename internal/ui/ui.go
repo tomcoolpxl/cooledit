@@ -46,6 +46,7 @@ type UI struct {
 
 	// used by quit flow
 	quitAfterSave bool
+	quitNow       bool
 
 	// ctrl-c force quit
 	ctrlCArmed bool
@@ -62,6 +63,10 @@ func New(screen term.Screen, editor *core.Editor) *UI {
 
 func (u *UI) Run() error {
 	for {
+		if u.quitNow {
+			return nil
+		}
+
 		w, h := u.screen.Size()
 		viewH := h - 1
 		if viewH < 1 {
@@ -77,20 +82,17 @@ func (u *UI) Run() error {
 
 		switch e := ev.(type) {
 		case term.KeyEvent:
-			// Help: any key exits
 			if u.mode == ModeHelp {
 				u.mode = ModeNormal
 				continue
 			}
 
-			// Prompt has priority over everything else
 			if u.mode == ModePrompt {
 				if u.handlePromptKey(e) {
 					continue
 				}
 			}
 
-			// Esc cancels Ctrl+C armed state and clears message
 			if e.Key == term.KeyEscape {
 				u.ctrlCArmed = false
 				if u.mode == ModeMessage {
@@ -99,12 +101,10 @@ func (u *UI) Run() error {
 				continue
 			}
 
-			// Ctrl+C force quit path
 			if u.handleCtrlC(e) {
 				return nil
 			}
 
-			// Normal keys
 			cmd := u.translateKey(e)
 			if cmd == nil {
 				continue
@@ -146,12 +146,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.mode = ModeHelp
 		return nil
 
-	// Ctrl+Q quit flow
 	case e.Key == term.KeyRune && e.Rune == 'q' && (e.Modifiers&term.ModCtrl) != 0:
 		u.startQuitFlow()
 		return nil
 
-	// Ctrl+S Save
 	case e.Key == term.KeyRune && e.Rune == 's' && e.Modifiers == term.ModCtrl:
 		if u.editor.File().Path == "" {
 			u.enterSaveAs(false)
@@ -159,8 +157,8 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		}
 		return core.CmdSave{}
 
-	// Ctrl+Shift+S Save As
-	case e.Key == term.KeyRune && e.Rune == 's' && (e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
+	case e.Key == term.KeyRune && e.Rune == 's' &&
+		(e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
 		u.enterSaveAs(false)
 		return nil
 
@@ -203,9 +201,7 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 func (u *UI) startQuitFlow() {
 	if !u.editor.Modified() {
-		// Quit immediately when clean.
-		u.mode = ModeNormal
-		u.editor.Apply(core.CmdQuit{}, 0)
+		u.quitNow = true
 		return
 	}
 
@@ -247,26 +243,19 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 		case term.KeyRune:
 			switch e.Rune {
 			case 'y', 'Y':
-				// Save then quit
 				if u.editor.File().Path == "" {
-					// need Save As, and quit after successful save
 					u.enterSaveAs(true)
 					return true
 				}
 				u.exitPrompt()
-				res := u.editor.Apply(core.CmdSave{}, 0)
-				if res.Message != "" {
-					u.enterMessage(res.Message)
-				}
-				// If save succeeded, modified should now be false.
+				u.editor.Apply(core.CmdSave{}, 0)
 				if !u.editor.Modified() {
-					u.editor.Apply(core.CmdQuit{}, 0)
+					u.quitNow = true
 				}
 				return true
 
 			case 'n', 'N':
-				u.exitPrompt()
-				u.editor.Apply(core.CmdQuit{}, 0)
+				u.quitNow = true
 				return true
 			}
 		case term.KeyEscape:
@@ -285,9 +274,6 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 				return true
 			}
 
-			// Overwrite confirm only if:
-			// - target exists
-			// - and target differs from current file path
 			if _, err := os.Stat(path); err == nil && path != u.editor.File().Path {
 				u.promptKind = PromptOverwrite
 				u.promptLabel = "Overwrite existing file? (y/n) "
@@ -297,12 +283,9 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 			}
 
 			u.exitPrompt()
-			res := u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
-			if res.Message != "" {
-				u.enterMessage(res.Message)
-			}
+			u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
 			if u.quitAfterSave && !u.editor.Modified() {
-				u.editor.Apply(core.CmdQuit{}, 0)
+				u.quitNow = true
 			}
 			return true
 
@@ -330,19 +313,14 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 				path := u.pendingPath
 				quitAfter := u.quitAfterSave
 				u.exitPrompt()
-				res := u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
-				if res.Message != "" {
-					u.enterMessage(res.Message)
-				}
+				u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
 				if quitAfter && !u.editor.Modified() {
-					u.editor.Apply(core.CmdQuit{}, 0)
+					u.quitNow = true
 				}
 				return true
 
 			case 'n', 'N':
-				// Back to Save As prompt, keep quitAfterSave behavior
-				quitAfter := u.quitAfterSave
-				u.enterSaveAs(quitAfter)
+				u.enterSaveAs(u.quitAfterSave)
 				return true
 			}
 		case term.KeyEscape:
@@ -374,7 +352,6 @@ func (u *UI) draw(w, h, viewH int) {
 	vp := u.editor.Viewport()
 	lines := u.editor.Lines()
 
-	// editor area (viewport aware: vertical + horizontal)
 	for sy := 0; sy < viewH; sy++ {
 		docY := vp.TopLine + sy
 		if docY < 0 || docY >= len(lines) {
@@ -396,7 +373,6 @@ func (u *UI) draw(w, h, viewH int) {
 		}
 	}
 
-	// cursor
 	if u.mode == ModeNormal || u.mode == ModeMessage {
 		cy, cx := u.editor.Cursor()
 		sx := cx - vp.LeftCol
@@ -414,32 +390,11 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 	row := h - 1
 	style := term.Style{Inverse: true}
 
-	// clear bar
 	for x := 0; x < w; x++ {
 		u.screen.SetCell(x, row, ' ', style)
 	}
 
-	switch u.mode {
-
-	case ModePrompt:
-		text := u.promptLabel + string(u.promptText)
-		for i, r := range text {
-			if i >= w {
-				break
-			}
-			u.screen.SetCell(i, row, r, style)
-		}
-
-		// Cursor for prompt input only for Save As (text entry)
-		if u.promptKind == PromptSaveAs {
-			cx := len(u.promptLabel) + len(u.promptText)
-			if cx < w {
-				u.screen.ShowCursor(cx, row)
-			}
-		}
-		return
-
-	case ModeMessage:
+	if u.mode == ModeMessage {
 		if time.Now().After(u.messageUntil) {
 			u.mode = ModeNormal
 		} else {
@@ -453,7 +408,23 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 		}
 	}
 
-	// ModeNormal layout: left + right (stable, right-aligned)
+	if u.mode == ModePrompt {
+		text := u.promptLabel + string(u.promptText)
+		for i, r := range text {
+			if i >= w {
+				break
+			}
+			u.screen.SetCell(i, row, r, style)
+		}
+		if u.promptKind == PromptSaveAs {
+			cx := len(u.promptLabel) + len(u.promptText)
+			if cx < w {
+				u.screen.ShowCursor(cx, row)
+			}
+		}
+		return
+	}
+
 	fs := u.editor.File()
 	mod := ""
 	if u.editor.Modified() {
@@ -469,7 +440,6 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 	}
 	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
 
-	// draw right aligned first
 	startRight := w - len(right)
 	if startRight < 0 {
 		startRight = 0
@@ -481,15 +451,11 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 		}
 	}
 
-	// draw left, but do not overwrite right area
 	maxLeft := startRight - 1
 	if maxLeft < 0 {
 		maxLeft = 0
 	}
 	for i, r := range left {
-		if i >= w {
-			break
-		}
 		if i >= maxLeft {
 			break
 		}
