@@ -68,6 +68,24 @@ type ResizeEvent struct {
 
 func (ResizeEvent) isEvent() {}
 
+type MouseButton int
+
+const (
+	MouseNone MouseButton = iota
+	MouseLeft
+	MouseRight
+	MouseMiddle
+	MouseWheelUp
+	MouseWheelDown
+)
+
+type MouseEvent struct {
+	X, Y   int
+	Button MouseButton
+}
+
+func (MouseEvent) isEvent() {}
+
 type Screen interface {
 	Init() error
 	Fini()

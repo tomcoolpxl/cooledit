@@ -53,3 +53,23 @@ type CmdSaveAs struct {
 	Path string
 }
 func (CmdSaveAs) isCommand() {}
+
+type CmdUndo struct{}
+func (CmdUndo) isCommand() {}
+
+type CmdRedo struct{}
+func (CmdRedo) isCommand() {}
+
+type CmdFind struct { Query string }
+func (CmdFind) isCommand() {}
+
+type CmdFindNext struct{}
+func (CmdFindNext) isCommand() {}
+
+type CmdFindPrev struct{}
+func (CmdFindPrev) isCommand() {}
+
+type CmdClick struct {
+	Line, Col int
+}
+func (CmdClick) isCommand() {}

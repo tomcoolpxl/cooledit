@@ -150,3 +150,40 @@ func (b *LineBuffer) Lines() [][]rune {
 func (b *LineBuffer) Cursor() (int, int) {
 	return b.line, b.col
 }
+
+func (b *LineBuffer) SetCursor(line, col int) {
+	if line < 0 {
+		line = 0
+	}
+	if line >= len(b.lines) {
+		line = len(b.lines) - 1
+	}
+	b.line = line
+
+	if col < 0 {
+		col = 0
+	}
+	if col > len(b.lines[b.line]) {
+		col = len(b.lines[b.line])
+	}
+	b.col = col
+	b.preferredCol = col
+}
+
+func (b *LineBuffer) LineLen(line int) int {
+	if line < 0 || line >= len(b.lines) {
+		return 0
+	}
+	return len(b.lines[line])
+}
+
+func (b *LineBuffer) RuneAt(line, col int) rune {
+	if line < 0 || line >= len(b.lines) {
+		return 0
+	}
+	l := b.lines[line]
+	if col < 0 || col >= len(l) {
+		return 0
+	}
+	return l[col]
+}

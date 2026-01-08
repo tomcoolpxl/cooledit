@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"fmt"
-	"os"
 	"time"
 
 	"cooledit/internal/core"
@@ -16,21 +14,17 @@ const (
 	ModeMessage
 	ModePrompt
 	ModeHelp
-)
-
-type PromptKind int
-
-const (
-	PromptSaveAs PromptKind = iota
-	PromptOverwrite
-	PromptQuitConfirm
+	ModeMenu
 )
 
 type UI struct {
 	screen term.Screen
 	editor *core.Editor
+	menubar *Menubar
 
-	mode UIMode
+	mode   UIMode
+	layout Layout
+	showMenubar bool
 
 	// message mode
 	message      string
@@ -55,9 +49,11 @@ type UI struct {
 
 func New(screen term.Screen, editor *core.Editor) *UI {
 	return &UI{
-		screen: screen,
-		editor: editor,
-		mode:   ModeNormal,
+		screen:      screen,
+		editor:      editor,
+		menubar:     NewMenubar(),
+		mode:        ModeNormal,
+		showMenubar: true,
 	}
 }
 
@@ -68,12 +64,10 @@ func (u *UI) Run() error {
 		}
 
 		w, h := u.screen.Size()
-		viewH := h - 1
-		if viewH < 1 {
-			viewH = 1
-		}
-
-		u.draw(w, h, viewH)
+		
+		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar)
+		
+		u.draw()
 
 		ev := u.screen.PollEvent()
 		if ev == nil {
@@ -92,6 +86,17 @@ func (u *UI) Run() error {
 					continue
 				}
 			}
+			
+			if u.mode == ModeMenu {
+				if u.handleMenuKey(e) {
+					continue
+				}
+			}
+
+			if e.Key == term.KeyF10 {
+				u.toggleMenuFocus()
+				continue
+			}
 
 			if e.Key == term.KeyEscape {
 				u.ctrlCArmed = false
@@ -106,14 +111,159 @@ func (u *UI) Run() error {
 			}
 
 			cmd := u.translateKey(e)
-			if cmd == nil {
-				continue
+			if cmd != nil {
+				res := u.editor.Apply(cmd, u.layout.Viewport.H)
+				if res.Message != "" {
+					u.enterMessage(res.Message)
+				}
 			}
+			
+		case term.MouseEvent:
+			u.handleMouseEvent(e)
+		}
+	}
+}
 
-			res := u.editor.Apply(cmd, viewH)
-			if res.Message != "" {
-				u.enterMessage(res.Message)
+func (u *UI) toggleMenuFocus() {
+	if !u.showMenubar {
+		u.showMenubar = true
+		u.mode = ModeMenu
+		u.menubar.Active = true
+		return
+	}
+	
+	if u.mode == ModeMenu {
+		u.mode = ModeNormal
+		u.menubar.Active = false
+	} else {
+		u.mode = ModeMenu
+		u.menubar.Active = true
+	}
+}
+
+func (u *UI) handleMenuKey(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyEscape:
+		u.mode = ModeNormal
+		u.menubar.Active = false
+		return true
+	case term.KeyLeft:
+		u.menubar.PrevMenu()
+		return true
+	case term.KeyRight:
+		u.menubar.NextMenu()
+		return true
+	case term.KeyUp:
+		u.menubar.PrevItem()
+		return true
+	case term.KeyDown:
+		u.menubar.NextItem()
+		return true
+	case term.KeyEnter:
+		u.executeMenuItem()
+		return true
+	}
+	return false
+}
+
+func (u *UI) executeMenuItem() {
+	menu := u.menubar.Menus[u.menubar.SelectedMenuIndex]
+	item := menu.Items[u.menubar.SelectedItemIndex]
+	
+	// Exit menu mode
+	u.mode = ModeNormal
+	u.menubar.Active = false
+	
+	if item.Action != nil {
+		item.Action(u)
+	} else if item.Command != nil {
+		res := u.editor.Apply(item.Command, u.layout.Viewport.H)
+		if res.Message != "" {
+			u.enterMessage(res.Message)
+		}
+	}
+}
+
+func (u *UI) handleMouseEvent(e term.MouseEvent) {
+	// 1. Check Menubar
+	if u.showMenubar && e.Y == u.layout.Menubar.Y {
+		if e.Button == term.MouseLeft {
+			// Find which menu was clicked
+			x := 0
+			for i, menu := range u.menubar.Menus {
+				width := len(menu.Title) + 2 // " Title "
+				if e.X >= x && e.X < x+width {
+					u.mode = ModeMenu
+					u.menubar.Active = true
+					u.menubar.SelectedMenuIndex = i
+					u.menubar.SelectedItemIndex = 0
+					return
+				}
+				x += width
 			}
+		}
+		return
+	}
+	
+	// 2. Check Menu Dropdown (if active)
+	if u.mode == ModeMenu {
+		menuIdx := u.menubar.SelectedMenuIndex
+		menuX := 0
+		for i := 0; i < menuIdx; i++ {
+			menuX += len(u.menubar.Menus[i].Title) + 2
+		}
+		
+		menu := u.menubar.Menus[menuIdx]
+		width := 0
+		for _, item := range menu.Items {
+			w := len(item.Label) + 4 + len(item.Accelerator)
+			if w > width { width = w }
+		}
+		if width < 10 { width = 10 }
+		
+		startX := menuX
+		startY := 1
+		if startX+width > u.layout.Width { startX = u.layout.Width - width }
+		
+		// Check bounds
+		numItems := len(menu.Items)
+		if e.X >= startX && e.X < startX+width && e.Y >= startY && e.Y < startY+numItems {
+			if e.Button == term.MouseLeft {
+				idx := e.Y - startY
+				u.menubar.SelectedItemIndex = idx
+				u.executeMenuItem()
+				return
+			}
+		} else {
+			// Click outside menu -> close
+			if e.Button == term.MouseLeft {
+				u.mode = ModeNormal
+				u.menubar.Active = false
+			}
+		}
+		return
+	}
+
+	// 3. Check Viewport
+	vp := u.layout.Viewport
+	if e.X >= vp.X && e.X < vp.X+vp.W && e.Y >= vp.Y && e.Y < vp.Y+vp.H {
+		if e.Button == term.MouseLeft {
+			viewX := e.X - vp.X
+			viewY := e.Y - vp.Y
+			
+			docLine := u.editor.Viewport().TopLine + viewY
+			docCol := u.editor.Viewport().LeftCol + viewX
+			
+			u.editor.Apply(core.CmdClick{Line: docLine, Col: docCol}, u.layout.Viewport.H)
+			
+		} else if e.Button == term.MouseWheelUp {
+			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
+			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
+			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
+		} else if e.Button == term.MouseWheelDown {
+			u.editor.Apply(core.CmdMoveDown{}, u.layout.Viewport.H)
+			u.editor.Apply(core.CmdMoveDown{}, u.layout.Viewport.H)
+			u.editor.Apply(core.CmdMoveDown{}, u.layout.Viewport.H)
 		}
 	}
 }
@@ -162,6 +312,25 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.enterSaveAs(false)
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == 'z' && (e.Modifiers&term.ModCtrl) != 0:
+		return core.CmdUndo{}
+
+	case e.Key == term.KeyRune && e.Rune == 'y' && (e.Modifiers&term.ModCtrl) != 0:
+		return core.CmdRedo{}
+	
+	case e.Key == term.KeyRune && e.Rune == 'z' && (e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
+		return core.CmdRedo{}
+		
+	case e.Key == term.KeyRune && e.Rune == 'f' && (e.Modifiers&term.ModCtrl) != 0:
+		u.enterFind()
+		return nil
+
+	case e.Key == term.KeyF3:
+		if e.Modifiers == term.ModShift {
+			return core.CmdFindPrev{}
+		}
+		return core.CmdFindNext{}
+
 	case e.Key == term.KeyRune && e.Modifiers == 0:
 		return core.CmdInsertRune{Rune: e.Rune}
 
@@ -199,300 +368,8 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	return nil
 }
 
-func (u *UI) startQuitFlow() {
-	if !u.editor.Modified() {
-		u.quitNow = true
-		return
-	}
-
-	u.mode = ModePrompt
-	u.promptKind = PromptQuitConfirm
-	u.promptLabel = "Unsaved changes. Save before quitting? (y/n) "
-	u.promptText = nil
-	u.quitAfterSave = false
-}
-
-func (u *UI) enterSaveAs(quitAfter bool) {
-	u.mode = ModePrompt
-	u.promptKind = PromptSaveAs
-	u.promptLabel = "Save as: "
-	u.promptText = nil
-	u.pendingPath = ""
-	u.quitAfterSave = quitAfter
-}
-
 func (u *UI) enterMessage(msg string) {
 	u.mode = ModeMessage
 	u.message = msg
 	u.messageUntil = time.Now().Add(2 * time.Second)
-}
-
-func (u *UI) exitPrompt() {
-	u.mode = ModeNormal
-	u.promptText = nil
-	u.promptLabel = ""
-	u.pendingPath = ""
-	u.quitAfterSave = false
-}
-
-func (u *UI) handlePromptKey(e term.KeyEvent) bool {
-	switch u.promptKind {
-
-	case PromptQuitConfirm:
-		switch e.Key {
-		case term.KeyRune:
-			switch e.Rune {
-			case 'y', 'Y':
-				if u.editor.File().Path == "" {
-					u.enterSaveAs(true)
-					return true
-				}
-				u.exitPrompt()
-				u.editor.Apply(core.CmdSave{}, 0)
-				if !u.editor.Modified() {
-					u.quitNow = true
-				}
-				return true
-
-			case 'n', 'N':
-				u.quitNow = true
-				return true
-			}
-		case term.KeyEscape:
-			u.exitPrompt()
-			return true
-		}
-		return true
-
-	case PromptSaveAs:
-		switch e.Key {
-		case term.KeyEnter:
-			path := string(u.promptText)
-			if path == "" {
-				u.enterMessage("Save As: empty path")
-				u.exitPrompt()
-				return true
-			}
-
-			if _, err := os.Stat(path); err == nil && path != u.editor.File().Path {
-				u.promptKind = PromptOverwrite
-				u.promptLabel = "Overwrite existing file? (y/n) "
-				u.pendingPath = path
-				u.promptText = nil
-				return true
-			}
-
-			u.exitPrompt()
-			u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
-			if u.quitAfterSave && !u.editor.Modified() {
-				u.quitNow = true
-			}
-			return true
-
-		case term.KeyEscape:
-			u.exitPrompt()
-			return true
-
-		case term.KeyBackspace:
-			if len(u.promptText) > 0 {
-				u.promptText = u.promptText[:len(u.promptText)-1]
-			}
-			return true
-
-		case term.KeyRune:
-			u.promptText = append(u.promptText, e.Rune)
-			return true
-		}
-		return true
-
-	case PromptOverwrite:
-		switch e.Key {
-		case term.KeyRune:
-			switch e.Rune {
-			case 'y', 'Y':
-				path := u.pendingPath
-				quitAfter := u.quitAfterSave
-				u.exitPrompt()
-				u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
-				if quitAfter && !u.editor.Modified() {
-					u.quitNow = true
-				}
-				return true
-
-			case 'n', 'N':
-				u.enterSaveAs(u.quitAfterSave)
-				return true
-			}
-		case term.KeyEscape:
-			u.exitPrompt()
-			return true
-		}
-		return true
-	}
-
-	return false
-}
-
-func (u *UI) draw(w, h, viewH int) {
-	u.screen.HideCursor()
-	u.clear(w, h)
-
-	if u.mode == ModeHelp {
-		u.drawHelp(w, h)
-		u.screen.Show()
-		return
-	}
-
-	viewW := w
-	if viewW < 1 {
-		viewW = 1
-	}
-
-	u.editor.EnsureVisible(viewW, viewH)
-	vp := u.editor.Viewport()
-	lines := u.editor.Lines()
-
-	for sy := 0; sy < viewH; sy++ {
-		docY := vp.TopLine + sy
-		if docY < 0 || docY >= len(lines) {
-			continue
-		}
-
-		line := lines[docY]
-		start := vp.LeftCol
-		if start > len(line) {
-			start = len(line)
-		}
-
-		for sx := 0; sx < viewW; sx++ {
-			docX := start + sx
-			if docX >= len(line) {
-				break
-			}
-			u.screen.SetCell(sx, sy, line[docX], term.Style{})
-		}
-	}
-
-	if u.mode == ModeNormal || u.mode == ModeMessage {
-		cy, cx := u.editor.Cursor()
-		sx := cx - vp.LeftCol
-		sy := cy - vp.TopLine
-		if sx >= 0 && sx < viewW && sy >= 0 && sy < viewH {
-			u.screen.ShowCursor(sx, sy)
-		}
-	}
-
-	u.drawStatusBar(w, h, vp)
-	u.screen.Show()
-}
-
-func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
-	row := h - 1
-	style := term.Style{Inverse: true}
-
-	for x := 0; x < w; x++ {
-		u.screen.SetCell(x, row, ' ', style)
-	}
-
-	if u.mode == ModeMessage {
-		if time.Now().After(u.messageUntil) {
-			u.mode = ModeNormal
-		} else {
-			for i, r := range u.message {
-				if i >= w {
-					break
-				}
-				u.screen.SetCell(i, row, r, style)
-			}
-			return
-		}
-	}
-
-	if u.mode == ModePrompt {
-		text := u.promptLabel + string(u.promptText)
-		for i, r := range text {
-			if i >= w {
-				break
-			}
-			u.screen.SetCell(i, row, r, style)
-		}
-		if u.promptKind == PromptSaveAs {
-			cx := len(u.promptLabel) + len(u.promptText)
-			if cx < w {
-				u.screen.ShowCursor(cx, row)
-			}
-		}
-		return
-	}
-
-	fs := u.editor.File()
-	mod := ""
-	if u.editor.Modified() {
-		mod = "*"
-	}
-
-	left := fmt.Sprintf("%s%s  Ctrl+S Save  Ctrl+Shift+S Save As  F1 Help", fs.BaseName, mod)
-
-	cy, cx := u.editor.Cursor()
-	eol := "LF"
-	if fs.EOL == "\r\n" {
-		eol = "CRLF"
-	}
-	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
-
-	startRight := w - len(right)
-	if startRight < 0 {
-		startRight = 0
-	}
-	for i, r := range right {
-		x := startRight + i
-		if x >= 0 && x < w {
-			u.screen.SetCell(x, row, r, style)
-		}
-	}
-
-	maxLeft := startRight - 1
-	if maxLeft < 0 {
-		maxLeft = 0
-	}
-	for i, r := range left {
-		if i >= maxLeft {
-			break
-		}
-		u.screen.SetCell(i, row, r, style)
-	}
-}
-
-func (u *UI) drawHelp(w, h int) {
-	lines := []string{
-		"cooledit - help",
-		"",
-		"Ctrl+S        Save",
-		"Ctrl+Shift+S  Save As",
-		"Ctrl+Q        Quit (prompts if unsaved)",
-		"Ctrl+C        Force quit (press twice, Esc cancels)",
-		"Arrows        Move cursor",
-		"PgUp/PgDn     Scroll",
-		"Ctrl+Home/End File start/end",
-		"F1            Help",
-		"",
-		"Press any key to return",
-	}
-
-	for y := 0; y < len(lines) && y < h; y++ {
-		for x, r := range lines[y] {
-			if x >= w {
-				break
-			}
-			u.screen.SetCell(x, y, r, term.Style{})
-		}
-	}
-}
-
-func (u *UI) clear(w, h int) {
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			u.screen.SetCell(x, y, ' ', term.Style{})
-		}
-	}
 }
