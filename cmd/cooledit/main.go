@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -12,6 +13,8 @@ import (
 
 func main() {
 	app := tview.NewApplication()
+
+	// ---------- Editor ----------
 
 	editor := tview.NewTextArea()
 	editor.SetWrap(false)
@@ -45,12 +48,44 @@ func main() {
 		)
 	}
 
-	// ---------- Layout (DECLARE EARLY) ----------
+	// ---------- Layout ----------
 
 	layout := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(editor, 0, 1, true).
 		AddItem(status, 1, 0, false)
+
+	// ---------- Helpers ----------
+
+	detectEOL := func(data []byte) string {
+		const maxScan = 64 * 1024 // bounded scan
+
+		n := len(data)
+		if n > maxScan {
+			n = maxScan
+		}
+
+		for i := 0; i < n; i++ {
+			if data[i] == '\r' {
+				return "CRLF"
+			}
+		}
+		return "LF"
+	}
+
+	normalizeForEditor := func(data []byte) string {
+		s := string(data)
+		s = strings.ReplaceAll(s, "\r\n", "\n")
+		s = strings.ReplaceAll(s, "\r", "\n")
+		return s
+	}
+
+	applyEOLOnSave := func(text string) []byte {
+		if eol == "CRLF" {
+			return []byte(strings.ReplaceAll(text, "\n", "\r\n"))
+		}
+		return []byte(text)
+	}
 
 	// ---------- File I/O ----------
 
@@ -59,7 +94,10 @@ func main() {
 		if err != nil {
 			return err
 		}
-		editor.SetText(string(data), false)
+
+		eol = detectEOL(data)
+		editor.SetText(normalizeForEditor(data), false)
+
 		filename = path
 		modified = false
 		updateStatus()
@@ -67,10 +105,13 @@ func main() {
 	}
 
 	saveFile := func(path string) error {
-		data := editor.GetText()
-		if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		text := editor.GetText()
+		data := applyEOLOnSave(text)
+
+		if err := os.WriteFile(path, data, 0644); err != nil {
 			return err
 		}
+
 		filename = path
 		modified = false
 		updateStatus()
