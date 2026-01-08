@@ -89,8 +89,8 @@ Design shortcuts that **improve on nano’s** cumbersome conventions: eliminate 
 
 **4.1 File Operations**
 
-* `Ctrl+O` Save
-* `Ctrl+S` Save As
+* `Ctrl+S` Save
+* `Ctrl+ShiftS` Save As
 * `Ctrl+Q` Quit/Exit
 
 **4.2 Navigation**
@@ -241,3 +241,41 @@ Not in initial scope but candidates:
 **Milestone 4**
 
 * Keyboard customization, settings persistence.
+
+
+
+Saving
+
+Ctrl+S
+
+If file has a path → Save (overwrite)
+
+If modified → write file
+
+If not modified → no-op + brief message
+
+If file has no path → Save As
+
+Ctrl+Shift+S
+
+Always Save As
+
+Overwrite confirmation:
+
+Only when overwriting an existing file that is not the current file
+
+Same rule as VS Code:
+
+Normal Save never asks
+
+Save As asks only if path exists and is different
+
+Help
+
+F1
+
+Opens a simple full-screen help overlay
+
+Any key exits help
+
+Does not modify editor state

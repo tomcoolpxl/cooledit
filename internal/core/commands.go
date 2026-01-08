@@ -46,5 +46,10 @@ func (CmdFileStart) isCommand() {}
 type CmdFileEnd struct{}
 func (CmdFileEnd) isCommand() {}
 
+type CmdSaveAs struct {
+	Path string
+}
+func (CmdSaveAs) isCommand() {}
+
 type CmdNoOp struct{}
 func (CmdNoOp) isCommand() {}

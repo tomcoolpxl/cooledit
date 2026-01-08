@@ -8,18 +8,46 @@ import (
 	"cooledit/internal/term"
 )
 
+type UIMode int
+
+const (
+	ModeNormal UIMode = iota
+	ModeMessage
+	ModePrompt
+)
+
+type PromptKind int
+
+const (
+	PromptSaveAs PromptKind = iota
+	PromptQuitConfirm
+)
+
 type UI struct {
 	screen term.Screen
 	editor *core.Editor
 
+	mode UIMode
+
+	// message mode
 	message      string
 	messageUntil time.Time
+
+	// prompt mode
+	promptKind  PromptKind
+	promptLabel string
+	promptText  []rune
+
+	// ctrl-c quit
+	quitPending bool
+	quitUntil   time.Time
 }
 
 func New(screen term.Screen, editor *core.Editor) *UI {
 	return &UI{
 		screen: screen,
 		editor: editor,
+		mode:   ModeNormal,
 	}
 }
 
@@ -39,29 +67,71 @@ func (u *UI) Run() error {
 		}
 
 		switch e := ev.(type) {
-		case term.ResizeEvent:
-			continue
-
 		case term.KeyEvent:
+			if u.mode == ModePrompt {
+				if u.handlePromptKey(e) {
+					continue
+				}
+			}
+
+			if u.handleCtrlC(e) {
+				return nil
+			}
+
 			cmd := u.translateKey(e)
+			if cmd == nil {
+				continue
+			}
+
 			res := u.editor.Apply(cmd, viewH)
 			if res.Quit {
 				return nil
 			}
 			if res.Message != "" {
-				u.setMessage(res.Message)
+				u.enterMessage(res.Message)
 			}
 		}
 	}
 }
 
-func (u *UI) setMessage(msg string) {
-	u.message = msg
-	u.messageUntil = time.Now().Add(2 * time.Second)
+func (u *UI) handleCtrlC(e term.KeyEvent) bool {
+	if e.Key != term.KeyRune || e.Rune != 'c' || e.Modifiers&term.ModCtrl == 0 {
+		return false
+	}
+
+	now := time.Now()
+
+	if u.quitPending && now.Before(u.quitUntil) {
+		return true
+	}
+
+	u.quitPending = true
+	u.quitUntil = now.Add(2 * time.Second)
+
+	if u.editor.Modified() {
+		u.enterMessage("UNSAVED changes — press Ctrl+C again to quit")
+	} else {
+		u.enterMessage("Press Ctrl+C again to quit")
+	}
+
+	return false
 }
 
 func (u *UI) translateKey(e term.KeyEvent) core.Command {
+	// Esc cancels pending Ctrl+C
+	if e.Key == term.KeyEscape {
+		u.quitPending = false
+		if u.mode == ModeMessage {
+			u.mode = ModeNormal
+		}
+		return nil
+	}
+
 	switch {
+	case e.Key == term.KeyRune && e.Rune == 'q' && e.Modifiers&term.ModCtrl != 0:
+		u.startQuitFlow()
+		return nil
+
 	case e.Key == term.KeyRune && e.Modifiers == 0:
 		return core.CmdInsertRune{Rune: e.Rune}
 
@@ -83,6 +153,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyDown:
 		return core.CmdMoveDown{}
 
+	case e.Key == term.KeyPageUp:
+		return core.CmdPageUp{}
+
+	case e.Key == term.KeyPageDown:
+		return core.CmdPageDown{}
+
 	case e.Key == term.KeyHome && e.Modifiers&term.ModCtrl != 0:
 		return core.CmdFileStart{}
 
@@ -94,20 +170,101 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyEnd:
 		return core.CmdMoveEnd{}
-
-	case e.Key == term.KeyPageUp:
-		return core.CmdPageUp{}
-
-	case e.Key == term.KeyPageDown:
-		return core.CmdPageDown{}
-
-	case e.Key == term.KeyRune &&
-		e.Rune == 'c' &&
-		e.Modifiers&term.ModCtrl != 0:
-		return core.CmdQuit{}
 	}
 
-	return core.CmdNoOp{}
+	return nil
+}
+
+func (u *UI) startQuitFlow() {
+	if !u.editor.Modified() {
+		// safe quit
+		u.enterMessage("Quit")
+		u.mode = ModeNormal
+		u.editor.Apply(core.CmdQuit{}, 0)
+		return
+	}
+
+	u.mode = ModePrompt
+	u.promptKind = PromptQuitConfirm
+	u.promptLabel = "Unsaved changes. Save before quitting? (y/n) "
+	u.promptText = nil
+}
+
+func (u *UI) handlePromptKey(e term.KeyEvent) bool {
+	switch u.promptKind {
+	case PromptSaveAs:
+		return u.handleSaveAsPrompt(e)
+	case PromptQuitConfirm:
+		return u.handleQuitConfirmPrompt(e)
+	}
+	return false
+}
+
+func (u *UI) handleQuitConfirmPrompt(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyRune:
+		switch e.Rune {
+		case 'y', 'Y':
+			u.exitPrompt()
+			if u.editor.File().Path == "" {
+				u.enterSaveAs()
+				return true
+			}
+			u.editor.Apply(core.CmdSaveAs{Path: u.editor.File().Path}, 0)
+			return true
+		case 'n', 'N':
+			return true
+		}
+
+	case term.KeyEscape:
+		u.exitPrompt()
+		return true
+	}
+	return true
+}
+
+func (u *UI) handleSaveAsPrompt(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyEnter:
+		path := string(u.promptText)
+		u.exitPrompt()
+		u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
+		return true
+
+	case term.KeyEscape:
+		u.exitPrompt()
+		return true
+
+	case term.KeyBackspace:
+		if len(u.promptText) > 0 {
+			u.promptText = u.promptText[:len(u.promptText)-1]
+		}
+		return true
+
+	case term.KeyRune:
+		u.promptText = append(u.promptText, e.Rune)
+		return true
+	}
+	return true
+}
+
+func (u *UI) enterSaveAs() {
+	u.mode = ModePrompt
+	u.promptKind = PromptSaveAs
+	u.promptLabel = "Save as: "
+	u.promptText = nil
+}
+
+func (u *UI) enterMessage(msg string) {
+	u.mode = ModeMessage
+	u.message = msg
+	u.messageUntil = time.Now().Add(2 * time.Second)
+}
+
+func (u *UI) exitPrompt() {
+	u.mode = ModeNormal
+	u.promptText = nil
+	u.promptLabel = ""
 }
 
 func (u *UI) draw(w, h, viewH int) {
@@ -115,13 +272,8 @@ func (u *UI) draw(w, h, viewH int) {
 	u.clear(w, h)
 
 	viewW := w
-	if viewW < 1 {
-		viewW = 1
-	}
-
 	u.editor.EnsureVisible(viewW, viewH)
 	vp := u.editor.Viewport()
-
 	lines := u.editor.Lines()
 
 	for sy := 0; sy < viewH; sy++ {
@@ -129,38 +281,29 @@ func (u *UI) draw(w, h, viewH int) {
 		if docY < 0 || docY >= len(lines) {
 			continue
 		}
-
 		line := lines[docY]
-		start := vp.LeftCol
-		if start > len(line) {
-			start = len(line)
-		}
-
-		for sx := 0; sx < viewW; sx++ {
-			docX := start + sx
-			if docX >= len(line) {
+		for sx, r := range line {
+			if sx >= viewW {
 				break
 			}
-			u.screen.SetCell(sx, sy, line[docX], term.Style{})
+			u.screen.SetCell(sx, sy, r, term.Style{})
 		}
 	}
 
-	cy, cx := u.editor.Cursor()
-	sx := cx - vp.LeftCol
-	sy := cy - vp.TopLine
-	if sy >= 0 && sy < viewH && sx >= 0 && sx < viewW {
-		u.screen.ShowCursor(sx, sy)
+	if u.mode == ModeNormal || u.mode == ModeMessage {
+		cy, cx := u.editor.Cursor()
+		sx := cx - vp.LeftCol
+		sy := cy - vp.TopLine
+		if sx >= 0 && sx < viewW && sy >= 0 && sy < viewH {
+			u.screen.ShowCursor(sx, sy)
+		}
 	}
 
-	u.drawStatusBar(w, h, vp)
+	u.drawStatusBar(w, h)
 	u.screen.Show()
 }
 
-func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
-	if h < 1 {
-		return
-	}
-
+func (u *UI) drawStatusBar(w, h int) {
 	row := h - 1
 	style := term.Style{Inverse: true}
 
@@ -168,48 +311,54 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 		u.screen.SetCell(x, row, ' ', style)
 	}
 
-	fs := u.editor.File()
-	mod := ""
-	if u.editor.Modified() {
-		mod = "*"
-	}
-
-	left := fs.BaseName + mod
-	for i, r := range left {
-		if i >= w {
-			break
+	switch u.mode {
+	case ModePrompt:
+		text := u.promptLabel + string(u.promptText)
+		for i, r := range text {
+			if i >= w {
+				break
+			}
+			u.screen.SetCell(i, row, r, style)
 		}
-		u.screen.SetCell(i, row, r, style)
-	}
+		cx := len(u.promptLabel) + len(u.promptText)
+		if cx < w {
+			u.screen.ShowCursor(cx, row)
+		}
 
-	// Right side: transient message OR normal status
-	now := time.Now()
-	var right string
+	case ModeMessage:
+		if time.Now().After(u.messageUntil) {
+			u.mode = ModeNormal
+			return
+		}
+		for i, r := range u.message {
+			if i >= w {
+				break
+			}
+			u.screen.SetCell(i, row, r, style)
+		}
 
-	if u.message != "" && now.Before(u.messageUntil) {
-		right = u.message
-	} else {
-		u.message = ""
+	case ModeNormal:
+		fs := u.editor.File()
+		mod := ""
+		if u.editor.Modified() {
+			mod = "*"
+		}
+		left := fs.BaseName + mod
+		for i, r := range left {
+			if i >= w {
+				break
+			}
+			u.screen.SetCell(i, row, r, style)
+		}
+
 		cy, cx := u.editor.Cursor()
-		eol := "LF"
-		if fs.EOL == "\r\n" {
-			eol = "CRLF"
+		right := fmt.Sprintf("Ln %d, Col %d", cy+1, cx+1)
+		start := w - len(right)
+		if start < 0 {
+			start = 0
 		}
-		right = fmt.Sprintf(
-			"Ln %d, Col %d  %s %s",
-			cy+1, cx+1, fs.Encoding, eol,
-		)
-	}
-
-	start := w - len(right)
-	if start < 0 {
-		start = 0
-	}
-
-	for i, r := range right {
-		x := start + i
-		if x >= 0 && x < w {
-			u.screen.SetCell(x, row, r, style)
+		for i, r := range right {
+			u.screen.SetCell(start+i, row, r, style)
 		}
 	}
 }

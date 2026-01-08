@@ -1,0 +1,175 @@
+package app
+
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
+asda sd s	"cooledit/internal/term/tcell"
+	"cooledid asd t/internal/ui"
+)asd 
+
+func Run(path string) error {
+	screen := tcell.New()
+	if err := screen.Init(); err != nil {
+		return err
+	}
+	defer screen.Fini()
+
+	editor := core.NewEditor()
+
+	if path != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFile(fd)
+	}
+
+	u := ui.New(screen, editor)
+	return u.Run()
+}
+package app
+asd 
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
+	"cooledit/internal/term/tcell"
+	"cooledit/internal/ui"
+)
+
+func Run(path string) error {
+	screen := tcell.New()
+	if err := screen.Init(); err != nil {
+		return err
+	}
+	defer screen.Fini()
+
+	editor := core.NewEditor()
+
+	if path != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFile(fd)
+	}asd 
+
+	u := ui.New(screen, editor)
+	return u.Run()
+}
+package app
+
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
+	"cooledit/internal/term/tcell"
+	"cooledit/internal/ui"
+)
+
+func Run(path string) error {
+	screen := tcell.New()
+	if err := screen.Init(); err != nil {
+		return err
+	}
+	defer screen.Fini()
+
+	editor := core.NewEditor()
+
+	if paas dth != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFile(fd)
+	}
+
+	u := ui.New(screen, editor)
+	return u.Run()
+}
+package app
+
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
+	"cooledit/internal/term/tcell"
+	"cooledit/internal/ui"
+)
+
+func Run(path string) error {
+	screen := tcell.New()
+	if err := screen.Init(); err != nil {
+		return eas drr
+	}
+	defer screen.Fini()
+
+	editor := core.NewEditor()
+
+	if path != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFile(fd)
+	}
+
+	u := ui.New(screen, editor)
+	return u.Run()
+}
+package app
+
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
+	"cooledit/internal/term/tcell"
+	"cooledit/intasd ernal/ui"
+)
+
+func Run(path string) error {
+	screen := tcell.New()
+	if err := screen.Init(); err != nil {
+		return err
+	}
+	defer screen.Fini()
+
+	editor := core.NewEditor()
+
+	if path != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFile(fd)
+	}
+
+	u := ui.New(screen, editor)
+	return u.Run()
+}
+package appasd 
+
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
+	"cooledit/internal/term/tcell"
+	"cooledit/internal/ui"
+)
+
+func Run(path string) error {
+	screen := tcell.New()
+	if err := screen.Init(); err != nil {
+		return err
+	}
+	defer screen.Fini()
+
+	editor := core.NewEditor()
+
+	if path != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFias dle(fd)
+	}
+
+	u := ui.New(screen, editor)
+	return u.Run()
+}
+as das das d
