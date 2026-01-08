@@ -21,7 +21,13 @@ func New(screen term.Screen, editor *core.Editor) *UI {
 
 func (u *UI) Run() error {
 	for {
-		u.draw()
+		w, h := u.screen.Size()
+		viewH := h - 1
+		if viewH < 1 {
+			viewH = 1
+		}
+
+		u.draw(w, h, viewH)
 
 		ev := u.screen.PollEvent()
 		if ev == nil {
@@ -34,7 +40,7 @@ func (u *UI) Run() error {
 
 		case term.KeyEvent:
 			cmd := u.translateKey(e)
-			res := u.editor.Apply(cmd)
+			res := u.editor.Apply(cmd, viewH)
 			if res.Quit {
 				return nil
 			}
@@ -65,6 +71,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyDown:
 		return core.CmdMoveDown{}
 
+	case e.Key == term.KeyHome && e.Modifiers&term.ModCtrl != 0:
+		return core.CmdFileStart{}
+
+	case e.Key == term.KeyEnd && e.Modifiers&term.ModCtrl != 0:
+		return core.CmdFileEnd{}
+
 	case e.Key == term.KeyHome:
 		return core.CmdMoveHome{}
 
@@ -86,15 +98,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	return core.CmdNoOp{}
 }
 
-func (u *UI) draw() {
-	w, h := u.screen.Size()
+func (u *UI) draw(w, h, viewH int) {
 	u.screen.HideCursor()
 	u.clear(w, h)
 
-	viewH := h - 1
-	if viewH < 1 {
-		viewH = 1
-	}
 	viewW := w
 	if viewW < 1 {
 		viewW = 1
@@ -147,8 +154,9 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 		mod = "*"
 	}
 
-	status := fmt.Sprintf("[No Name]%s  Ln %d, Col %d   Top %d, Left %d",
-		mod, cy+1, cx+1, vp.TopLine, vp.LeftCol,
+	status := fmt.Sprintf(
+		"[No Name]%s  Ln %d, Col %d   Ctrl+Home End  PgUp PgDn",
+		mod, cy+1, cx+1,
 	)
 
 	for i := 0; i < w; i++ {

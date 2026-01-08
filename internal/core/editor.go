@@ -30,8 +30,8 @@ type Result struct {
 	Quit bool
 }
 
-func (e *Editor) Apply(cmd Command) Result {
-	switch c := cmd.(type) {
+func (e *Editor) Apply(cmd Command, viewHeight int) Result {
+	switch cmd.(type) {
 	case CmdQuit:
 		now := time.Now()
 		if e.quitPending && now.Sub(e.quitAt) < 2*time.Second {
@@ -40,84 +40,72 @@ func (e *Editor) Apply(cmd Command) Result {
 		e.quitPending = true
 		e.quitAt = now
 		return Result{}
+	}
 
+	e.quitPending = false
+
+	switch cmd.(type) {
 	case CmdInsertRune:
-		e.quitPending = false
 		e.modified = true
-		e.buf.InsertRune(c.Rune)
+		e.buf.InsertRune(cmd.(CmdInsertRune).Rune)
 
 	case CmdInsertNewline:
-		e.quitPending = false
 		e.modified = true
 		e.buf.InsertNewline()
 
 	case CmdBackspace:
-		e.quitPending = false
 		e.modified = true
 		e.buf.Backspace()
 
 	case CmdMoveLeft:
-		e.quitPending = false
 		e.buf.MoveLeft()
 
 	case CmdMoveRight:
-		e.quitPending = false
 		e.buf.MoveRight()
 
 	case CmdMoveUp:
-		e.quitPending = false
 		e.buf.MoveUp()
 
 	case CmdMoveDown:
-		e.quitPending = false
 		e.buf.MoveDown()
 
 	case CmdMoveHome:
-		e.quitPending = false
 		e.buf.MoveHome()
 
 	case CmdMoveEnd:
-		e.quitPending = false
 		e.buf.MoveEnd()
 
 	case CmdPageUp:
-		e.quitPending = false
-		for i := 0; i < e.pageSize(); i++ {
+		for i := 0; i < viewHeight; i++ {
 			e.buf.MoveUp()
 		}
 
 	case CmdPageDown:
-		e.quitPending = false
-		for i := 0; i < e.pageSize(); i++ {
+		for i := 0; i < viewHeight; i++ {
 			e.buf.MoveDown()
 		}
 
 	case CmdFileStart:
-		e.quitPending = false
 		for {
-			prevLine, _ := e.buf.Cursor()
+			prev, _ := e.buf.Cursor()
 			e.buf.MoveUp()
-			line, _ := e.buf.Cursor()
-			if line == prevLine {
+			cur, _ := e.buf.Cursor()
+			if cur == prev {
 				break
 			}
 		}
 		e.buf.MoveHome()
 
 	case CmdFileEnd:
-		e.quitPending = false
 		for {
-			prevLine, _ := e.buf.Cursor()
+			prev, _ := e.buf.Cursor()
 			e.buf.MoveDown()
-			line, _ := e.buf.Cursor()
-			if line == prevLine {
+			cur, _ := e.buf.Cursor()
+			if cur == prev {
 				break
 			}
 		}
 		e.buf.MoveEnd()
-
-	default:
-		e.quitPending = false
 	}
 
 	return Result{}
@@ -137,11 +125,6 @@ func (e *Editor) Viewport() Viewport {
 
 func (e *Editor) Modified() bool {
 	return e.modified
-}
-
-// pageSize returns a conservative default; UI will keep viewport in sync.
-func (e *Editor) pageSize() int {
-	return 10
 }
 
 func (e *Editor) EnsureVisible(viewWidth, viewHeight int) {
