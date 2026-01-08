@@ -52,8 +52,12 @@ func (s *Screen) PollEvent() term.Event {
 	return nil
 }
 
-func (s *Screen) SetCell(x, y int, ch rune) {
-	s.screen.SetContent(x, y, ch, nil, tcell.StyleDefault)
+func (s *Screen) SetCell(x, y int, ch rune, st term.Style) {
+	style := tcell.StyleDefault
+	if st.Inverse {
+		style = style.Reverse(true)
+	}
+	s.screen.SetContent(x, y, ch, nil, style)
 }
 
 func (s *Screen) Show() {

@@ -117,17 +117,19 @@ func (u *UI) draw(w, h, viewH int) {
 		if docY < 0 || docY >= len(lines) {
 			continue
 		}
+
 		line := lines[docY]
 		start := vp.LeftCol
 		if start > len(line) {
 			start = len(line)
 		}
+
 		for sx := 0; sx < viewW; sx++ {
 			docX := start + sx
 			if docX >= len(line) {
 				break
 			}
-			u.screen.SetCell(sx, sy, line[docX])
+			u.screen.SetCell(sx, sy, line[docX], term.Style{})
 		}
 	}
 
@@ -146,32 +148,59 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 	if h < 1 {
 		return
 	}
-	row := h - 1
 
-	cy, cx := u.editor.Cursor()
+	row := h - 1
+	style := term.Style{Inverse: true}
+
+	// Clear entire status bar
+	for x := 0; x < w; x++ {
+		u.screen.SetCell(x, row, ' ', style)
+	}
+
+	fs := u.editor.File()
 	mod := ""
 	if u.editor.Modified() {
 		mod = "*"
 	}
 
-	status := fmt.Sprintf(
-		"[No Name]%s  Ln %d, Col %d   Ctrl+Home End  PgUp PgDn",
-		mod, cy+1, cx+1,
+	// Left-aligned: filename
+	left := fs.BaseName + mod
+	for i, r := range left {
+		if i >= w {
+			break
+		}
+		u.screen.SetCell(i, row, r, style)
+	}
+
+	// Right-aligned: cursor + encoding + EOL
+	cy, cx := u.editor.Cursor()
+	eol := "LF"
+	if fs.EOL == "\r\n" {
+		eol = "CRLF"
+	}
+
+	right := fmt.Sprintf(
+		"Ln %d, Col %d  %s %s",
+		cy+1, cx+1, fs.Encoding, eol,
 	)
 
-	for i := 0; i < w; i++ {
-		ch := ' '
-		if i < len(status) {
-			ch = rune(status[i])
+	start := w - len(right)
+	if start < 0 {
+		start = 0
+	}
+
+	for i, r := range right {
+		x := start + i
+		if x >= 0 && x < w {
+			u.screen.SetCell(x, row, r, style)
 		}
-		u.screen.SetCell(i, row, ch)
 	}
 }
 
 func (u *UI) clear(w, h int) {
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			u.screen.SetCell(x, y, ' ')
+			u.screen.SetCell(x, y, ' ', term.Style{})
 		}
 	}
 }

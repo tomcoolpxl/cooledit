@@ -2,11 +2,12 @@ package app
 
 import (
 	"cooledit/internal/core"
+	"cooledit/internal/fileio"
 	"cooledit/internal/term/tcell"
 	"cooledit/internal/ui"
 )
 
-func Run() error {
+func Run(path string) error {
 	screen := tcell.New()
 	if err := screen.Init(); err != nil {
 		return err
@@ -14,7 +15,15 @@ func Run() error {
 	defer screen.Fini()
 
 	editor := core.NewEditor()
-	u := ui.New(screen, editor)
 
+	if path != "" {
+		fd, err := fileio.Open(path)
+		if err != nil {
+			return err
+		}
+		editor.LoadFile(fd)
+	}
+
+	u := ui.New(screen, editor)
 	return u.Run()
 }

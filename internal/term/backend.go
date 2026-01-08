@@ -45,6 +45,10 @@ const (
 	ModShift
 )
 
+type Style struct {
+	Inverse bool
+}
+
 type Event interface {
 	isEvent()
 }
@@ -69,10 +73,9 @@ type Screen interface {
 	Fini()
 
 	Size() (width, height int)
-
 	PollEvent() Event
 
-	SetCell(x, y int, ch rune)
+	SetCell(x, y int, ch rune, style Style)
 	Show()
 
 	ShowCursor(x, y int)

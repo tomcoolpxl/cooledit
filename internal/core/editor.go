@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"cooledit/internal/core/buffer"
+	"cooledit/internal/fileio"
 )
 
 type Viewport struct {
@@ -11,9 +12,17 @@ type Viewport struct {
 	LeftCol int
 }
 
+type FileState struct {
+	Path     string
+	BaseName string
+	EOL      string // "\n" or "\r\n"
+	Encoding string // "UTF-8" or "ISO-8859-1"
+}
+
 type Editor struct {
 	buf         buffer.Buffer
 	vp          Viewport
+	file        FileState
 	modified    bool
 	quitPending bool
 	quitAt      time.Time
@@ -23,11 +32,30 @@ func NewEditor() *Editor {
 	return &Editor{
 		buf: buffer.NewLineBuffer(),
 		vp:  Viewport{TopLine: 0, LeftCol: 0},
+		file: FileState{
+			Path:     "",
+			BaseName: "[No Name]",
+			EOL:      "\n",
+			Encoding: "UTF-8",
+		},
 	}
 }
 
 type Result struct {
 	Quit bool
+}
+
+func (e *Editor) LoadFile(fd *fileio.FileData) {
+	e.buf = buffer.NewLineBufferFromLines(fd.Lines)
+	e.vp = Viewport{TopLine: 0, LeftCol: 0}
+	e.modified = false
+
+	e.file = FileState{
+		Path:     fd.Path,
+		BaseName: fd.BaseName,
+		EOL:      fd.EOL,
+		Encoding: fd.Encoding,
+	}
 }
 
 func (e *Editor) Apply(cmd Command, viewHeight int) Result {
@@ -44,10 +72,10 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 	e.quitPending = false
 
-	switch cmd.(type) {
+	switch c := cmd.(type) {
 	case CmdInsertRune:
 		e.modified = true
-		e.buf.InsertRune(cmd.(CmdInsertRune).Rune)
+		e.buf.InsertRune(c.Rune)
 
 	case CmdInsertNewline:
 		e.modified = true
@@ -59,19 +87,14 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 	case CmdMoveLeft:
 		e.buf.MoveLeft()
-
 	case CmdMoveRight:
 		e.buf.MoveRight()
-
 	case CmdMoveUp:
 		e.buf.MoveUp()
-
 	case CmdMoveDown:
 		e.buf.MoveDown()
-
 	case CmdMoveHome:
 		e.buf.MoveHome()
-
 	case CmdMoveEnd:
 		e.buf.MoveEnd()
 
@@ -79,7 +102,6 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		for i := 0; i < viewHeight; i++ {
 			e.buf.MoveUp()
 		}
-
 	case CmdPageDown:
 		for i := 0; i < viewHeight; i++ {
 			e.buf.MoveDown()
@@ -125,6 +147,10 @@ func (e *Editor) Viewport() Viewport {
 
 func (e *Editor) Modified() bool {
 	return e.modified
+}
+
+func (e *Editor) File() FileState {
+	return e.file
 }
 
 func (e *Editor) EnsureVisible(viewWidth, viewHeight int) {

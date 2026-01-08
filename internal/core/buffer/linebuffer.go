@@ -16,6 +16,20 @@ func NewLineBuffer() *LineBuffer {
 	}
 }
 
+// NewLineBufferFromLines creates a buffer from existing lines (read-only load).
+// Cursor starts at (0,0).
+func NewLineBufferFromLines(lines [][]rune) *LineBuffer {
+	if len(lines) == 0 {
+		lines = [][]rune{make([]rune, 0)}
+	}
+	return &LineBuffer{
+		lines:        lines,
+		line:         0,
+		col:          0,
+		preferredCol: 0,
+	}
+}
+
 func (b *LineBuffer) clampCol() {
 	if b.col > len(b.lines[b.line]) {
 		b.col = len(b.lines[b.line])
@@ -40,13 +54,13 @@ func (b *LineBuffer) InsertNewline() {
 	newLine := append([]rune{}, line[b.col:]...)
 	b.lines[b.line] = line[:b.col]
 
+	b.lines = append(b.lines, nil)
+	copy(b.lines[b.line+2:], b.lines[b.line+1:])
+	b.lines[b.line+1] = newLine
+
 	b.line++
 	b.col = 0
 	b.preferredCol = 0
-
-	b.lines = append(b.lines, nil)
-	copy(b.lines[b.line+1:], b.lines[b.line:])
-	b.lines[b.line] = newLine
 }
 
 func (b *LineBuffer) Backspace() {
