@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"time"
 
 	"cooledit/internal/core"
 	"cooledit/internal/term"
@@ -10,6 +11,9 @@ import (
 type UI struct {
 	screen term.Screen
 	editor *core.Editor
+
+	message      string
+	messageUntil time.Time
 }
 
 func New(screen term.Screen, editor *core.Editor) *UI {
@@ -44,8 +48,16 @@ func (u *UI) Run() error {
 			if res.Quit {
 				return nil
 			}
+			if res.Message != "" {
+				u.setMessage(res.Message)
+			}
 		}
 	}
+}
+
+func (u *UI) setMessage(msg string) {
+	u.message = msg
+	u.messageUntil = time.Now().Add(2 * time.Second)
 }
 
 func (u *UI) translateKey(e term.KeyEvent) core.Command {
@@ -152,7 +164,6 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 	row := h - 1
 	style := term.Style{Inverse: true}
 
-	// Clear entire status bar
 	for x := 0; x < w; x++ {
 		u.screen.SetCell(x, row, ' ', style)
 	}
@@ -163,7 +174,6 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 		mod = "*"
 	}
 
-	// Left-aligned: filename
 	left := fs.BaseName + mod
 	for i, r := range left {
 		if i >= w {
@@ -172,17 +182,24 @@ func (u *UI) drawStatusBar(w, h int, vp core.Viewport) {
 		u.screen.SetCell(i, row, r, style)
 	}
 
-	// Right-aligned: cursor + encoding + EOL
-	cy, cx := u.editor.Cursor()
-	eol := "LF"
-	if fs.EOL == "\r\n" {
-		eol = "CRLF"
-	}
+	// Right side: transient message OR normal status
+	now := time.Now()
+	var right string
 
-	right := fmt.Sprintf(
-		"Ln %d, Col %d  %s %s",
-		cy+1, cx+1, fs.Encoding, eol,
-	)
+	if u.message != "" && now.Before(u.messageUntil) {
+		right = u.message
+	} else {
+		u.message = ""
+		cy, cx := u.editor.Cursor()
+		eol := "LF"
+		if fs.EOL == "\r\n" {
+			eol = "CRLF"
+		}
+		right = fmt.Sprintf(
+			"Ln %d, Col %d  %s %s",
+			cy+1, cx+1, fs.Encoding, eol,
+		)
+	}
 
 	start := w - len(right)
 	if start < 0 {

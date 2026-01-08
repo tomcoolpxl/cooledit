@@ -15,8 +15,9 @@ type Viewport struct {
 type FileState struct {
 	Path     string
 	BaseName string
-	EOL      string // "\n" or "\r\n"
-	Encoding string // "UTF-8" or "ISO-8859-1"
+	EOL      string
+	Encoding string
+	ReadOnly bool
 }
 
 type Editor struct {
@@ -37,12 +38,14 @@ func NewEditor() *Editor {
 			BaseName: "[No Name]",
 			EOL:      "\n",
 			Encoding: "UTF-8",
+			ReadOnly: false,
 		},
 	}
 }
 
 type Result struct {
-	Quit bool
+	Quit    bool
+	Message string
 }
 
 func (e *Editor) LoadFile(fd *fileio.FileData) {
@@ -55,6 +58,7 @@ func (e *Editor) LoadFile(fd *fileio.FileData) {
 		BaseName: fd.BaseName,
 		EOL:      fd.EOL,
 		Encoding: fd.Encoding,
+		ReadOnly: true, // important
 	}
 }
 
@@ -71,6 +75,14 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	}
 
 	e.quitPending = false
+
+	// Editing commands blocked in read-only mode
+	if e.file.ReadOnly {
+		switch cmd.(type) {
+		case CmdInsertRune, CmdInsertNewline, CmdBackspace:
+			return Result{Message: "Read-only: use Save As to enable editing"}
+		}
+	}
 
 	switch c := cmd.(type) {
 	case CmdInsertRune:
