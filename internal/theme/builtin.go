@@ -2,7 +2,7 @@ package theme
 
 import "cooledit/internal/term"
 
-// BuiltinThemes contains all 10 hardcoded themes
+// BuiltinThemes contains all 11 hardcoded themes
 var BuiltinThemes = map[string]*Theme{
 	"default":         defaultTheme(),
 	"dark":            darkTheme(),
@@ -14,6 +14,7 @@ var BuiltinThemes = map[string]*Theme{
 	"gruvbox-light":   gruvboxLightTheme(),
 	"dracula":         draculaTheme(),
 	"nord":            nordTheme(),
+	"dos":             dosTheme(),
 }
 
 // GetBuiltinTheme returns a built-in theme by name, or the default theme if not found
@@ -37,6 +38,7 @@ func ListBuiltinThemes() []string {
 		"gruvbox-light",
 		"dracula",
 		"nord",
+		"dos",
 	}
 }
 
@@ -197,7 +199,7 @@ func lightTheme() *Theme {
 			SelectedFg:    "#FFFFFF",
 			SelectedBg:    "#0078D7",
 			DropdownFg:    "#000000",
-			DropdownBg:    "#FFFFFF",
+			DropdownBg:    "#F0F0F0",
 			DropdownSelFg: "#FFFFFF",
 			DropdownSelBg: "#0078D7",
 			AcceleratorFg: "#6E6E6E",
@@ -259,7 +261,7 @@ func monokaiTheme() *Theme {
 			SelectedFg:    "#272822",
 			SelectedBg:    "#F92672",
 			DropdownFg:    "#F8F8F2",
-			DropdownBg:    "#272822",
+			DropdownBg:    "#3E3D32",
 			DropdownSelFg: "#272822",
 			DropdownSelBg: "#F92672",
 			AcceleratorFg: "#90908A",
@@ -656,6 +658,68 @@ func nordTheme() *Theme {
 			WarningBg: "#EBCB8B",
 			ErrorFg:   "#ECEFF4",
 			ErrorBg:   "#BF616A",
+		},
+	}
+}
+
+// dosTheme - classic DOS Edit colors (blue background, white/cyan text)
+func dosTheme() *Theme {
+	return &Theme{
+		Name: "dos",
+		Editor: EditorColors{
+			Fg:            "#FFFFFF",
+			Bg:            "#0000AA",
+			SelectionFg:   "#000000",
+			SelectionBg:   "#00AAAA",
+			LineNumbersFg: "#AAAAAA",
+			LineNumbersBg: "#000055",
+		},
+		Search: SearchColors{
+			MatchFg:        "#000000",
+			MatchBg:        "#FFFF00",
+			CurrentMatchFg: "#FFFFFF",
+			CurrentMatchBg: "#00AA00",
+		},
+		Status: StatusColors{
+			Fg:         "#000000",
+			Bg:         "#00AAAA",
+			FilenameFg: "#000000",
+			ModifiedFg: "#FF0000",
+			PositionFg: "#000000",
+			ModeFg:     "#FFFF00",
+			HelpFg:     "#000000",
+		},
+		Menu: MenuColors{
+			Fg:            "#000000",
+			Bg:            "#00AAAA",
+			SelectedFg:    "#FFFFFF",
+			SelectedBg:    "#AA00AA",
+			DropdownFg:    "#FFFFFF",
+			DropdownBg:    "#000055",
+			DropdownSelFg: "#FFFF00",
+			DropdownSelBg: "#AA00AA",
+			AcceleratorFg: "#AAAAAA",
+		},
+		Prompt: PromptColors{
+			Fg:      "#000000",
+			Bg:      "#00AAAA",
+			LabelFg: "#FFFF00",
+			InputFg: "#FFFFFF",
+		},
+		Help: HelpColors{
+			Fg:       "#FFFFFF",
+			Bg:       "#0000AA",
+			TitleFg:  "#FFFF00",
+			TitleBg:  "#00AAAA",
+			FooterFg: "#AAAAAA",
+		},
+		Msg: MessageColors{
+			InfoFg:    "#FFFFFF",
+			InfoBg:    "#0000AA",
+			WarningFg: "#000000",
+			WarningBg: "#FFFF00",
+			ErrorFg:   "#FFFFFF",
+			ErrorBg:   "#AA0000",
 		},
 	}
 }

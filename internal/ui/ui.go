@@ -72,6 +72,9 @@ type UI struct {
 }
 
 func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
+	// Set editor tab width from config
+	editor.TabWidth = cfg.Editor.TabWidth
+
 	return &UI{
 		screen:      screen,
 		editor:      editor,
@@ -428,6 +431,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyBackspace:
 		return core.CmdBackspace{}
+
+	case e.Key == term.KeyTab && e.Modifiers == 0:
+		return core.CmdTab{}
+
+	case e.Key == term.KeyTab && (e.Modifiers&term.ModCtrl) != 0:
+		return core.CmdInsertLiteralTab{}
 
 	case e.Key == term.KeyDelete && e.Modifiers == 0:
 		return core.CmdDelete{}

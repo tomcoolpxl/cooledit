@@ -6,9 +6,9 @@ type MenuItem struct {
 	Label       string
 	Accelerator string // e.g. "Ctrl+S"
 	Command     core.Command
-	Action      func(*UI)   // Special actions like "Quit" or "Toggle"
-	Submenu     []MenuItem  // Submenu items (e.g., for Themes)
-	IsCheckable bool        // If true, item can be checked
+	Action      func(*UI)      // Special actions like "Quit" or "Toggle"
+	Submenu     []MenuItem     // Submenu items (e.g., for Themes)
+	IsCheckable bool           // If true, item can be checked
 	IsChecked   func(*UI) bool // Function to determine if checked
 }
 
@@ -39,7 +39,7 @@ func NewMenubar() *Menubar {
 
 func (m *Menubar) initDefaults() {
 	themeItems := m.buildThemeItems()
-	
+
 	m.Menus = []Menu{
 		{
 			Title: "File",
@@ -103,6 +103,7 @@ func (m *Menubar) buildThemeItems() []MenuItem {
 		"gruvbox-light",
 		"dracula",
 		"nord",
+		"dos",
 	}
 
 	items := make([]MenuItem, len(themes))

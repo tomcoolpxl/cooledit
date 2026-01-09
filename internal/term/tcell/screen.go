@@ -91,7 +91,7 @@ func (s *Screen) PushEvent(ev term.Event) {
 
 func (s *Screen) SetCell(x, y int, ch rune, st term.Style) {
 	style := tcell.StyleDefault
-	
+
 	// Apply colors if not using inverse mode
 	if st.Inverse {
 		// Legacy inverse mode - use reverse video
@@ -106,19 +106,19 @@ func (s *Screen) SetCell(x, y int, ch rune, st term.Style) {
 			style = style.Background(parseColor(st.Background))
 		}
 	}
-	
+
 	s.screen.SetContent(x, y, ch, nil, style)
 }
 
 // parseColor converts our Color type to tcell.Color
 func parseColor(c term.Color) tcell.Color {
 	s := string(c)
-	
+
 	// Handle hex colors (#RRGGBB)
 	if strings.HasPrefix(s, "#") && len(s) == 7 {
 		return tcell.GetColor(s)
 	}
-	
+
 	// Handle named colors
 	switch c {
 	case term.ColorDefault:

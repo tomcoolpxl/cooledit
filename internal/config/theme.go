@@ -78,12 +78,12 @@ func (c *Config) GetTheme(name string) *theme.Theme {
 	if t := theme.GetBuiltinTheme(name); t.Name == name {
 		return t
 	}
-	
+
 	// Try custom themes from config
 	if spec, ok := c.Themes[name]; ok {
 		return ConvertThemeSpec(name, spec)
 	}
-	
+
 	// Fallback to default
 	return theme.GetBuiltinTheme("default")
 }
@@ -100,11 +100,11 @@ func (c *Config) GetCurrentTheme() *theme.Theme {
 // GetAvailableThemes returns all available theme names
 func (c *Config) GetAvailableThemes() []string {
 	themes := theme.ListBuiltinThemes()
-	
+
 	// Add custom theme names
 	for name := range c.Themes {
 		themes = append(themes, name)
 	}
-	
+
 	return themes
 }

@@ -35,6 +35,8 @@ type Editor struct {
 
 	selectionActive bool
 	selectionAnchor struct{ Line, Col int }
+
+	TabWidth int // Number of spaces per tab (default: 4)
 }
 
 type Result struct {
@@ -579,6 +581,56 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 		line, col := e.buf.Cursor()
 
+		// Smart backspace: if at the start of whitespace indentation, remove one indentation unit
+		if col > 0 && e.TabWidth > 0 {
+			lines := e.buf.Lines()
+			if line < len(lines) {
+				lineText := lines[line]
+				// Check if we're in leading whitespace
+				isInLeadingWhitespace := true
+				for i := 0; i < col; i++ {
+					if lineText[i] != ' ' && lineText[i] != '\t' {
+						isInLeadingWhitespace = false
+						break
+					}
+				}
+
+				if isInLeadingWhitespace && col > 0 {
+					// Calculate how many spaces to delete to reach previous tab stop
+					spacesToDelete := col % e.TabWidth
+					if spacesToDelete == 0 {
+						spacesToDelete = e.TabWidth
+					}
+
+					// Check if we have that many spaces before cursor
+					hasSpaces := true
+					for i := col - spacesToDelete; i < col && hasSpaces; i++ {
+						if i < 0 || lineText[i] != ' ' {
+							hasSpaces = false
+						}
+					}
+
+					if hasSpaces && spacesToDelete > 1 {
+						// Delete multiple spaces as one unit
+						actions := make([]Action, spacesToDelete)
+						for i := 0; i < spacesToDelete; i++ {
+							actions[i] = &BackspaceAction{
+								DeletedRune: ' ',
+								Line:        line,
+								Col:         col - i,
+								IsMerge:     false,
+							}
+						}
+
+						composite := &CompositeAction{Actions: actions}
+						e.undo.Push(composite)
+						composite.Apply(e)
+						return Result{}
+					}
+				}
+			}
+		}
+
 		var action *BackspaceAction
 
 		if col > 0 {
@@ -601,6 +653,54 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{}
 		}
 
+		e.undo.Push(action)
+		action.Apply(e)
+
+	case CmdTab:
+		// Insert spaces to next tab stop
+		if e.selectionActive {
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+		}
+
+		line, col := e.buf.Cursor()
+		tabWidth := e.TabWidth
+		if tabWidth <= 0 {
+			tabWidth = 4
+		}
+
+		// Calculate spaces to next tab stop
+		spacesToInsert := tabWidth - (col % tabWidth)
+
+		// Create composite action for inserting multiple spaces
+		actions := make([]Action, spacesToInsert)
+		for i := 0; i < spacesToInsert; i++ {
+			actions[i] = &InsertRuneAction{
+				Rune: ' ',
+				Line: line,
+				Col:  col + i,
+			}
+		}
+
+		composite := &CompositeAction{Actions: actions}
+		e.undo.Push(composite)
+		composite.Apply(e)
+
+	case CmdInsertLiteralTab:
+		// Insert a raw tab character
+		if e.selectionActive {
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+		}
+
+		line, col := e.buf.Cursor()
+		action := &InsertRuneAction{
+			Rune: '\t',
+			Line: line,
+			Col:  col,
+		}
 		e.undo.Push(action)
 		action.Apply(e)
 

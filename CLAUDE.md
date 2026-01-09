@@ -55,17 +55,19 @@ internal/
 - ✅ Toggle settings auto-save (line numbers, soft wrap)
 - ✅ Soft wrap implementation with adaptive line wrapping
 - ✅ Insert/Replace mode toggle with Insert key and cursor shape indicators
+- ✅ Tab handling with smart indentation (Tab inserts spaces, Ctrl+Tab inserts literal \t)
 
 ### Implemented (Milestone 4 - Theme System)
 - ✅ Term.Style extended with Foreground/Background color fields
 - ✅ Theme package with comprehensive color element definitions
-- ✅ 10 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord
+- ✅ 11 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos
 - ✅ Custom theme support from config file
 - ✅ All UI elements use theme colors (editor, menubar, status bar, prompt, help)
 - ✅ View menu with theme selection (checkmarks for current theme)
 - ✅ Interactive theme switching with auto-save to config
 - ✅ Graceful terminal capability detection via tcell (true color → 256 → 16 → monochrome)
 - ✅ Backward compatibility with "default" theme using inverse video
+- ✅ Menu backgrounds fixed to be distinct from editor backgrounds in all themes
 
 ### Planned (Milestone 4 Remaining)
 - ⏳ Add --config CLI flag for alternate config file location
@@ -87,6 +89,8 @@ internal/
 - `Ctrl+F` - Find/Replace (unified mode)
 - `F3` / `Shift+F3` - Find Next/Previous
 - `Ctrl+G` - Go to Line (always available)
+- `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
+- `Ctrl+Tab` - Insert literal tab character (\t)
 - `Insert` - Toggle Insert/Replace mode
 - `F1` - Help overlay (adaptive two-column/single-column layout)
 - `F10` / `Esc` - Toggle menubar
@@ -164,6 +168,15 @@ internal/
 - Replace mode overwrites characters instead of inserting
 - At end of line, behaves like insert mode
 - State not saved - always starts in insert mode
+
+### Tab Handling
+- **Tab key inserts spaces** (not literal `\t` characters)
+- **Configurable tab width** (default: 4 spaces, set via `tab_width` in config)
+- **Smart indentation**: Tab moves cursor to next tab stop (e.g., column 4, 8, 12...)
+- **Smart backspace**: When in leading whitespace, backspace removes one indentation unit
+- **Literal tabs**: Press `Ctrl+Tab` to insert a raw `\t` character
+- **Rendering**: Literal tab characters render with proper width via tcell
+- **Undo/Redo**: Tab insertion and smart backspace are atomic operations
 - Cursor shapes customizable in future
 
 ## Testing Strategy
@@ -193,11 +206,11 @@ internal/
 - Display in status bar
 - Preserve original format on save
 
-## Theme System (Planned - Milestone 4)
+## Theme System (Implemented - Milestone 4)
 
 **Built-in Themes:**
-10 hardcoded themes that work out of the box without any configuration:
-1. `default` - Uses terminal defaults with inverse video (current behavior)
+11 hardcoded themes that work out of the box without any configuration:
+1. `default` - Uses terminal defaults with inverse video (backward compatibility)
 2. `dark` - Dark background with light text (simple, high contrast)
 3. `light` - Light background with dark text (simple, high contrast)
 4. `monokai` - Popular dark theme with purple, pink, yellow, green accents
@@ -205,8 +218,9 @@ internal/
 6. `solarized-light` - Ethan Schoonover's precision light color scheme
 7. `gruvbox-dark` - Retro groove colors, warm dark background
 8. `gruvbox-light` - Retro groove colors, warm light background
-9. `dracula` - Dark theme with purple/pink accents, easy on the eyes
-10. `nord` - Arctic, bluish theme inspired by northern lights
+9. `dracula` - Dark theme with purple accents and pink highlights
+10. `nord` - Arctic bluish dark theme inspired by northern lights
+11. `dos` - Classic DOS Edit colors (blue background, white/cyan text)
 
 **Custom Themes:**
 Users can define additional themes in config file using `[themes.custom_name]` sections.
@@ -215,7 +229,6 @@ Users can define additional themes in config file using `[themes.custom_name]` s
 - View → Themes menu shows all available themes (built-in + custom)
 - Click to switch theme (saves selection to config)
 - Current theme indicated with checkmark
-- Keyboard shortcut: `Ctrl+T` (or customizable via keybindings)
 
 **Color Elements:**
 Each element has `fg` (foreground) and `bg` (background) properties.
@@ -297,7 +310,7 @@ title_bg = "default"
 - Invalid or conflicting bindings fall back to defaults with warning
 
 **Theme System (Implemented):**
-- 10 built-in themes (hardcoded, no external dependencies required):
+- 11 built-in themes (hardcoded, no external dependencies required):
   1. `default` - Terminal defaults with inverse video (backward compatibility)
   2. `dark` - Classic dark background with light text
   3. `light` - Classic light background with dark text
@@ -308,6 +321,7 @@ title_bg = "default"
   8. `gruvbox-light` - Retro groove light colors
   9. `dracula` - Dark theme with purple accents
   10. `nord` - Arctic, bluish dark theme
+  11. `dos` - Classic DOS Edit colors (blue background, white/cyan text)
 - Custom themes can be defined in `[themes.custom_name]` sections of config file
 - Built-in themes always available without config file
 - View menu includes theme menu items with checkmarks showing current theme
@@ -316,6 +330,7 @@ title_bg = "default"
 - Color formats: named colors (e.g., "red", "blue"), hex `#RRGGBB`, or `"default"` for terminal default
 - Automatic graceful degradation for terminals with limited color support (tcell handles this automatically)
 - Active theme selected via `ui.theme` config value
+- Menu backgrounds fixed to be distinct from editor backgrounds for better visibility
 - TODO: CLI flag `--config <path>` to override config file location (planned)
 
 **Behavior:**

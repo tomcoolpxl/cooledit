@@ -240,7 +240,7 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 		}
 
 		drawX := vpRect.X + gutterWidth
-		
+
 		editorStyle := u.getEditorStyle()
 		selectionStyle := u.getSelectionStyle()
 
@@ -346,7 +346,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	gutterStyle := u.getLineNumberStyle()
 	editorStyle := u.getEditorStyle()
 	selectionStyle := u.getSelectionStyle()
-	
+
 	for sy := 0; sy < vpRect.H; sy++ {
 		wrappedIdx := vp.TopLine + sy
 
@@ -880,4 +880,3 @@ func (u *UI) getHelpTitleStyle() term.Style {
 	}
 	return term.Style{Foreground: u.theme.Help.TitleFg, Background: u.theme.Help.TitleBg}
 }
-

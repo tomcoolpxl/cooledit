@@ -14,14 +14,14 @@ func LoadTheme(name string, customThemes map[string]ConfigThemeSpec) *Theme {
 	if theme, ok := BuiltinThemes[name]; ok {
 		return theme
 	}
-	
+
 	// Check custom themes from config
 	if spec, ok := customThemes[name]; ok {
 		if customTheme := convertConfigToTheme(name, spec); customTheme != nil {
 			return customTheme
 		}
 	}
-	
+
 	// Fallback to default
 	return BuiltinThemes["default"]
 }
@@ -40,12 +40,12 @@ func ParseColor(s string) term.Color {
 	if s == "" || s == "default" {
 		return term.ColorDefault
 	}
-	
+
 	// Validate hex color format
 	if len(s) == 7 && s[0] == '#' {
 		return term.Color(s)
 	}
-	
+
 	// Named colors
 	switch s {
 	case "black":
@@ -73,11 +73,11 @@ func ParseColor(s string) term.Color {
 // GetAvailableThemes returns all available theme names (built-in + custom)
 func GetAvailableThemes(customThemes map[string]ConfigThemeSpec) []string {
 	themes := ListBuiltinThemes()
-	
+
 	// Add custom theme names
 	for name := range customThemes {
 		themes = append(themes, name)
 	}
-	
+
 	return themes
 }

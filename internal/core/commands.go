@@ -24,6 +24,14 @@ type CmdBackspace struct{}
 
 func (CmdBackspace) isCommand() {}
 
+type CmdTab struct{}
+
+func (CmdTab) isCommand() {}
+
+type CmdInsertLiteralTab struct{}
+
+func (CmdInsertLiteralTab) isCommand() {}
+
 type CmdDelete struct{}
 
 func (CmdDelete) isCommand() {}

@@ -45,15 +45,15 @@ type StatusColors struct {
 
 // MenuColors defines colors for the menubar
 type MenuColors struct {
-	Fg               term.Color // Menu text
-	Bg               term.Color // Menu background
-	SelectedFg       term.Color // Selected menu foreground
-	SelectedBg       term.Color // Selected menu background
-	DropdownFg       term.Color // Dropdown item text
-	DropdownBg       term.Color // Dropdown background
-	DropdownSelFg    term.Color // Dropdown selected item foreground
-	DropdownSelBg    term.Color // Dropdown selected item background
-	AcceleratorFg    term.Color // Keyboard shortcut hints
+	Fg            term.Color // Menu text
+	Bg            term.Color // Menu background
+	SelectedFg    term.Color // Selected menu foreground
+	SelectedBg    term.Color // Selected menu background
+	DropdownFg    term.Color // Dropdown item text
+	DropdownBg    term.Color // Dropdown background
+	DropdownSelFg term.Color // Dropdown selected item foreground
+	DropdownSelBg term.Color // Dropdown selected item background
+	AcceleratorFg term.Color // Keyboard shortcut hints
 }
 
 // PromptColors defines colors for the prompt/message area
