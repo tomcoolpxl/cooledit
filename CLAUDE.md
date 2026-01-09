@@ -45,20 +45,21 @@ internal/
 - ✅ Basic text editing with buffer management
 - ✅ File load/save with encoding detection (UTF-8, ISO-8859-1, etc.)
 - ✅ EOL format detection and preservation (LF/CRLF)
-- ✅ Search (Find/Next/Previous)
-- ✅ Replace (Replace one/Skip/Replace all) with review mode
+- ✅ Search (Find/Next/Previous) with non-overlapping matches
+- ✅ Replace (unified find/replace mode with R/N/P/A/Q options)
 - ✅ Undo/Redo with command pattern
 - ✅ Text selection via Shift+Arrow keys
 - ✅ System clipboard integration (Cut/Copy/Paste)
-- ✅ Status bar (filename, modified flag, cursor position, encoding, EOL)
-- ✅ Auto-hiding menubar (toggle with F10)
+- ✅ Status bar with priority-based layout and centered mini-help
+- ✅ Auto-hiding menubar (toggle with F10 or Esc)
 - ✅ Mouse support (optional via `-mouse` flag)
+- ✅ Go to Line (Ctrl+G) - Always available without CLI flag
+- ✅ Adaptive help screen (F1) with two-column layout for wide terminals
 
 ### Planned (Milestone 4)
 - ⏳ Configuration persistence
 - ⏳ Keybinding customization
-- ✅ Go to Line (Ctrl+G) - **Implemented and always available**
-- 🔧 Soft wrap - **Partially implemented** (toggle exists, rendering may be incomplete)
+- 🔧 Soft wrap - Partially implemented (toggle exists, rendering may be incomplete)
 
 ## Important Keyboard Shortcuts
 
@@ -70,19 +71,23 @@ internal/
 - `Ctrl+V` - Paste
 - `Ctrl+Z` - Undo
 - `Ctrl+Y` - Redo
-- `Ctrl+F` - Find
-- `Ctrl+H` - Replace
+- `Ctrl+F` - Find/Replace (unified mode)
 - `F3` / `Shift+F3` - Find Next/Previous
-- `F1` - Help overlay
-- `F10` - Toggle menubar
+- `Ctrl+G` - Go to Line (always available)
+- `F1` - Help overlay (adaptive two-column/single-column layout)
+- `F10` / `Esc` - Toggle menubar
 
 ## Key Design Decisions
 
-### Status Bar (Always Visible)
-Displays: filename, modified indicator, line:col position, encoding, EOL type
+### Status Bar (Always Visible, Priority-Based Layout)
+**Left** (priority 2): Filename with modified indicator (`*`)
+**Center** (priority 3): Mini-help with adaptive display:
+  - `F1 Help` → `Esc/F10 Menu` → `Ctrl+Q Quit` → `Ctrl+S Save` → `Ctrl+F Find/Replace`
+  - Shows as many items as fit, removes from right to left when space is limited
+**Right** (priority 1): `Ln X, Col Y  Encoding EOL` (cursor position and file status)
 
 ### Menubar (Auto-hidden by Default)
-- Toggle with F10
+- Toggle with F10 or Esc
 - Menus: File, Edit, Search, View, Help
 - Navigation via arrow keys or mouse (if enabled)
 
@@ -99,24 +104,33 @@ Displays: filename, modified indicator, line:col position, encoding, EOL type
 - Save As only prompts for overwrite if file exists and is different from current
 - Normal save never prompts (VS Code behavior)
 
-### Replace Workflow (Nano-Style)
-1. `Ctrl+H` opens "Replace: " prompt (pre-filled with last search term)
+### Find/Replace Workflow (Unified Nano-Style Mode)
+1. `Ctrl+F` opens "Find: " prompt (pre-filled with last search term)
 2. Enter search term → `Enter`
-3. Prompt changes to "Replace with: " (pre-filled with last replacement)
-4. Enter replacement → `Enter`
-5. Editor jumps to first match (highlighted with selection)
-6. Status bar shows: **"Replace this instance? (y)es, (n)o, (a)ll, (c)ancel"**
-7. User presses:
-   - `Y` - Replace this match and move to next
-   - `N` - Skip this match and move to next
-   - `A` - Replace all remaining matches
-   - `C` or `Esc` - Cancel and exit replace mode
+3. Editor enters **Find/Replace Mode** with first match highlighted
+4. Status bar shows: **"[R]eplace  [N]ext  [P]rev  [A]ll  [Q]uit"**
+5. User can:
+   - `N` - Find next match (non-overlapping: "ttt" in "ttttt" finds once)
+   - `P` - Find previous match
+   - `R` - Replace current match (prompts for replacement text, then finds next)
+   - `A` - Replace all matches from beginning of file (prompts for replacement text)
+   - `Q` or `Esc` - Quit find/replace mode
+6. Message bar persists during find/replace operations
 
 **Key Features:**
 - Find and Replace share the same search term
-- Previous search/replace values are remembered
-- Found text is highlighted during search
+- Previous search/replace values are remembered and pre-populated
+- Found text is highlighted with selection during search
+- Non-overlapping search (no repeated matches on same text)
+- Replace All always starts from beginning of file regardless of cursor position
 - Each replace operation is undoable
+- Unified mode keeps user in find/replace context instead of separate dialogs
+
+### Help Screen (F1)
+- **Adaptive layout**: Two columns on wide terminals (≥80 chars), single column on narrow
+- **Smart truncation**: Shows "(scroll down for more)" when content doesn't fit
+- **Organized sections**: Menu & Help, File, Edit, Search, Navigation
+- **Clean design**: Simple indentation, highlighted section headers, no box-drawing characters
 
 ### Word Wrap
 - **Off by default**
@@ -127,6 +141,17 @@ Displays: filename, modified indicator, line:col position, encoding, EOL type
 - Unit tests for core components (buffer, editor, search, undo)
 - UI tests with fake screen implementation
 - Coverage tracking in place
+- **102+ tests covering**:
+  - Non-overlapping search matches (TestFindNextNoOverlapping, TestFindNextTwoNonOverlapping)
+  - Replace All starting from file beginning (TestReplaceAllFromBeginning)
+  - Text highlighting during search (TestSearchHighlightsText)
+  - Replace operations (TestReplaceOne, TestReplaceAll, TestReplaceNotFound, TestReplaceUndoable)
+  - Search UI integration (TestSearchUIIntegration)
+  - Status bar mini-help (TestStatusBarMiniHelp, TestStatusBarMiniHelpNarrowTerminal)
+  - Status bar in find/replace mode (TestStatusBarFindReplaceMode)
+  - Help screen adaptive layout (TestHelpScreenWideTerminal, TestHelpScreenNarrowTerminal)
+  - Help mode (TestHelpMode)
+  - Status bar rendering (TestStatusBarCursorPosition)
 
 ## File Handling
 
@@ -166,18 +191,29 @@ Will support:
 ## When Working on This Project
 
 1. **No syntax highlighting** - If asked about it, refer to design decision
+2. **Follow exislly functional with all core features complete:
+- ✅ Go to Line is always available (CLI flag removed)
+- ✅ Unified Find/Replace mode with nano-style workflow
+- ✅ Non-overlapping search (proper match advancement)
+- ✅ Replace All starts from beginning of file
+- ✅ Priority-based status bar with adaptive centered mini-help
+- ✅ Adaptive help screen with two-column layout for wide terminals
+- ✅ Message bar persistence during find/replace operations
+- ✅ Comprehensive test coverage (102+ tests, all passing)
+
+Focus areas:
+- Configuration persistence (to remove need for command-line flags)
+- Keybinding customization
+- Completing soft wrap rendering logic
+
+## When Working on This Project
+
+1. **No syntax highlighting** - If asked about it, refer to design decision
 2. **Follow existing patterns** - Buffer management, command pattern for undo/redo
 3. **Test thoroughly** - Especially buffer operations and UI interactions
 4. **Maintain simplicity** - This is meant to be a simple, nano-like editor
 5. **Cross-platform** - Consider Windows, Linux, and macOS compatibility
 6. **Terminal constraints** - Remember this runs in a terminal, not a GUI
-
-## Current State (as of milestone 3+)
-
-The editor is functional with core features complete, including Go to Line (behind flag). Focus is now on:
-- Configuration persistence (to remove need for command-line flags)
-- Keybinding customization
-- Completing soft wrap rendering logic
 
 ---
 

@@ -649,6 +649,180 @@ func TestExecuteMenuItems(t *testing.T) {
 	}
 }
 
+func TestStatusBarMiniHelp(t *testing.T) {
+	// Test that mini-help appears in center of status bar on wide terminal
+	ui, screen := newTestUI(100, 5)
+
+	draw(ui)
+
+	// Look for mini-help text (F1, Ctrl+Q, etc.) in the middle section
+	statusBarY := 4
+	foundF1 := false
+	foundCtrlQ := false
+
+	for x := 10; x < 80; x++ {
+		if screen.Cell(x, statusBarY) == 'F' && screen.Cell(x+1, statusBarY) == '1' {
+			foundF1 = true
+		}
+		if screen.Cell(x, statusBarY) == 'C' && screen.Cell(x+1, statusBarY) == 't' &&
+			screen.Cell(x+2, statusBarY) == 'r' && screen.Cell(x+3, statusBarY) == 'l' {
+			// Check if it's Ctrl+Q or Ctrl+S
+			if x+6 < 80 && screen.Cell(x+5, statusBarY) == 'Q' {
+				foundCtrlQ = true
+			}
+		}
+	}
+
+	if !foundF1 {
+		t.Fatalf("expected 'F1' in status bar mini-help")
+	}
+	if !foundCtrlQ {
+		t.Fatalf("expected 'Ctrl+Q' in status bar mini-help")
+	}
+}
+
+func TestStatusBarMiniHelpNarrowTerminal(t *testing.T) {
+	// Test that mini-help is truncated on narrow terminal
+	ui, screen := newTestUI(50, 5)
+
+	draw(ui)
+
+	// On narrow terminal, should have F1 but maybe not all items
+	statusBarY := 4
+	foundF1 := false
+
+	for x := 0; x < 50; x++ {
+		if screen.Cell(x, statusBarY) == 'F' && screen.Cell(x+1, statusBarY) == '1' {
+			foundF1 = true
+			break
+		}
+	}
+
+	if !foundF1 {
+		t.Fatalf("expected at least 'F1' in narrow status bar")
+	}
+}
+
+func TestStatusBarFindReplaceMode(t *testing.T) {
+	// Test that status bar shows replace options in find/replace mode
+	ui, screen := newTestUI(80, 5)
+
+	// Type some text and search for it
+	typeString(ui, "hello world")
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome, Modifiers: term.ModCtrl})
+
+	// Enter find mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'f', Modifiers: term.ModCtrl})
+	draw(ui)
+
+	typeString(ui, "hello")
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+	draw(ui)
+
+	// Should be in ModeFindReplace
+	if ui.mode != ModeFindReplace {
+		t.Fatalf("expected ModeFindReplace, got mode %d", ui.mode)
+	}
+
+	// Status bar should show [R]eplace options
+	statusBarY := 4
+	foundReplace := false
+
+	for x := 0; x < 30; x++ {
+		if screen.Cell(x, statusBarY) == '[' && screen.Cell(x+1, statusBarY) == 'R' &&
+			screen.Cell(x+2, statusBarY) == ']' {
+			foundReplace = true
+			break
+		}
+	}
+
+	if !foundReplace {
+		t.Fatalf("expected '[R]eplace' in status bar during find/replace mode")
+	}
+}
+
+func TestHelpScreenWideTerminal(t *testing.T) {
+	// Test two-column layout on wide terminal
+	ui, screen := newTestUI(90, 25)
+
+	dispatch(ui, term.KeyEvent{Key: term.KeyF1})
+	draw(ui)
+
+	if ui.mode != ModeHelp {
+		t.Fatal("expected Help mode")
+	}
+
+	// Should have "CoolEdit" title at top
+	if screen.Cell(2, 0) != 'C' {
+		t.Fatalf("expected 'C' from CoolEdit title")
+	}
+
+	// Should have content in both left and right columns
+	// Left should have "MENU & HELP" around line 2
+	foundMenuHelp := false
+	for x := 0; x < 40; x++ {
+		if screen.Cell(x, 2) == 'M' && screen.Cell(x+1, 2) == 'E' &&
+			screen.Cell(x+2, 2) == 'N' && screen.Cell(x+3, 2) == 'U' {
+			foundMenuHelp = true
+			break
+		}
+	}
+
+	// Right column should have "SEARCH" section
+	foundSearch := false
+	for x := 40; x < 90; x++ {
+		if screen.Cell(x, 2) == 'S' && screen.Cell(x+1, 2) == 'E' &&
+			screen.Cell(x+2, 2) == 'A' && screen.Cell(x+3, 2) == 'R' &&
+			screen.Cell(x+4, 2) == 'C' && screen.Cell(x+5, 2) == 'H' {
+			foundSearch = true
+			break
+		}
+	}
+
+	if !foundMenuHelp {
+		t.Fatalf("expected 'MENU' section in left column")
+	}
+	if !foundSearch {
+		t.Fatalf("expected 'SEARCH' section in right column")
+	}
+}
+
+func TestHelpScreenNarrowTerminal(t *testing.T) {
+	// Test single-column layout on narrow terminal
+	ui, screen := newTestUI(60, 25)
+
+	dispatch(ui, term.KeyEvent{Key: term.KeyF1})
+	draw(ui)
+
+	if ui.mode != ModeHelp {
+		t.Fatal("expected Help mode")
+	}
+
+	// Should have title
+	if screen.Cell(2, 0) != 'C' {
+		t.Fatalf("expected 'C' from CoolEdit title")
+	}
+
+	// Should have content in single column
+	foundMenuHelp := false
+	for y := 0; y < 25; y++ {
+		for x := 0; x < 40; x++ {
+			if screen.Cell(x, y) == 'M' && screen.Cell(x+1, y) == 'E' &&
+				screen.Cell(x+2, y) == 'N' && screen.Cell(x+3, y) == 'U' {
+				foundMenuHelp = true
+				break
+			}
+		}
+		if foundMenuHelp {
+			break
+		}
+	}
+
+	if !foundMenuHelp {
+		t.Fatalf("expected 'MENU' section in single column layout")
+	}
+}
+
 func TestPromptOverwrite(t *testing.T) {
 	ui, screen := newTestUI(40, 5)
 
