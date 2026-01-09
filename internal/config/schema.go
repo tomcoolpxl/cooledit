@@ -17,11 +17,11 @@ type Editor struct {
 
 // UI contains user interface settings
 type UI struct {
-	ShowMenubar   bool   `toml:"show_menubar"`
-	ShowStatusBar bool   `toml:"show_statusbar"`
+	ShowMenubar   bool `toml:"show_menubar"`
+	ShowStatusBar bool `toml:"show_statusbar"`
 
-	Theme         string `toml:"theme"`
-	CursorShape   string `toml:"cursor_shape"`
+	Theme       string `toml:"theme"`
+	CursorShape string `toml:"cursor_shape"`
 }
 
 // Search contains search-related settings
