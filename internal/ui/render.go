@@ -538,6 +538,7 @@ func (u *UI) drawStatusBar() {
 			"Ctrl+Q Quit",
 			"Ctrl+S Save",
 			"Ctrl+F Find/Replace",
+			"Ins Insert/Replace",
 		}
 
 		// Calculate available space for center section
@@ -652,6 +653,7 @@ func (u *UI) drawHelp(w, h int) {
 		"    Ctrl+C        Copy",
 		"    Ctrl+V        Paste",
 		"    Ctrl+A        Select all",
+		"    Insert        Insert/Replace mode",
 	}
 
 	rightCol := []string{
@@ -668,6 +670,10 @@ func (u *UI) drawHelp(w, h int) {
 		"    Ctrl+Home     File start",
 		"    Ctrl+End      File end",
 		"    PgUp/PgDn     Page up/down",
+		"",
+		"  VIEW",
+		"    Ctrl+L        Line numbers",
+		"    Ctrl+W        Word wrap",
 	}
 
 	footer := "  Press any key to close"
