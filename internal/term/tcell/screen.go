@@ -17,7 +17,7 @@ func New() *Screen {
 	return &Screen{}
 }
 
-func (s *Screen) Init(enableMouse bool) error {
+func (s *Screen) Init() error {
 	ts, err := tcell.NewScreen()
 	if err != nil {
 		return err
@@ -32,9 +32,6 @@ func (s *Screen) Init(enableMouse bool) error {
 	s.originalCursorStyle = tcell.CursorStyleDefault
 
 	ts.Clear()
-	if enableMouse {
-		ts.EnableMouse(tcell.MouseButtonEvents)
-	}
 	s.screen = ts
 	return nil
 }
@@ -61,28 +58,6 @@ func (s *Screen) PollEvent() term.Event {
 
 	case *tcell.EventKey:
 		return translateKeyEvent(e)
-
-	case *tcell.EventMouse:
-		x, y := e.Position()
-		btn := e.Buttons()
-
-		var button term.MouseButton
-		switch {
-		case btn&tcell.Button1 != 0:
-			button = term.MouseLeft
-		case btn&tcell.Button2 != 0:
-			button = term.MouseRight
-		case btn&tcell.Button3 != 0:
-			button = term.MouseMiddle
-		case btn&tcell.WheelUp != 0:
-			button = term.MouseWheelUp
-		case btn&tcell.WheelDown != 0:
-			button = term.MouseWheelDown
-		default:
-			return nil // Ignore release/move
-		}
-
-		return term.MouseEvent{X: x, Y: y, Button: button}
 	}
 
 	return nil

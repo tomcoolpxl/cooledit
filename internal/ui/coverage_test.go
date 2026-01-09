@@ -181,12 +181,3 @@ func TestTranslateKeyCoverage(t *testing.T) {
 	dispatch(ui, term.KeyEvent{Key: term.KeyEnd})
 }
 
-func TestMouseWheelCoverage(t *testing.T) {
-	ui, _ := newTestUI(40, 10)
-	
-	// Wheel Up
-	dispatch(ui, term.MouseEvent{X: 5, Y: 2, Button: term.MouseWheelUp})
-	
-	// Wheel Down
-	dispatch(ui, term.MouseEvent{X: 5, Y: 2, Button: term.MouseWheelDown})
-}

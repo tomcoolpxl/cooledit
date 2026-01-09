@@ -51,9 +51,8 @@ This layer depends on the terminal backend only via a small interface (events in
 
 Responsible for:
 * Entering alternate screen, raw input mode
-* Reading key/mouse/resize events
+* Reading key/resize events
 * Rendering a grid of cells (runes + style)
-* **Mouse Handling:** Optional capture via `Init(enableMouse bool)`
 
 ---
 
@@ -197,7 +196,6 @@ cooledit/
 
 ### Milestone 3 (Complete)
 * Menubar (Auto-hide).
-* Mouse support (Optional via flag/config).
 
 ### Milestone 4 (Planned - Next Phase)
 * Theme/Color system with 10 built-in themes + custom themes from config.

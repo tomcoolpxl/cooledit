@@ -10,7 +10,6 @@ A terminal-based text editor for Windows, Linux, and macOS. Similar to nano but 
 - Undo/redo with full history
 - Find and replace with non-overlapping matches
 - System clipboard integration (Ctrl+C/X/V)
-- Mouse support (optional)
 - Line numbers (toggle with Ctrl+L)
 - Word wrap (toggle with Ctrl+W)
 - Configurable cursor shapes (block, underline, bar)
@@ -44,9 +43,6 @@ cooledit filename.txt
 
 # Create new file
 cooledit
-
-# Enable mouse support
-cooledit -mouse filename.txt
 
 # Show line numbers by default
 cooledit -line-numbers filename.txt
@@ -119,7 +115,6 @@ tab_width = 4
 [ui]
 show_menubar = false
 show_statusbar = true
-mouse_enabled = false
 theme = "default"
 cursor_shape = "block"  # Options: block, underline, bar
 

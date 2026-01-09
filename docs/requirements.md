@@ -146,13 +146,7 @@ Menus to include:
 
 * Inline dialogs (search, replace, go to line) should appear integrated into the UI above status bar.
 
-**5.5 Mouse Support**
-
-* **Disabled by default**.
-* Enabled via `-mouse` command line flag or config file.
-* When enabled: Click to move cursor, scroll wheel support.
-
-**5.6 Configuration Persistence**
+**5.5 Configuration Persistence**
 
 * Settings stored in TOML format.
 * Location:
@@ -163,7 +157,6 @@ Menus to include:
   * `editor.soft_wrap` - Enable word wrap
   * `editor.tab_width` - Spaces per tab
   * `ui.show_menubar` - Show menubar by default
-  * `ui.mouse_enabled` - Enable mouse support
   * `ui.theme` - Active theme name (default: "default")
   * `search.case_sensitive` - Case-sensitive search by default
   * `themes.*` - Theme definitions (see Section 9)
@@ -202,7 +195,6 @@ Menus to include:
 **6.1 Command-Line Flags**
 
 * `cooledit [filename]` - Open file for editing
-* `-mouse` - Enable mouse support
 * `-line-numbers` - Show line numbers column
 * `--config <path>` - Use alternate config file location
 
@@ -366,7 +358,6 @@ Not in initial scope but candidates:
 **Milestone 3 (Complete)**
 
 * Menubar (Auto-hide).
-* Mouse support (Optional via flag/config).
 * Text Selection and System Clipboard.
 * Configuration persistence with TOML.
 * Toggle settings auto-save.

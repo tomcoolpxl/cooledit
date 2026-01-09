@@ -85,9 +85,6 @@ func dispatch(ui *UI, ev term.Event) {
 				ui.enterMessage(res.Message)
 			}
 		}
-
-	case term.MouseEvent:
-		ui.handleMouseEvent(e)
 	}
 }
 
@@ -459,8 +456,8 @@ func TestMenubarRendering(t *testing.T) {
 	}
 }
 
-func TestMouseClickMovesCursor(t *testing.T) {
-	ui, screen := newTestUI(20, 5)
+func TestEnterKeyCursorPosition(t *testing.T) {
+	ui, _ := newTestUI(20, 5)
 	ui.showMenubar = false
 
 	// Fill buffer:
@@ -470,81 +467,10 @@ func TestMouseClickMovesCursor(t *testing.T) {
 	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
 	typeString(ui, "bbbb")
 
-	// Click on (2, 1) -> Row 1, Col 2 (zero-based) -> 'b' at index 2
-	// Viewport starts at (0,0) without menubar
-	dispatch(ui, term.MouseEvent{X: 2, Y: 1, Button: term.MouseLeft})
-	draw(ui)
-
-	if screen.cursorY != 1 || screen.cursorX != 2 {
-		t.Fatalf("expected cursor at (2,1), got (%d,%d)", screen.cursorX, screen.cursorY)
-	}
-
-	// Verify doc position logic
+	// Test cursor position after Enter
 	row, col := ui.editor.Cursor()
-	if row != 1 || col != 2 {
-		t.Fatalf("expected doc cursor (1,2), got (%d,%d)", row, col)
-	}
-}
-
-func TestMouseWheelScrolling(t *testing.T) {
-	ui, screen := newTestUI(20, 5)
-
-	// 10 lines
-	for i := 0; i < 10; i++ {
-		typeString(ui, "x")
-		dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
-	}
-
-	// Cursor at bottom.
-	dispatch(ui, term.KeyEvent{Key: term.KeyHome, Modifiers: term.ModCtrl})
-	draw(ui)
-
-	if screen.Cell(0, 0) != 'x' {
-		t.Fatal("expected 'x' at top")
-	}
-
-	// Scroll Down (simulates moving viewport down)
-	dispatch(ui, term.MouseEvent{Button: term.MouseWheelDown})
-	draw(ui)
-
-	// Cursor should have moved down (CmdMoveDown called 3 times)
-	row, _ := ui.editor.Cursor()
-	if row != 3 {
-		t.Fatalf("expected cursor row 3 after scroll down, got %d", row)
-	}
-
-	// Scroll Up
-	dispatch(ui, term.MouseEvent{Button: term.MouseWheelUp})
-	draw(ui)
-
-	row, _ = ui.editor.Cursor()
-	if row != 0 {
-		t.Fatalf("expected cursor row 0 after scroll up, got %d", row)
-	}
-}
-
-func TestMouseMenuInteraction(t *testing.T) {
-	ui, _ := newTestUI(40, 10)
-	ui.showMenubar = true
-	draw(ui)
-
-	// Click "File" (0,0 to 6,0 approx)
-	dispatch(ui, term.MouseEvent{X: 2, Y: 0, Button: term.MouseLeft})
-	draw(ui)
-
-	if ui.mode != ModeMenu || !ui.menubar.Active {
-		t.Fatal("expected menu mode active")
-	}
-	if ui.menubar.SelectedMenuIndex != 0 { // File is index 0
-		t.Fatal("expected File menu selected")
-	}
-
-	// Click outside (in viewport) -> should close menu
-	dispatch(ui, term.MouseEvent{X: 0, Y: 5, Button: term.MouseLeft})
-	draw(ui)
-
-	if ui.mode != ModeNormal {
-		t.Fatal("expected normal mode after click outside")
+	if row != 1 || col != 4 {
+		t.Fatalf("expected cursor at (1,4), got (%d,%d)", row, col)
 	}
 }
 
@@ -593,28 +519,6 @@ func TestMenuNavigationWrapping(t *testing.T) {
 	dispatch(ui, term.KeyEvent{Key: term.KeyRight})
 	if ui.menubar.SelectedMenuIndex != 0 {
 		t.Fatalf("expected menu 0 after wrap right")
-	}
-}
-
-func TestMouseEdgeCases(t *testing.T) {
-	ui, _ := newTestUI(40, 5)
-	ui.showMenubar = true
-	draw(ui)
-
-	// Click Status Bar (Row 4) - should do nothing (no crash)
-	dispatch(ui, term.MouseEvent{X: 0, Y: 4, Button: term.MouseLeft})
-	if ui.mode != ModeNormal {
-		t.Fatalf("status bar click changed mode")
-	}
-
-	// Enter prompt mode
-	ui.enterFind()
-	draw(ui)
-	// Now Prompt is at Row 3.
-	dispatch(ui, term.MouseEvent{X: 0, Y: 3, Button: term.MouseLeft})
-
-	if ui.mode != ModePrompt {
-		t.Fatalf("prompt click exited prompt mode")
 	}
 }
 

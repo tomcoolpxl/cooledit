@@ -9,13 +9,13 @@ import (
 	"cooledit/internal/ui"
 )
 
-func Run(path string, enableMouse, lineNumbers bool, cfg *config.Config) error {
-	return RunWithScreen(path, enableMouse, lineNumbers, cfg, tcell.New())
+func Run(path string, lineNumbers bool, cfg *config.Config) error {
+	return RunWithScreen(path, lineNumbers, cfg, tcell.New())
 }
 
 // RunWithScreen is exported for testing or custom backends
-func RunWithScreen(path string, enableMouse, lineNumbers bool, cfg *config.Config, screen term.Screen) error {
-	if err := screen.Init(enableMouse); err != nil {
+func RunWithScreen(path string, lineNumbers bool, cfg *config.Config, screen term.Screen) error {
+	if err := screen.Init(); err != nil {
 		return err
 	}
 	defer screen.Fini()

@@ -19,7 +19,7 @@ type Editor struct {
 type UI struct {
 	ShowMenubar   bool   `toml:"show_menubar"`
 	ShowStatusBar bool   `toml:"show_statusbar"`
-	MouseEnabled  bool   `toml:"mouse_enabled"`
+
 	Theme         string `toml:"theme"`
 	CursorShape   string `toml:"cursor_shape"`
 }
@@ -114,7 +114,6 @@ func Default() *Config {
 		UI: UI{
 			ShowMenubar:   false,
 			ShowStatusBar: true,
-			MouseEnabled:  false,
 			Theme:         "default",
 			CursorShape:   "block",
 		},

@@ -94,30 +94,12 @@ type ResizeEvent struct {
 
 func (ResizeEvent) isEvent() {}
 
-type MouseButton int
-
-const (
-	MouseNone MouseButton = iota
-	MouseLeft
-	MouseRight
-	MouseMiddle
-	MouseWheelUp
-	MouseWheelDown
-)
-
-type MouseEvent struct {
-	X, Y   int
-	Button MouseButton
-}
-
-func (MouseEvent) isEvent() {}
-
 type RedrawEvent struct{}
 
 func (RedrawEvent) isEvent() {}
 
 type Screen interface {
-	Init(enableMouse bool) error
+	Init() error
 	Fini()
 
 	Size() (width, height int)

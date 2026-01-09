@@ -23,9 +23,6 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.UI.ShowMenubar {
 		t.Error("Expected ShowMenubar to be false by default")
 	}
-	if cfg.UI.MouseEnabled {
-		t.Error("Expected MouseEnabled to be false by default")
-	}
 	if !cfg.Search.CaseSensitive {
 		t.Error("Expected CaseSensitive to be true by default")
 	}
@@ -53,8 +50,7 @@ func TestSaveAndLoad(t *testing.T) {
 			TabWidth:    8,
 		},
 		UI: UI{
-			ShowMenubar:  false,
-			MouseEnabled: false,
+			ShowMenubar: false,
 		},
 		Search: Search{
 			CaseSensitive: true,
@@ -89,9 +85,6 @@ func TestSaveAndLoad(t *testing.T) {
 	}
 	if loaded.UI.ShowMenubar != false {
 		t.Error("ShowMenubar not loaded correctly")
-	}
-	if loaded.UI.MouseEnabled != false {
-		t.Error("MouseEnabled not loaded correctly")
 	}
 	if loaded.Search.CaseSensitive != true {
 		t.Error("CaseSensitive not loaded correctly")
@@ -157,8 +150,5 @@ tab_width = 2
 	defaults := Default()
 	if cfg.Editor.SoftWrap != defaults.Editor.SoftWrap {
 		t.Error("SoftWrap should use default when not in config")
-	}
-	if cfg.UI.MouseEnabled != defaults.UI.MouseEnabled {
-		t.Error("MouseEnabled should use default when section missing")
 	}
 }

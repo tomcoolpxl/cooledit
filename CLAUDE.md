@@ -48,7 +48,6 @@ internal/
 - ✅ System clipboard integration (Cut/Copy/Paste)
 - ✅ Status bar with priority-based layout and centered mini-help
 - ✅ Auto-hiding menubar (toggle with F10 or Esc)
-- ✅ Mouse support (optional via CLI flag or config)
 - ✅ Go to Line (Ctrl+G) - Always available
 - ✅ Adaptive help screen (F1) with two-column layout for wide terminals
 - ✅ Configuration persistence with TOML file
@@ -135,12 +134,11 @@ internal/
   - Cursor shapes (block, underline, bar with checkmark for active shape)
   - **Separator line**
   - Themes submenu (all 13 available themes with checkmark for active theme)
-- Navigation via arrow keys or mouse (if enabled)
+- Navigation via arrow keys
 - Menu items support: checkmarks (for toggles only), separators (visual lines), and readonly items (informational display, no checkmarks)
 - **Smart navigation**: Up/Down arrows automatically skip separator lines and readonly items
 
 ### Command-Line Flags
-- `-mouse` - Enable mouse support (click to position cursor, scroll)
 - `-line-numbers` - Show line numbers column
 - `--config <path>` - Use alternate config file location
 
@@ -350,7 +348,6 @@ tab_width = 4         # Spaces per tab
 [ui]
 show_menubar = false     # Show menubar by default
 show_statusbar = true    # Show status bar (F11 toggles Zen mode)
-mouse_enabled = false    # Enable mouse support
 theme = "default"        # Active theme name
 cursor_shape = "block"   # Cursor shape: "block", "underline", or "bar"
 

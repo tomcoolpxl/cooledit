@@ -8,15 +8,13 @@ import (
 )
 
 type mockScreen struct {
-	initCalled   bool
-	mouseEnabled bool
-	finiCalled   bool
-	pollCount    int
+	initCalled bool
+	finiCalled bool
+	pollCount  int
 }
 
-func (m *mockScreen) Init(enableMouse bool) error {
+func (m *mockScreen) Init() error {
 	m.initCalled = true
-	m.mouseEnabled = enableMouse
 	return nil
 }
 
@@ -46,44 +44,19 @@ func (m *mockScreen) SetCursorShape(shape term.CursorShape, color term.Color) {}
 func (m *mockScreen) ShowCursor(x, y int)                                     {}
 func (m *mockScreen) HideCursor()                                             {}
 
-func TestRunWithScreenMouseSetting(t *testing.T) {
-	t.Run("MouseEnabled", func(t *testing.T) {
-		m := &mockScreen{}
-		cfg := config.Default()
-		cfg.UI.MouseEnabled = true
-		// RunWithScreen will call Run which loops.
-		// Our mock returns Ctrl+Q which sets quitNow=true.
-		err := RunWithScreen("", true, false, cfg, m)
-		if err != nil {
-			t.Fatalf("Run failed: %v", err)
-		}
-		if !m.initCalled {
-			t.Errorf("Init was not called")
-		}
-		if !m.mouseEnabled {
-			t.Errorf("Expected mouse to be enabled")
-		}
-		if !m.finiCalled {
-			t.Errorf("Fini was not called")
-		}
-	})
-
-	t.Run("MouseDisabled", func(t *testing.T) {
-		m := &mockScreen{}
-		cfg := config.Default()
-		cfg.UI.MouseEnabled = false
-		err := RunWithScreen("", false, false, cfg, m)
-		if err != nil {
-			t.Fatalf("Run failed: %v", err)
-		}
-		if !m.initCalled {
-			t.Errorf("Init was not called")
-		}
-		if m.mouseEnabled {
-			t.Errorf("Expected mouse to be disabled")
-		}
-		if !m.finiCalled {
-			t.Errorf("Fini was not called")
-		}
-	})
+func TestRunWithScreenBasic(t *testing.T) {
+	m := &mockScreen{}
+	cfg := config.Default()
+	// RunWithScreen will call Run which loops.
+	// Our mock returns Ctrl+Q which sets quitNow=true.
+	err := RunWithScreen("", false, cfg, m)
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if !m.initCalled {
+		t.Errorf("Init was not called")
+	}
+	if !m.finiCalled {
+		t.Errorf("Fini was not called")
+	}
 }

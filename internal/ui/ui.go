@@ -213,9 +213,6 @@ func (u *UI) Run() error {
 					u.enterMessage(res.Message)
 				}
 			}
-
-		case term.MouseEvent:
-			u.handleMouseEvent(e)
 		}
 	}
 }
@@ -322,97 +319,6 @@ func (u *UI) adjustMenuScroll() {
 	// If selected item is below visible area, scroll down
 	if selectedIdx >= scrollOffset+availableHeight {
 		u.menubar.ScrollOffset = selectedIdx - availableHeight + 1
-	}
-}
-
-func (u *UI) handleMouseEvent(e term.MouseEvent) {
-	// 1. Check Menubar
-	if u.showMenubar && e.Y == u.layout.Menubar.Y {
-		if e.Button == term.MouseLeft {
-			// Find which menu was clicked
-			x := 0
-			for i, menu := range u.menubar.Menus {
-				width := len(menu.Title) + 2 // " Title "
-				if e.X >= x && e.X < x+width {
-					u.mode = ModeMenu
-					u.menubar.Active = true
-					u.menubar.SelectedMenuIndex = i
-					u.menubar.SelectedItemIndex = 0
-					return
-				}
-				x += width
-			}
-		}
-		return
-	}
-
-	// 2. Check Menu Dropdown (if active)
-	if u.mode == ModeMenu {
-		menuIdx := u.menubar.SelectedMenuIndex
-		menuX := 0
-		for i := 0; i < menuIdx; i++ {
-			menuX += len(u.menubar.Menus[i].Title) + 2
-		}
-
-		menu := u.menubar.Menus[menuIdx]
-		width := 0
-		for _, item := range menu.Items {
-			w := len(item.Label) + 4 + len(item.Accelerator)
-			if w > width {
-				width = w
-			}
-		}
-		if width < 10 {
-			width = 10
-		}
-
-		startX := menuX
-		startY := 1
-		if startX+width > u.layout.Width {
-			startX = u.layout.Width - width
-		}
-
-		// Check bounds
-		numItems := len(menu.Items)
-		if e.X >= startX && e.X < startX+width && e.Y >= startY && e.Y < startY+numItems {
-			if e.Button == term.MouseLeft {
-				idx := e.Y - startY
-				u.menubar.SelectedItemIndex = idx
-				u.executeMenuItem()
-				return
-			}
-		} else {
-			// Click outside menu -> close
-			if e.Button == term.MouseLeft {
-				u.mode = ModeNormal
-				u.menubar.Active = false
-				u.showMenubar = false
-			}
-		}
-		return
-	}
-
-	// 3. Check Viewport
-	vp := u.layout.Viewport
-	if e.X >= vp.X && e.X < vp.X+vp.W && e.Y >= vp.Y && e.Y < vp.Y+vp.H {
-		if e.Button == term.MouseLeft {
-			viewX := e.X - vp.X
-			viewY := e.Y - vp.Y
-
-			docLine := u.editor.Viewport().TopLine + viewY
-			docCol := u.editor.Viewport().LeftCol + viewX
-
-			u.editor.Apply(core.CmdClick{Line: docLine, Col: docCol}, u.layout.Viewport.H)
-
-		} else if e.Button == term.MouseWheelUp {
-			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
-			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
-			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
-		} else if e.Button == term.MouseWheelDown {
-			u.editor.Apply(core.CmdMoveDown{}, u.layout.Viewport.H)
-			u.editor.Apply(core.CmdMoveDown{}, u.layout.Viewport.H)
-			u.editor.Apply(core.CmdMoveDown{}, u.layout.Viewport.H)
-		}
 	}
 }
 
