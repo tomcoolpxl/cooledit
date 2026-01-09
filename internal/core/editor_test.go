@@ -573,3 +573,98 @@ func TestReplaceUndoable(t *testing.T) {
 		t.Fatalf("expected 'hello world' after undo, got %q", string(lines[0]))
 	}
 }
+
+func TestFindNextNoOverlapping(t *testing.T) {
+	e := newTestEditor()
+	// "ttttt" should find "ttt" only once at position 0
+	for _, r := range "ttttt" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// First find
+	res := e.Apply(CmdFind{Query: "ttt"}, 10)
+	if res.Message != "Found: ttt" {
+		t.Fatalf("expected to find 'ttt', got: %s", res.Message)
+	}
+
+	line, col := e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0,0), got (%d,%d)", line, col)
+	}
+
+	// Next find should not overlap
+	res = e.Apply(CmdFindNext{}, 10)
+	if res.Message != "Not found (next): ttt" {
+		t.Fatalf("expected no more matches, got: %s", res.Message)
+	}
+}
+
+func TestFindNextTwoNonOverlapping(t *testing.T) {
+	e := newTestEditor()
+	// "ttttttt" should find "ttt" twice: at positions 0 and 3
+	for _, r := range "ttttttt" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// First find at position 0
+	res := e.Apply(CmdFind{Query: "ttt"}, 10)
+	if res.Message != "Found: ttt" {
+		t.Fatalf("expected to find 'ttt', got: %s", res.Message)
+	}
+
+	line, col := e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0,0), got (%d,%d)", line, col)
+	}
+
+	// Second find at position 3
+	res = e.Apply(CmdFindNext{}, 10)
+	if res.Message != "Found next: ttt" {
+		t.Fatalf("expected to find next 'ttt', got: %s", res.Message)
+	}
+
+	line, col = e.Cursor()
+	if line != 0 || col != 3 {
+		t.Fatalf("expected cursor at (0,3), got (%d,%d)", line, col)
+	}
+
+	// No more matches
+	res = e.Apply(CmdFindNext{}, 10)
+	if res.Message != "Not found (next): ttt" {
+		t.Fatalf("expected no more matches, got: %s", res.Message)
+	}
+}
+
+func TestReplaceAllFromBeginning(t *testing.T) {
+	e := newTestEditor()
+	// "foo bar foo baz foo"
+	for _, r := range "foo bar foo baz foo" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Move cursor to middle of text (position 10)
+	e.Apply(CmdMoveHome{}, 10)
+	for i := 0; i < 10; i++ {
+		e.Apply(CmdMoveRight{}, 10)
+	}
+
+	_, col := e.Cursor()
+	if col != 10 {
+		t.Fatalf("cursor should be at col 10, got %d", col)
+	}
+
+	// Replace all should start from beginning, not cursor position
+	res := e.Apply(CmdReplaceAll{Find: "foo", Replace: "XXX"}, 10)
+	if res.Message != "Replaced 3 occurrences" {
+		t.Fatalf("expected 'Replaced 3 occurrences', got: %s", res.Message)
+	}
+
+	lines := e.Lines()
+	text := string(lines[0])
+	expected := "XXX bar XXX baz XXX"
+	if text != expected {
+		t.Fatalf("expected %q, got %q", expected, text)
+	}
+}

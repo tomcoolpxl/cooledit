@@ -169,8 +169,8 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "No previous search"}
 		}
 		line, col := e.buf.Cursor()
-		// Start search after current position
-		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+1, SearchForward)
+		// Start search after current match to avoid overlapping matches
+		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+len(e.search.LastQuery), SearchForward)
 		if found {
 			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found next: " + e.search.LastQuery}
@@ -350,6 +350,9 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "Replace: empty search term"}
 		}
 
+		// Update search state to match find term
+		e.search.SetQuery(c.Find)
+
 		line, col := e.buf.Cursor()
 		lines := e.buf.Lines()
 
@@ -396,13 +399,17 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		return Result{Message: "Replaced (no more matches)"}
 
 	case CmdReplaceAll:
-		// Replace all remaining matches from current cursor position
+		// Replace all matches from the beginning of the file
 		if c.Find == "" {
 			return Result{Message: "Replace: empty search term"}
 		}
 
+		// Update search state to match find term
+		e.search.SetQuery(c.Find)
+
 		count := 0
-		line, col := e.buf.Cursor()
+		// Start from beginning of file
+		line, col := 0, 0
 
 		// Keep replacing until no more matches
 		for {

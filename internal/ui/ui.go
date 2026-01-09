@@ -15,7 +15,7 @@ const (
 	ModePrompt
 	ModeHelp
 	ModeMenu
-	ModeReplaceReview
+	ModeFindReplace
 )
 
 type UI struct {
@@ -51,6 +51,9 @@ type UI struct {
 	// remember last search/replace terms
 	lastFindTerm    string
 	lastReplaceTerm string
+
+	// find/replace mode state
+	replacingAll bool
 
 	// Features
 	showLineNumbers bool
@@ -118,8 +121,8 @@ func (u *UI) Run() error {
 				}
 			}
 
-			if u.mode == ModeReplaceReview {
-				if u.handleReplaceReviewKey(e) {
+			if u.mode == ModeFindReplace {
+				if u.handleFindReplaceKey(e) {
 					continue
 				}
 			}
@@ -369,10 +372,6 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.enterFind()
 		return nil
 
-	case e.Key == term.KeyRune && e.Rune == 'h' && (e.Modifiers&term.ModCtrl) != 0:
-		u.enterReplace()
-		return nil
-
 	case e.Key == term.KeyRune && e.Rune == 'g' && (e.Modifiers&term.ModCtrl) != 0:
 		u.enterGoToLine()
 		return nil
@@ -423,55 +422,80 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	return nil
 }
 
-func (u *UI) handleReplaceReviewKey(e term.KeyEvent) bool {
+func (u *UI) handleFindReplaceKey(e term.KeyEvent) bool {
 	switch e.Key {
 	case term.KeyEscape:
-		// Cancel replace
+		// Exit find/replace mode
 		u.mode = ModeNormal
+		u.editor.ClearSelection()
+		return true
+
+	case term.KeyF3:
+		// Find next
+		if e.Modifiers == term.ModShift {
+			res := u.editor.Apply(core.CmdFindPrev{}, u.layout.Viewport.H)
+			if res.Message != "" && res.Message[:9] == "Not found" {
+				u.mode = ModeNormal
+				u.enterMessage(res.Message)
+			}
+		} else {
+			res := u.editor.Apply(core.CmdFindNext{}, u.layout.Viewport.H)
+			if res.Message != "" && res.Message[:9] == "Not found" {
+				u.mode = ModeNormal
+				u.enterMessage(res.Message)
+			}
+		}
 		return true
 
 	case term.KeyRune:
 		switch e.Rune {
-		case 'r', 'R', 'y', 'Y':
-			// Replace current match and find next
-			res := u.editor.Apply(core.CmdReplace{
-				Find:    u.replaceFindTerm,
-				Replace: u.replaceWithTerm,
-			}, u.layout.Viewport.H)
-
-			if res.Message != "" {
-				// No more matches
+		case 'n', 'N':
+			// Find next
+			res := u.editor.Apply(core.CmdFindNext{}, u.layout.Viewport.H)
+			if res.Message != "" && res.Message[:9] == "Not found" {
 				u.mode = ModeNormal
 				u.enterMessage(res.Message)
 			}
-			// Otherwise stay in replace review mode for next match
 			return true
 
-		case 's', 'S', 'n', 'N':
-			// Skip this match and find next
-			res := u.editor.Apply(core.CmdFindNext{}, u.layout.Viewport.H)
-			if res.Message != "" {
-				// No more matches
+		case 'p', 'P':
+			// Find previous
+			res := u.editor.Apply(core.CmdFindPrev{}, u.layout.Viewport.H)
+			if res.Message != "" && res.Message[:9] == "Not found" {
 				u.mode = ModeNormal
 				u.enterMessage(res.Message)
+			}
+			return true
+
+		case 'r', 'R':
+			// Replace current match - need to prompt for replacement text
+			u.mode = ModePrompt
+			u.promptKind = PromptReplaceWith
+			u.promptLabel = "Replace with: "
+			if u.lastReplaceTerm != "" {
+				u.promptText = []rune(u.lastReplaceTerm)
+			} else {
+				u.promptText = nil
 			}
 			return true
 
 		case 'a', 'A':
-			// Replace all remaining matches
-			res := u.editor.Apply(core.CmdReplaceAll{
-				Find:    u.replaceFindTerm,
-				Replace: u.replaceWithTerm,
-			}, u.layout.Viewport.H)
-			u.mode = ModeNormal
-			if res.Message != "" {
-				u.enterMessage(res.Message)
+			// Replace all - need to prompt for replacement text
+			u.replacingAll = true
+			u.mode = ModePrompt
+			u.promptKind = PromptReplaceWith
+			u.promptLabel = "Replace all with: "
+			if u.lastReplaceTerm != "" {
+				u.promptText = []rune(u.lastReplaceTerm)
+			} else {
+				u.promptText = nil
 			}
 			return true
 
-		case 'q', 'Q', 'c', 'C':
-			// Quit replace mode
+		case 'q', 'Q':
+			// Quit find mode
 			u.mode = ModeNormal
+			u.editor.ClearSelection()
 			return true
 		}
 	}

@@ -52,6 +52,12 @@ func dispatch(ui *UI, ev term.Event) {
 			}
 		}
 
+		if ui.mode == ModeFindReplace {
+			if ui.handleFindReplaceKey(e) {
+				return
+			}
+		}
+
 		if ui.mode == ModeMenu {
 			if ui.handleMenuKey(e) {
 				return
@@ -340,7 +346,7 @@ func TestViewportScrolling(t *testing.T) {
 }
 
 func TestSearchUIIntegration(t *testing.T) {
-	ui, screen := newTestUI(20, 5)
+	ui, _ := newTestUI(20, 5)
 
 	typeString(ui, "foo bar foo")
 	dispatch(ui, term.KeyEvent{Key: term.KeyHome, Modifiers: term.ModCtrl}) // Go to start
@@ -352,29 +358,44 @@ func TestSearchUIIntegration(t *testing.T) {
 	typeString(ui, "foo")
 	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
 
-	draw(ui) // updates layout back to normal, draws cursor
+	draw(ui) // Now in ModeFindReplace with selection
 
-	// Cursor should be at 0,0
-	if screen.cursorX != 0 || screen.cursorY != 0 {
-		t.Fatalf("expected cursor at (0,0), got (%d,%d)", screen.cursorX, screen.cursorY)
+	// Should be in find/replace mode
+	if ui.mode != ModeFindReplace {
+		t.Fatalf("expected ModeFindReplace, got mode %d", ui.mode)
 	}
 
-	// F3 (Next)
-	dispatch(ui, term.KeyEvent{Key: term.KeyF3})
+	// Cursor should be at start of first match (0,0)
+	line, col := ui.editor.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0,0), got (%d,%d)", line, col)
+	}
+
+	// F3 or N (Next) - test N key in find/replace mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'n'})
 	draw(ui)
 
 	// Should find second "foo" at 0, 8
-	if screen.cursorX != 8 {
-		t.Fatalf("expected cursor at (8,0) after F3, got (%d,%d)", screen.cursorX, screen.cursorY)
+	line, col = ui.editor.Cursor()
+	if line != 0 || col != 8 {
+		t.Fatalf("expected cursor at (0,8) after next, got (%d,%d)", line, col)
 	}
 
-	// Shift+F3 (Prev)
-	dispatch(ui, term.KeyEvent{Key: term.KeyF3, Modifiers: term.ModShift})
+	// P (Prev) in find/replace mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'p'})
 	draw(ui)
 
 	// Should find first "foo" at 0, 0
-	if screen.cursorX != 0 {
-		t.Fatalf("expected cursor at (0,0) after Shift+F3, got (%d,%d)", screen.cursorX, screen.cursorY)
+	line, col = ui.editor.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0,0) after prev, got (%d,%d)", line, col)
+	}
+
+	// Q to quit find mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'q'})
+	
+	if ui.mode != ModeNormal {
+		t.Fatalf("expected ModeNormal after quit, got mode %d", ui.mode)
 	}
 }
 
@@ -535,9 +556,10 @@ func TestHelpMode(t *testing.T) {
 		t.Fatal("expected Help mode")
 	}
 
-	// Screen should show help text (not empty)
-	if screen.Cell(0, 0) != 'c' { // "cooledit - help"
-		t.Fatalf("expected help text, got %q", screen.Cell(0, 0))
+	// Screen should show help text - first line now has title
+	firstLineChar := screen.Cell(2, 0)
+	if firstLineChar != 'C' { // "CoolEdit"
+		t.Fatalf("expected help title on first line, got %q", firstLineChar)
 	}
 
 	// Any key exits

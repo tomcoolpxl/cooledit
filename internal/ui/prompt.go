@@ -16,7 +16,6 @@ const (
 	PromptQuitConfirm
 	PromptFind
 	PromptGoToLine
-	PromptReplaceFind
 	PromptReplaceWith
 )
 
@@ -58,18 +57,6 @@ func (u *UI) enterGoToLine() {
 	u.promptKind = PromptGoToLine
 	u.promptLabel = "Go to line: "
 	u.promptText = nil
-}
-
-func (u *UI) enterReplace() {
-	u.mode = ModePrompt
-	u.promptKind = PromptReplaceFind
-	u.promptLabel = "Replace: "
-	// Use last find term if available (shared between find and replace)
-	if u.lastFindTerm != "" {
-		u.promptText = []rune(u.lastFindTerm)
-	} else {
-		u.promptText = nil
-	}
 }
 
 func (u *UI) exitPrompt() {
@@ -195,7 +182,11 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 				u.lastFindTerm = query
 			}
 			res := u.editor.Apply(core.CmdFind{Query: query}, u.layout.Viewport.H)
-			if res.Message != "" {
+			if res.Message == "" || res.Message[:5] == "Found" {
+				// Found a match, enter find/replace mode (AFTER exitPrompt)
+				u.mode = ModeFindReplace
+			} else {
+				// Not found, show message
 				u.enterMessage(res.Message)
 			}
 			return true
@@ -253,63 +244,43 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 		}
 		return true
 
-	case PromptReplaceFind:
-		switch e.Key {
-		case term.KeyEnter:
-			findTerm := string(u.promptText)
-			if findTerm == "" {
-				u.exitPrompt()
-				u.enterMessage("Replace: empty search term")
-				return true
-			}
-			// Store the find term and move to second phase
-			u.lastFindTerm = findTerm
-			u.replaceFindTerm = findTerm
-			u.promptKind = PromptReplaceWith
-			u.promptLabel = "Replace with: "
-			// Pre-populate with last replace term
-			if u.lastReplaceTerm != "" {
-				u.promptText = []rune(u.lastReplaceTerm)
-			} else {
-				u.promptText = nil
-			}
-			return true
-
-		case term.KeyEscape:
-			u.exitPrompt()
-			return true
-
-		case term.KeyBackspace:
-			if len(u.promptText) > 0 {
-				u.promptText = u.promptText[:len(u.promptText)-1]
-			}
-			return true
-
-		case term.KeyRune:
-			u.promptText = append(u.promptText, e.Rune)
-			return true
-		}
-		return true
-
 	case PromptReplaceWith:
 		switch e.Key {
 		case term.KeyEnter:
 			replaceTerm := string(u.promptText)
 			u.lastReplaceTerm = replaceTerm
-			u.replaceWithTerm = replaceTerm
-			// Find first match and enter replace review mode
 			u.exitPrompt()
-			res := u.editor.Apply(core.CmdFind{Query: u.replaceFindTerm}, u.layout.Viewport.H)
-			if res.Message != "" {
+
+			if u.replacingAll {
+				// Replace all occurrences
+				u.replacingAll = false
+				res := u.editor.Apply(core.CmdReplaceAll{
+					Find:    u.lastFindTerm,
+					Replace: replaceTerm,
+				}, u.layout.Viewport.H)
+				u.mode = ModeNormal
 				u.enterMessage(res.Message)
 			} else {
-				// Found a match, enter review mode
-				u.mode = ModeReplaceReview
+				// Replace current match and stay in find/replace mode
+				res := u.editor.Apply(core.CmdReplace{
+					Find:    u.lastFindTerm,
+					Replace: replaceTerm,
+				}, u.layout.Viewport.H)
+				if res.Message != "" && res.Message[:9] == "Not found" {
+					u.mode = ModeNormal
+					u.enterMessage(res.Message)
+				} else {
+					// Stay in find/replace mode
+					u.mode = ModeFindReplace
+				}
 			}
 			return true
 
 		case term.KeyEscape:
 			u.exitPrompt()
+			u.replacingAll = false
+			// Go back to find/replace mode
+			u.mode = ModeFindReplace
 			return true
 
 		case term.KeyBackspace:

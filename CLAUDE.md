@@ -17,7 +17,11 @@
 - **Language**: Go (vanilla, no frameworks)
 - **Terminal Library**: tcell
 - **Structure**: Clean architecture with internal packages
-
+tt
+t
+ttttttt
+ttt
+tttt
 ## Project Structure
 
 ```

@@ -315,16 +315,16 @@ func (u *UI) drawStatusBar() {
 
 	var left string
 
-	// Special status bar for replace review mode
-	if u.mode == ModeReplaceReview {
-		left = "Replace this instance? (y)es, (n)o, (a)ll, (c)ancel"
+	// Special status bar for find/replace mode
+	if u.mode == ModeFindReplace {
+		left = "[R]eplace  [N]ext  [P]rev  [A]ll  [Q]uit"
 	} else {
 		fs := u.editor.File()
 		mod := ""
 		if u.editor.Modified() {
 			mod = "*"
 		}
-		left = fmt.Sprintf("%s%s  Ctrl+S Save  Ctrl+Q Quit  F1 Help  F10 Menu", fs.BaseName, mod)
+		left = fmt.Sprintf("%s%s", fs.BaseName, mod)
 	}
 
 	cy, cx := u.editor.Cursor()
@@ -335,7 +335,7 @@ func (u *UI) drawStatusBar() {
 	}
 	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
 
-	// Draw Right
+	// Priority 1: Draw Right (position and status)
 	startRight := rect.W - len(right)
 	if startRight < 0 {
 		startRight = 0
@@ -347,16 +347,82 @@ func (u *UI) drawStatusBar() {
 		}
 	}
 
-	// Draw Left
+	// Priority 2: Draw Left (filename)
 	maxLeft := startRight - 1
 	if maxLeft < 0 {
 		maxLeft = 0
 	}
+	leftEnd := len(left)
+	if leftEnd > maxLeft {
+		leftEnd = maxLeft
+	}
 	for i, r := range left {
-		if i >= maxLeft {
+		if i >= leftEnd {
 			break
 		}
 		u.screen.SetCell(rect.X+i, rect.Y, r, style)
+	}
+
+	// Priority 3: Draw centered mini-help (if not in find/replace mode)
+	if u.mode != ModeFindReplace {
+		// Build mini-help with priority from left to right
+		miniHelp := []string{
+			"F1 Help",
+			"Esc/F10 Menu",
+			"Ctrl+Q Quit",
+			"Ctrl+S Save",
+			"Ctrl+F Find/Replace",
+		}
+
+		// Calculate available space for center section
+		availStart := leftEnd + 2
+		availEnd := startRight - 2
+		availWidth := availEnd - availStart
+
+		if availWidth > 0 {
+			// Build help string with available space
+			var helpParts []string
+			helpLen := 0
+			for _, part := range miniHelp {
+				newLen := helpLen
+				if len(helpParts) > 0 {
+					newLen += 3 // "  " separator
+				}
+				newLen += len(part)
+
+				if newLen <= availWidth {
+					helpParts = append(helpParts, part)
+					helpLen = newLen
+				} else {
+					break
+				}
+			}
+
+			if len(helpParts) > 0 {
+				// Join with separators
+				helpText := ""
+				for i, part := range helpParts {
+					if i > 0 {
+						helpText += "  "
+					}
+					helpText += part
+				}
+
+				// Center the help text
+				centerX := availStart + (availWidth-len(helpText))/2
+				if centerX < availStart {
+					centerX = availStart
+				}
+
+				// Draw centered help
+				for i, r := range helpText {
+					x := centerX + i
+					if x >= availStart && x < availEnd {
+						u.screen.SetCell(rect.X+x, rect.Y, r, style)
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -401,30 +467,135 @@ func (u *UI) drawPrompt() {
 }
 
 func (u *UI) drawHelp(w, h int) {
-	lines := []string{
-		"cooledit - help",
+	leftCol := []string{
+		"  CoolEdit - Quick Reference",
 		"",
-		"Ctrl+S        Save",
-		"Ctrl+Shift+S  Save As",
-		"Ctrl+Q        Quit",
-		"Ctrl+C        Force quit",
-		"Ctrl+Z        Undo",
-		"Ctrl+Y        Redo",
-		"Arrows        Move cursor",
-		"PgUp/PgDn     Scroll",
-		"Ctrl+Home/End File start/end",
-		"F10           Menu",
-		"F1            Help",
+		"  MENU & HELP",
+		"    F10, Esc      Menu bar",
+		"    F1            This help",
 		"",
-		"Press any key to return",
+		"  FILE",
+		"    Ctrl+S        Save",
+		"    Ctrl+Shift+S  Save as",
+		"    Ctrl+Q        Quit",
+		"",
+		"  EDIT",
+		"    Ctrl+Z        Undo",
+		"    Ctrl+Y        Redo",
+		"    Ctrl+X        Cut",
+		"    Ctrl+C        Copy",
+		"    Ctrl+V        Paste",
+		"    Ctrl+A        Select all",
 	}
 
-	for y := 0; y < len(lines) && y < h; y++ {
-		for x, r := range lines[y] {
-			if x >= w {
-				break
+	rightCol := []string{
+		"",
+		"",
+		"  SEARCH",
+		"    Ctrl+F        Find/Replace",
+		"    F3, Shift+F3  Next/Previous",
+		"    Ctrl+G        Go to line",
+		"",
+		"  NAVIGATION",
+		"    Arrows        Move cursor",
+		"    Home/End      Line start/end",
+		"    Ctrl+Home     File start",
+		"    Ctrl+End      File end",
+		"    PgUp/PgDn     Page up/down",
+	}
+
+	footer := "  Press any key to close"
+
+	style := term.Style{}
+	titleStyle := term.Style{Inverse: true}
+
+	// Determine if we can use two columns (need at least 80 width)
+	useTwoColumns := w >= 80
+
+	if useTwoColumns {
+		// Two-column layout
+		colWidth := 40
+		maxLines := len(leftCol)
+		if len(rightCol) > maxLines {
+			maxLines = len(rightCol)
+		}
+
+		for y := 0; y < maxLines && y < h-1; y++ {
+			// Left column
+			if y < len(leftCol) {
+				line := leftCol[y]
+				s := style
+				if y == 0 || (len(line) > 2 && line[2] != ' ' && line != "") {
+					s = titleStyle
+				}
+				for x, r := range line {
+					if x >= colWidth {
+						break
+					}
+					u.screen.SetCell(x, y, r, s)
+				}
 			}
-			u.screen.SetCell(x, y, r, term.Style{})
+
+			// Right column
+			if y < len(rightCol) {
+				line := rightCol[y]
+				s := style
+				if len(line) > 2 && line[2] != ' ' && line != "" {
+					s = titleStyle
+				}
+				for x, r := range line {
+					if colWidth+x >= w {
+						break
+					}
+					u.screen.SetCell(colWidth+x, y, r, s)
+				}
+			}
+		}
+
+		// Footer
+		if h > 0 {
+			for x, r := range footer {
+				if x >= w {
+					break
+				}
+				u.screen.SetCell(x, h-1, r, style)
+			}
+		}
+	} else {
+		// Single column layout with pagination
+		allLines := append([]string{}, leftCol...)
+		allLines = append(allLines, "")
+		allLines = append(allLines, rightCol...)
+		allLines = append(allLines, "")
+		allLines = append(allLines, footer)
+
+		// Show as many lines as fit
+		for y := 0; y < len(allLines) && y < h; y++ {
+			line := allLines[y]
+			s := style
+			if y == 0 || (len(line) > 2 && line[2] != ' ' && line != "") {
+				s = titleStyle
+			}
+			for x, r := range line {
+				if x >= w {
+					break
+				}
+				u.screen.SetCell(x, y, r, s)
+			}
+		}
+
+		// If content doesn't fit, show indicator
+		if len(allLines) > h && h > 0 {
+			indicator := " (scroll down for more)"
+			startX := w - len(indicator)
+			if startX < 0 {
+				startX = 0
+			}
+			for i, r := range indicator {
+				if startX+i < w {
+					u.screen.SetCell(startX+i, h-1, r, titleStyle)
+				}
+			}
 		}
 	}
 }
