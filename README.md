@@ -1,4 +1,4 @@
-# CoolEdit
+# cooledit
 
 A terminal-based text editor for Windows, Linux, and macOS. Similar to nano but with modern keyboard shortcuts and better file handling.
 
@@ -44,11 +44,21 @@ cooledit filename.txt
 # Create new file
 cooledit
 
-# Show line numbers by default
-cooledit -line-numbers filename.txt
+# Show line numbers
+cooledit -l filename.txt
+cooledit --line-numbers filename.txt
 
 # Use custom config file
+cooledit -c /path/to/config.toml filename.txt
 cooledit --config /path/to/config.toml filename.txt
+
+# Show version
+cooledit -v
+cooledit --version
+
+# Show help
+cooledit -h
+cooledit --help
 ```
 
 ## Keyboard Shortcuts
@@ -67,7 +77,7 @@ cooledit --config /path/to/config.toml filename.txt
 - `Ctrl+A` - Select all
 - `Insert` - Toggle insert/replace mode
 - `Tab` - Insert spaces to next tab stop
-- `Ctrl+Tab` - Insert literal tab character
+- `Ctrl+I` - Insert literal tab character
 - `Backspace` - Delete one character
 
 ### Search

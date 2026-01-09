@@ -1,8 +1,8 @@
-# Claude Context - Cooledit Project
+# Claude Context - cooledit Project
 
 ## Project Overview
 
-**Cooledit** is a terminal-based text editor written in vanilla Go, inspired by nano but with better UI and keyboard shortcuts. The goal is to create a simple, beginner-friendly editor without syntax highlighting.
+**cooledit** is a terminal-based text editor written in vanilla Go, inspired by nano but with better UI and keyboard shortcuts. The goal is to create a simple, beginner-friendly editor without syntax highlighting.
 
 ## Core Design Principles
 
@@ -54,7 +54,7 @@ internal/
 - ✅ Toggle settings auto-save (line numbers, soft wrap)
 - ✅ Soft wrap implementation with adaptive line wrapping
 - ✅ Insert/Replace mode toggle with Insert key and cursor shape indicators
-- ✅ Tab handling with smart indentation (Tab inserts spaces, Ctrl+Tab inserts literal \t)
+- ✅ Tab handling with smart indentation (Tab inserts spaces, Ctrl+I inserts literal \t)
 
 ### Implemented (Milestone 4 - Theme System)
 - ✅ Term.Style extended with Foreground/Background color fields
@@ -92,7 +92,7 @@ internal/
 - `Ctrl+W` - Toggle word wrap
 - `F11` - Toggle status bar (Zen mode)
 - `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
-- `Ctrl+Tab` - Insert literal tab character (\t)
+- `Ctrl+I` - Insert literal tab character (\t)
 - `Insert` - Toggle Insert/Replace mode
 - `F1` - Help overlay (adaptive two-column/single-column layout)
 - `F10` / `Esc` - Toggle menubar
@@ -139,8 +139,10 @@ internal/
 - **Smart navigation**: Up/Down arrows automatically skip separator lines and readonly items
 
 ### Command-Line Flags
-- `-line-numbers` - Show line numbers column
-- `--config <path>` - Use alternate config file location
+- `-l, --line-numbers` - Show line numbers column
+- `-c, --config <path>` - Use alternate config file location
+- `-v, --version` - Show version information
+- `-h, --help` - Show help message
 
 ### Clipboard Behavior
 - Cut/Copy with no selection operates on current line
@@ -225,7 +227,7 @@ internal/
 - **Configurable tab width** (default: 4 spaces, set via `tab_width` in config)
 - **Smart indentation**: Tab moves cursor to next tab stop (e.g., column 4, 8, 12...)
 - **Simple backspace**: Backspace always deletes one character at a time (space, tab, or any character) - no smart deletion
-- **Literal tabs**: Press `Ctrl+Tab` to insert a raw `\t` character
+- **Literal tabs**: Press `Ctrl+I` to insert a raw `\t` character
 - **Rendering**: Literal tab characters render with proper width via tcell
 - **Undo/Redo**: Tab insertion is an atomic operation
 

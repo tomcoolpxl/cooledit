@@ -486,7 +486,7 @@ func TestHelpMode(t *testing.T) {
 
 	// Screen should show help text - first line now has title
 	firstLineChar := screen.Cell(2, 0)
-	if firstLineChar != 'C' { // "CoolEdit"
+	if firstLineChar != 'c' { // "cooledit"
 		t.Fatalf("expected help title on first line, got %q", firstLineChar)
 	}
 
@@ -658,9 +658,9 @@ func TestHelpScreenWideTerminal(t *testing.T) {
 		t.Fatal("expected Help mode")
 	}
 
-	// Should have "CoolEdit" title at top
-	if screen.Cell(2, 0) != 'C' {
-		t.Fatalf("expected 'C' from CoolEdit title")
+	// Should have "cooledit" title at top
+	if screen.Cell(2, 0) != 'c' {
+		t.Fatalf("expected 'c' from cooledit title")
 	}
 
 	// Should have content in both left and right columns
@@ -705,8 +705,8 @@ func TestHelpScreenNarrowTerminal(t *testing.T) {
 	}
 
 	// Should have title
-	if screen.Cell(2, 0) != 'C' {
-		t.Fatalf("expected 'C' from CoolEdit title")
+	if screen.Cell(2, 0) != 'c' {
+		t.Fatalf("expected 'c' from cooledit title")
 	}
 
 	// Should have content in single column

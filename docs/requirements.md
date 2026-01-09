@@ -194,9 +194,11 @@ Menus to include:
 
 **6.1 Command-Line Flags**
 
-* `cooledit [filename]` - Open file for editing
-* `-line-numbers` - Show line numbers column
-* `--config <path>` - Use alternate config file location
+* `cooledit [OPTIONS] [filename]` - Open file for editing
+* `-l, --line-numbers` - Show line numbers column
+* `-c, --config <path>` - Use alternate config file location
+* `-v, --version` - Show version information
+* `-h, --help` - Show help message
 
 **6.2 Environment Variables**
 

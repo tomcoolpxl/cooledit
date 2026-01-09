@@ -741,7 +741,7 @@ func (u *UI) drawPrompt() {
 
 func (u *UI) drawHelp(w, h int) {
 	leftCol := []string{
-		"  CoolEdit - Quick Reference",
+		"  cooledit - Quick Reference",
 		"",
 		"  MENU & HELP",
 		"    F10, Esc      Menu bar",
@@ -763,7 +763,7 @@ func (u *UI) drawHelp(w, h int) {
 		"    Insert        Insert/Replace mode",
 		"    Tab           Insert spaces to tab stop",
 		"    Backspace     Delete one character",
-		"    Ctrl+Tab      Insert literal tab (\\t)",
+		"    Ctrl+I        Insert literal tab (\\t)",
 	}
 
 	rightCol := []string{
@@ -896,7 +896,7 @@ func (u *UI) drawHelp(w, h int) {
 func (u *UI) drawAbout(w, h int) {
 	lines := []string{
 		"",
-		"  CoolEdit",
+		"  cooledit",
 		"",
 		"  A terminal text editor",
 		"",

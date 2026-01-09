@@ -417,7 +417,7 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyTab && e.Modifiers == 0:
 		return core.CmdTab{}
 
-	case e.Key == term.KeyTab && (e.Modifiers&term.ModCtrl) != 0:
+	case e.Key == term.KeyRune && e.Rune == 'i' && (e.Modifiers&term.ModCtrl) != 0:
 		return core.CmdInsertLiteralTab{}
 
 	case e.Key == term.KeyDelete && e.Modifiers == 0:

@@ -31,6 +31,11 @@ func Load() (*Config, error) {
 		return Default(), nil // Fallback to defaults if can't get config path
 	}
 
+	return LoadFrom(path)
+}
+
+// LoadFrom reads configuration from a specific file path
+func LoadFrom(path string) (*Config, error) {
 	// If config file doesn't exist, return defaults
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return Default(), nil
@@ -68,7 +73,7 @@ func Save(cfg *Config) error {
 	defer f.Close()
 
 	// Write header comment
-	f.WriteString("# CoolEdit Configuration\n")
+	f.WriteString("# cooledit Configuration\n")
 	f.WriteString("# This file is automatically updated when you change settings\n\n")
 
 	// Encode config to TOML
