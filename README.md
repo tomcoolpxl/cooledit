@@ -1,4 +1,4 @@
-# CoolEdit
+# cooledit
 
 A terminal-based text editor for Windows, Linux, and macOS. Similar to nano but with modern keyboard shortcuts and better file handling.
 
