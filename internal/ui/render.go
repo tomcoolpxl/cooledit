@@ -157,10 +157,10 @@ func (u *UI) drawMenuDropdown() {
 			u.screen.SetCell(startX+x, y, ' ', s)
 		}
 
-		// Draw checkmark if item is checkable and checked
+		// Draw checkmark if item is checkable and checked (but not readonly)
 		checkmark := ' '
 		labelOffset := 1
-		if item.IsCheckable && item.IsChecked != nil && item.IsChecked(u) {
+		if item.IsCheckable && !item.IsReadOnly && item.IsChecked != nil && item.IsChecked(u) {
 			checkmark = '✓'
 			u.screen.SetCell(startX, y, checkmark, s)
 		}
@@ -715,7 +715,7 @@ func (u *UI) drawHelp(w, h int) {
 		"    View menu     Cursor shapes",
 		"",
 		"  THEMES",
-		"    View menu     11 built-in themes",
+		"    View menu     13 built-in themes",
 	}
 
 	footer := "  Press any key to close"

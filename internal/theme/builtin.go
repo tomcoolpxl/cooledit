@@ -2,7 +2,7 @@ package theme
 
 import "cooledit/internal/term"
 
-// BuiltinThemes contains all 11 hardcoded themes
+// BuiltinThemes contains all 13 hardcoded themes
 var BuiltinThemes = map[string]*Theme{
 	"default":         defaultTheme(),
 	"dark":            darkTheme(),
@@ -15,6 +15,8 @@ var BuiltinThemes = map[string]*Theme{
 	"dracula":         draculaTheme(),
 	"nord":            nordTheme(),
 	"dos":             dosTheme(),
+	"ibm-green":       ibmGreenTheme(),
+	"ibm-amber":       ibmAmberTheme(),
 }
 
 // GetBuiltinTheme returns a built-in theme by name, or the default theme if not found
@@ -39,6 +41,8 @@ func ListBuiltinThemes() []string {
 		"dracula",
 		"nord",
 		"dos",
+		"ibm-green",
+		"ibm-amber",
 	}
 }
 
@@ -53,7 +57,7 @@ func defaultTheme() *Theme {
 			SelectionBg:   term.ColorDefault,
 			LineNumbersFg: term.ColorDefault,
 			LineNumbersBg: term.ColorDefault,
-			CursorColor:   term.ColorDefault,
+			CursorColor:   "#00FF00",
 		},
 		Search: SearchColors{
 			MatchFg:        term.ColorDefault,
@@ -731,6 +735,132 @@ func dosTheme() *Theme {
 			WarningBg: "#FFFF00",
 			ErrorFg:   "#FFFFFF",
 			ErrorBg:   "#AA0000",
+		},
+	}
+}
+
+// ibmGreenTheme - classic IBM green phosphor monitor colors
+func ibmGreenTheme() *Theme {
+	return &Theme{
+		Name: "ibm-green",
+		Editor: EditorColors{
+			Fg:            "#00FF00",
+			Bg:            "#000000",
+			SelectionFg:   "#000000",
+			SelectionBg:   "#00AA00",
+			LineNumbersFg: "#008800",
+			LineNumbersBg: "#000000",
+			CursorColor:   "#00FF00",
+		},
+		Search: SearchColors{
+			MatchFg:        "#000000",
+			MatchBg:        "#00FF00",
+			CurrentMatchFg: "#000000",
+			CurrentMatchBg: "#00DD00",
+		},
+		Status: StatusColors{
+			Fg:         "#00FF00",
+			Bg:         "#003300",
+			FilenameFg: "#00FF00",
+			ModifiedFg: "#00FF00",
+			PositionFg: "#00FF00",
+			ModeFg:     "#00DD00",
+			HelpFg:     "#00CC00",
+		},
+		Menu: MenuColors{
+			Fg:            "#00FF00",
+			Bg:            "#002200",
+			SelectedFg:    "#000000",
+			SelectedBg:    "#00AA00",
+			DropdownFg:    "#00FF00",
+			DropdownBg:    "#001100",
+			DropdownSelFg: "#000000",
+			DropdownSelBg: "#00AA00",
+			AcceleratorFg: "#008800",
+		},
+		Prompt: PromptColors{
+			Fg:      "#00FF00",
+			Bg:      "#003300",
+			LabelFg: "#00DD00",
+			InputFg: "#00FF00",
+		},
+		Help: HelpColors{
+			Fg:       "#00FF00",
+			Bg:       "#000000",
+			TitleFg:  "#000000",
+			TitleBg:  "#00AA00",
+			FooterFg: "#008800",
+		},
+		Msg: MessageColors{
+			InfoFg:    "#00FF00",
+			InfoBg:    "#003300",
+			WarningFg: "#00FF00",
+			WarningBg: "#005500",
+			ErrorFg:   "#00FF00",
+			ErrorBg:   "#006600",
+		},
+	}
+}
+
+// ibmAmberTheme - classic IBM amber phosphor monitor colors
+func ibmAmberTheme() *Theme {
+	return &Theme{
+		Name: "ibm-amber",
+		Editor: EditorColors{
+			Fg:            "#FFAA00",
+			Bg:            "#000000",
+			SelectionFg:   "#000000",
+			SelectionBg:   "#CC8800",
+			LineNumbersFg: "#AA7700",
+			LineNumbersBg: "#000000",
+			CursorColor:   "#FFAA00",
+		},
+		Search: SearchColors{
+			MatchFg:        "#000000",
+			MatchBg:        "#FFAA00",
+			CurrentMatchFg: "#000000",
+			CurrentMatchBg: "#DD9900",
+		},
+		Status: StatusColors{
+			Fg:         "#FFAA00",
+			Bg:         "#332200",
+			FilenameFg: "#FFAA00",
+			ModifiedFg: "#FFAA00",
+			PositionFg: "#FFAA00",
+			ModeFg:     "#FFCC00",
+			HelpFg:     "#DD9900",
+		},
+		Menu: MenuColors{
+			Fg:            "#FFAA00",
+			Bg:            "#221800",
+			SelectedFg:    "#000000",
+			SelectedBg:    "#CC8800",
+			DropdownFg:    "#FFAA00",
+			DropdownBg:    "#110C00",
+			DropdownSelFg: "#000000",
+			DropdownSelBg: "#CC8800",
+			AcceleratorFg: "#AA7700",
+		},
+		Prompt: PromptColors{
+			Fg:      "#FFAA00",
+			Bg:      "#332200",
+			LabelFg: "#FFCC00",
+			InputFg: "#FFAA00",
+		},
+		Help: HelpColors{
+			Fg:       "#FFAA00",
+			Bg:       "#000000",
+			TitleFg:  "#000000",
+			TitleBg:  "#CC8800",
+			FooterFg: "#AA7700",
+		},
+		Msg: MessageColors{
+			InfoFg:    "#FFAA00",
+			InfoBg:    "#332200",
+			WarningFg: "#FFAA00",
+			WarningBg: "#443300",
+			ErrorFg:   "#FFAA00",
+			ErrorBg:   "#554400",
 		},
 	}
 }

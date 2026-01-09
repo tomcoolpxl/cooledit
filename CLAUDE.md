@@ -60,7 +60,7 @@ internal/
 ### Implemented (Milestone 4 - Theme System)
 - ✅ Term.Style extended with Foreground/Background color fields
 - ✅ Theme package with comprehensive color element definitions
-- ✅ 11 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos
+- ✅ 13 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos, ibm-green, ibm-amber
 - ✅ Custom theme support from config file
 - ✅ All UI elements use theme colors (editor, menubar, status bar, prompt, help)
 - ✅ View menu with theme selection (checkmarks for current theme)
@@ -122,12 +122,15 @@ internal/
   - Toggle Word Wrap (checkmark when enabled)
   - Toggle Status Bar (checkmark when enabled)
   - **Separator line**
-  - CRLF status (readonly, shows current line ending: LF or CRLF)
-  - Encoding status (readonly, shows current file encoding)
+  - CRLF status (readonly display, shows current line ending: LF or CRLF)
+  - Encoding status (readonly display, shows current file encoding)
   - **Separator line**
   - Cursor shapes (block, underline, bar with checkmark for active shape)
   - **Separator line**
-  - Themes submenu (all available themes with checkmark for active theme)
+  - Themes submenu (all 13 available themes with checkmark for active theme)
+- Navigation via arrow keys or mouse (if enabled)
+- Menu items support: checkmarks (for toggles), separators (visual lines), and readonly items (informational display, no checkmarks)
+- **Smart navigation**: Up/Down arrows automatically skip separator lines
 - Navigation via arrow keys or mouse (if enabled)
 - Menu items support: checkmarks, separators (visual lines), and readonly items (informational only)
 
@@ -197,8 +200,12 @@ internal/
 - **Persistent**: Cursor shape preference saved to config file
 - **Menu access**: View → Cursor submenu (block, underline, bar with checkmarks)
 - **All three shapes supported**: Block (█), Underline (_), Bar (|)
+
+### Cursor Colors (Theme-based)
 - **Themed cursor colors**: Each theme defines a cursor color that contrasts well with the background
-- **Color support**: Terminal support varies - some terminals may not display custom cursor colors
+- **Default theme**: Green cursor (#00FF00) - classic terminal aesthetic
+- **IBM themes**: Authentic phosphor colors (green for ibm-green, amber for ibm-amber)
+- **Color support**: Terminal support varies - modern terminals (Windows Terminal, iTerm2, Alacritty, Kitty) generally support it
 - **Configuration**: Cursor colors can be customized in theme config using hex (#RRGGBB) or named colors
 
 ### Tab Handling
@@ -240,8 +247,8 @@ internal/
 ## Theme System (Implemented - Milestone 4)
 
 **Built-in Themes:**
-11 hardcoded themes that work out of the box without any configuration:
-1. `default` - Uses terminal defaults with inverse video (backward compatibility)
+13 hardcoded themes that work out of the box without any configuration:
+1. `default` - Uses terminal defaults with inverse video, green cursor (backward compatibility)
 2. `dark` - Dark background with light text (simple, high contrast)
 3. `light` - Light background with dark text (simple, high contrast)
 4. `monokai` - Popular dark theme with purple, pink, yellow, green accents
@@ -252,6 +259,8 @@ internal/
 9. `dracula` - Dark theme with purple accents and pink highlights
 10. `nord` - Arctic bluish dark theme inspired by northern lights
 11. `dos` - Classic DOS Edit colors (blue background, white/cyan text)
+12. `ibm-green` - Classic IBM green phosphor monitor (black background, green shades)
+13. `ibm-amber` - Classic IBM amber phosphor monitor (black background, amber/orange shades)
 
 **Custom Themes:**
 Users can define additional themes in config file using `[themes.custom_name]` sections.

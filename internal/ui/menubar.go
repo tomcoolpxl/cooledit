@@ -126,6 +126,8 @@ func (m *Menubar) buildThemeItems() []MenuItem {
 		"dracula",
 		"nord",
 		"dos",
+		"ibm-green",
+		"ibm-amber",
 	}
 
 	items := make([]MenuItem, len(themes))
@@ -188,13 +190,40 @@ func (m *Menubar) PrevMenu() {
 
 func (m *Menubar) NextItem() {
 	items := m.Menus[m.SelectedMenuIndex].Items
+	startIndex := m.SelectedItemIndex
+	
+	// Move to next item
 	m.SelectedItemIndex = (m.SelectedItemIndex + 1) % len(items)
+	
+	// Skip separators
+	for items[m.SelectedItemIndex].IsSeparator {
+		m.SelectedItemIndex = (m.SelectedItemIndex + 1) % len(items)
+		// Prevent infinite loop if all items are separators
+		if m.SelectedItemIndex == startIndex {
+			break
+		}
+	}
 }
 
 func (m *Menubar) PrevItem() {
 	items := m.Menus[m.SelectedMenuIndex].Items
+	startIndex := m.SelectedItemIndex
+	
+	// Move to previous item
 	m.SelectedItemIndex--
 	if m.SelectedItemIndex < 0 {
 		m.SelectedItemIndex = len(items) - 1
+	}
+	
+	// Skip separators
+	for items[m.SelectedItemIndex].IsSeparator {
+		m.SelectedItemIndex--
+		if m.SelectedItemIndex < 0 {
+			m.SelectedItemIndex = len(items) - 1
+		}
+		// Prevent infinite loop if all items are separators
+		if m.SelectedItemIndex == startIndex {
+			break
+		}
 	}
 }
