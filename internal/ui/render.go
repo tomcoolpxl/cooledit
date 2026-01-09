@@ -493,7 +493,7 @@ func (u *UI) drawStatusBar() {
 	if fs.EOL == "\r\n" {
 		eol = "CRLF"
 	}
-	
+
 	// Add replace mode indicator to right section
 	modeIndicator := ""
 	if !u.insertMode {
