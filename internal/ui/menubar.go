@@ -191,10 +191,10 @@ func (m *Menubar) PrevMenu() {
 func (m *Menubar) NextItem() {
 	items := m.Menus[m.SelectedMenuIndex].Items
 	startIndex := m.SelectedItemIndex
-	
+
 	// Move to next item
 	m.SelectedItemIndex = (m.SelectedItemIndex + 1) % len(items)
-	
+
 	// Skip separators
 	for items[m.SelectedItemIndex].IsSeparator {
 		m.SelectedItemIndex = (m.SelectedItemIndex + 1) % len(items)
@@ -208,13 +208,13 @@ func (m *Menubar) NextItem() {
 func (m *Menubar) PrevItem() {
 	items := m.Menus[m.SelectedMenuIndex].Items
 	startIndex := m.SelectedItemIndex
-	
+
 	// Move to previous item
 	m.SelectedItemIndex--
 	if m.SelectedItemIndex < 0 {
 		m.SelectedItemIndex = len(items) - 1
 	}
-	
+
 	// Skip separators
 	for items[m.SelectedItemIndex].IsSeparator {
 		m.SelectedItemIndex--
