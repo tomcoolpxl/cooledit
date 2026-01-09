@@ -83,7 +83,7 @@ internal/
 **Center** (priority 3): Mini-help with adaptive display:
   - `F1 Help` → `Esc/F10 Menu` → `Ctrl+Q Quit` → `Ctrl+S Save` → `Ctrl+F Find/Replace`
   - Shows as many items as fit, removes from right to left when space is limited
-**Right** (priority 1): `Ln X, Col Y  Encoding EOL` (cursor position and file status)
+**Right** (priority 1): `REPLACE  Ln X, Col Y  Encoding EOL` (replace mode indicator when active, cursor position and file status)
 
 ### Menubar (Auto-hidden by Default)
 - Toggle with F10 or Esc
@@ -140,6 +140,7 @@ internal/
 ### Insert/Replace Mode
 - **Insert mode by default** (block cursor)
 - Toggle with Insert key to replace/overwrite mode (underline cursor)
+- Replace mode shows **"REPLACE"** indicator in status bar
 - Replace mode overwrites characters instead of inserting
 - At end of line, behaves like insert mode
 - State not saved - always starts in insert mode
@@ -165,6 +166,7 @@ internal/
   - Toggle actions save config (TestToggleLineNumbersSavesConfig, TestToggleSoftWrapSavesConfig)
   - Soft wrap rendering (TestSoftWrapRendering, TestSoftWrapVsNoWrap)
   - Insert/Replace mode (TestInsertMode, TestReplaceMode, TestReplaceModeAtEndOfLine, TestInsertKeyToggle)
+  - Status bar replace indicator (TestStatusBarReplaceModeIndicator)
 
 ### EOL Format
 - Auto-detect (LF vs CRLF)

@@ -1226,3 +1226,66 @@ func TestInsertKeyToggle(t *testing.T) {
 		t.Error("Should be back in insert mode")
 	}
 }
+
+func TestStatusBarReplaceModeIndicator(t *testing.T) {
+	ui, screen := newTestUI(80, 24)
+	
+	// In insert mode, status bar should not show REPLACE
+	draw(ui)
+	
+	statusLine := ""
+	for x := 0; x < 80; x++ {
+		r := screen.Cell(x, 23)
+		if r != 0 {
+			statusLine += string(r)
+		}
+	}
+	
+	if contains(statusLine, "REPLACE") {
+		t.Error("Status bar should not show REPLACE in insert mode")
+	}
+	
+	// Toggle to replace mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyInsert})
+	draw(ui)
+	
+	statusLine = ""
+	for x := 0; x < 80; x++ {
+		r := screen.Cell(x, 23)
+		if r != 0 {
+			statusLine += string(r)
+		}
+	}
+	
+	if !contains(statusLine, "REPLACE") {
+		t.Error("Status bar should show REPLACE in replace mode")
+	}
+	
+	// Toggle back to insert mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyInsert})
+	draw(ui)
+	
+	statusLine = ""
+	for x := 0; x < 80; x++ {
+		r := screen.Cell(x, 23)
+		if r != 0 {
+			statusLine += string(r)
+		}
+	}
+	
+	if contains(statusLine, "REPLACE") {
+		t.Error("Status bar should not show REPLACE after toggling back to insert mode")
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && func() bool {
+		for i := 0; i <= len(s)-len(substr); i++ {
+			if s[i:i+len(substr)] == substr {
+				return true
+			}
+		}
+		return false
+	}()
+}
+

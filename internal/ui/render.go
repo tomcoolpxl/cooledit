@@ -493,7 +493,13 @@ func (u *UI) drawStatusBar() {
 	if fs.EOL == "\r\n" {
 		eol = "CRLF"
 	}
-	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
+	
+	// Add replace mode indicator to right section
+	modeIndicator := ""
+	if !u.insertMode {
+		modeIndicator = "REPLACE  "
+	}
+	right := fmt.Sprintf("%sLn %d, Col %d  %s %s", modeIndicator, cy+1, cx+1, fs.Encoding, eol)
 
 	// Priority 1: Draw Right (position and status)
 	startRight := rect.W - len(right)
