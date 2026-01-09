@@ -117,6 +117,13 @@ internal/
 ### Menubar (Auto-hidden by Default)
 - Toggle with F10 or Esc
 - Menus: File, Edit, Search, View, Help
+- **DOS-style keyboard shortcuts**: Press underlined letter to activate menu item
+  - File: **S**ave, Save **A**s, **Q**uit
+  - Edit: **U**ndo, **R**edo, Cu**t**, **C**opy, **P**aste, Select All (**G**rab All)
+  - Search: **F**ind/Replace, Find **N**ext, Find **P**rev
+  - Help: **K**eyboard Shortcuts
+  - View: No shortcuts (toggles use arrow keys/Enter)
+- **Automatic scrolling**: On small screens, menus scroll automatically with ↑/↓ indicators
 - View menu includes:
   - Toggle Line Numbers (checkmark when enabled)
   - Toggle Word Wrap (checkmark when enabled)
@@ -129,10 +136,8 @@ internal/
   - **Separator line**
   - Themes submenu (all 13 available themes with checkmark for active theme)
 - Navigation via arrow keys or mouse (if enabled)
-- Menu items support: checkmarks (for toggles), separators (visual lines), and readonly items (informational display, no checkmarks)
-- **Smart navigation**: Up/Down arrows automatically skip separator lines
-- Navigation via arrow keys or mouse (if enabled)
-- Menu items support: checkmarks, separators (visual lines), and readonly items (informational only)
+- Menu items support: checkmarks (for toggles only), separators (visual lines), and readonly items (informational display, no checkmarks)
+- **Smart navigation**: Up/Down arrows automatically skip separator lines and readonly items
 
 ### Command-Line Flags
 - `-mouse` - Enable mouse support (click to position cursor, scroll)
@@ -172,6 +177,7 @@ internal/
 
 ### Help Screen (F1)
 - **Adaptive layout**: Two columns on wide terminals (≥80 chars), single column on narrow
+- **Dynamic column width**: Calculates optimal column width to prevent overlap
 - **Smart truncation**: Shows "(scroll down for more)" when content doesn't fit
 - **Organized sections**: Menu & Help, File, Edit, Search, Navigation
 - **Clean design**: Simple indentation, highlighted section headers, no box-drawing characters
@@ -207,6 +213,14 @@ internal/
 - **IBM themes**: Authentic phosphor colors (green for ibm-green, amber for ibm-amber)
 - **Color support**: Terminal support varies - modern terminals (Windows Terminal, iTerm2, Alacritty, Kitty) generally support it
 - **Configuration**: Cursor colors can be customized in theme config using hex (#RRGGBB) or named colors
+- **Terminal state preservation**: Original terminal cursor color is saved on startup and restored on exit
+
+### Secret Features
+- **Vim command mode**: Press `:` while in menu mode (F10/Esc) to enter vim command mode
+  - Supported commands: `:w` (save), `:w!` (force save), `:q` (quit), `:q!` (force quit), `:wq` (save and quit)
+  - Command shown in status bar while typing
+  - Press Enter to execute, Esc to cancel, Backspace to delete characters
+  - Not documented in F1 help screen by design (easter egg for vim users)
 
 ### Tab Handling
 - **Tab key inserts spaces** (not literal `\t` characters)
@@ -238,6 +252,27 @@ internal/
   - Soft wrap rendering (TestSoftWrapRendering, TestSoftWrapVsNoWrap)
   - Insert/Replace mode (TestInsertMode, TestReplaceMode, TestReplaceModeAtEndOfLine, TestInsertKeyToggle)
   - Status bar replace indicator (TestStatusBarReplaceModeIndicator)
+  - Menu navigation and rendering (including menu scrolling on small screens)
+
+### Technical Details
+
+**Style System**:
+- All text rendering uses `term.Style` struct with foreground, background, and **underline** attributes
+- Underline support added for menu shortcut keys (DOS-style visual cue)
+- tcell backend implements underline via `.Underline(true)` method
+
+**Menu System Implementation**:
+- `MenuItem` struct includes `ShortcutKey rune` field for keyboard shortcuts
+- `Menubar` struct includes `ScrollOffset int` for automatic menu scrolling
+- Shortcut keys work case-insensitively (both lowercase and uppercase)
+- Scroll offset resets to 0 when switching between menus
+- `adjustMenuScroll()` ensures selected item is always visible on screen
+- Visual indicators (↑/↓) show when menu content extends beyond visible area
+
+**Terminal Backend**:
+- `SetCursorShape()` accepts both shape (block/underline/bar) and color parameters
+- Original terminal cursor style saved during initialization, restored on exit
+- tcell v2 provides cursor style control via `SetCursorStyle(tcell.CursorStyleXX, color)`
 
 ### EOL Format
 - Auto-detect (LF vs CRLF)
@@ -353,8 +388,8 @@ title_bg = "default"
 - Invalid or conflicting bindings fall back to defaults with warning
 
 **Theme System (Implemented):**
-- 11 built-in themes (hardcoded, no external dependencies required):
-  1. `default` - Terminal defaults with inverse video (backward compatibility)
+- 13 built-in themes (hardcoded, no external dependencies required):
+  1. `default` - Terminal defaults with inverse video, green cursor (backward compatibility)
   2. `dark` - Classic dark background with light text
   3. `light` - Classic light background with dark text
   4. `monokai` - Popular dark theme with vibrant colors
@@ -365,6 +400,8 @@ title_bg = "default"
   9. `dracula` - Dark theme with purple accents
   10. `nord` - Arctic, bluish dark theme
   11. `dos` - Classic DOS Edit colors (blue background, white/cyan text)
+  12. `ibm-green` - Classic IBM green phosphor monitor (black background, green shades)
+  13. `ibm-amber` - Classic IBM amber phosphor monitor (black background, amber/orange shades)
 - Custom themes can be defined in `[themes.custom_name]` sections of config file
 - Built-in themes always available without config file
 - View menu includes theme menu items with checkmarks showing current theme
@@ -373,8 +410,7 @@ title_bg = "default"
 - Color formats: named colors (e.g., "red", "blue"), hex `#RRGGBB`, or `"default"` for terminal default
 - Automatic graceful degradation for terminals with limited color support (tcell handles this automatically)
 - Active theme selected via `ui.theme` config value
-- Menu backgrounds fixed to be distinct from editor backgrounds for better visibility
-- TODO: CLI flag `--config <path>` to override config file location (planned)
+- Menu backgrounds fixed to be distinct from editor backgrounds for better visibility (6 themes updated)
 
 **Behavior:**
 - Config file created automatically on first toggle action or theme switch
@@ -405,16 +441,22 @@ Project is fully functional with all core features complete:
 - ✅ Non-overlapping search (proper match advancement)
 - ✅ Replace All starts from beginning of file
 - ✅ Priority-based status bar with adaptive centered mini-help
-- ✅ Adaptive help screen with two-column layout for wide terminals
+- ✅ Adaptive help screen with two-column layout and dynamic column widths
 - ✅ Message bar persistence during find/replace operations
 - ✅ Configuration system with TOML persistence
 - ✅ Toggle settings auto-save to config file
 - ✅ Soft wrap rendering with proper line wrapping and cursor positioning
-- ✅ Insert/Replace mode with Insert key toggle and cursor shape indicators
-- ✅ Comprehensive test coverage (120+ tests, all passing)
+- ✅ Insert/Replace mode with Insert key toggle and smart cursor shape alternation
+- ✅ Configurable cursor shapes (block, underline, bar) with theme-based colors
+- ✅ 13 built-in themes including retro IBM phosphor themes
+- ✅ DOS-style menu shortcuts with underlined letters
+- ✅ Automatic menu scrolling for small screens
+- ✅ Secret vim command mode (`:w`, `:q`, `:wq`, etc.)
+- ✅ Terminal cursor state preservation
+- ✅ Comprehensive test coverage (102+ tests, all passing)
 
 Focus areas:
-- Keybinding customization
+- Additional features as requested
 
 ## When Working on This Project
 
@@ -427,4 +469,4 @@ Focus areas:
 
 ---
 
-Last Updated: January 9, 2026
+Last Updated: January 2025

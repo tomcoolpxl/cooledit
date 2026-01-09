@@ -28,6 +28,7 @@ type Menubar struct {
 	Active            bool // If true, we are navigating the menu
 	SelectedMenuIndex int
 	SelectedItemIndex int
+	ScrollOffset      int  // Vertical scroll offset for current menu
 }
 
 func NewMenubar() *Menubar {

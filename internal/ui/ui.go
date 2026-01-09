@@ -208,10 +208,10 @@ func (u *UI) Run() error {
 				}
 			}
 
-		case term.MouseEvent:
-			u.handleMouseEvent(e)
-		}
+	case term.MouseEvent:
+		u.handleMouseEvent(e)
 	}
+}
 }
 
 func (u *UI) toggleMenuFocus() {
@@ -243,9 +243,11 @@ func (u *UI) handleMenuKey(e term.KeyEvent) bool {
 		return true
 	case term.KeyUp:
 		u.menubar.PrevItem()
+		u.adjustMenuScroll()
 		return true
 	case term.KeyDown:
 		u.menubar.NextItem()
+		u.adjustMenuScroll()
 		return true
 	case term.KeyEnter:
 		u.executeMenuItem()
@@ -293,6 +295,27 @@ func (u *UI) executeMenuItem() {
 		if res.Message != "" {
 			u.enterMessage(res.Message)
 		}
+	}
+}
+
+func (u *UI) adjustMenuScroll() {
+	// Ensure selected item is visible within scroll window
+	availableHeight := u.layout.Height - 1 // menubar at top
+	if availableHeight < 1 {
+		availableHeight = 1
+	}
+
+	selectedIdx := u.menubar.SelectedItemIndex
+	scrollOffset := u.menubar.ScrollOffset
+
+	// If selected item is above visible area, scroll up
+	if selectedIdx < scrollOffset {
+		u.menubar.ScrollOffset = selectedIdx
+	}
+
+	// If selected item is below visible area, scroll down
+	if selectedIdx >= scrollOffset+availableHeight {
+		u.menubar.ScrollOffset = selectedIdx - availableHeight + 1
 	}
 }
 

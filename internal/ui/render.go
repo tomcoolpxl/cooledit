@@ -126,11 +126,29 @@ func (u *UI) drawMenuDropdown() {
 		startX = u.layout.Width - width
 	}
 
+	// Calculate available height for menu
+	availableHeight := u.layout.Height - startY
+	if availableHeight < 1 {
+		availableHeight = 1
+	}
+
+	// Determine visible range based on scroll offset
+	scrollOffset := u.menubar.ScrollOffset
+	visibleEnd := scrollOffset + availableHeight
+	if visibleEnd > len(items) {
+		visibleEnd = len(items)
+	}
+
+	canScrollUp := scrollOffset > 0
+	canScrollDown := visibleEnd < len(items)
+
 	style := u.getDropdownStyle()
 	styleSelected := u.getDropdownSelectedStyle()
 
-	for i, item := range items {
-		y := startY + i
+	// Draw visible items
+	for i := scrollOffset; i < visibleEnd; i++ {
+		item := items[i]
+		y := startY + (i - scrollOffset)
 		if y >= u.layout.Height {
 			break
 		}
@@ -157,6 +175,15 @@ func (u *UI) drawMenuDropdown() {
 			u.screen.SetCell(startX+x, y, ' ', s)
 		}
 
+		// Show scroll indicator on first/last line if needed
+		if (i == scrollOffset && canScrollUp) || (i == visibleEnd-1 && canScrollDown) {
+			indicator := '↑'
+			if i == visibleEnd-1 && canScrollDown {
+				indicator = '↓'
+			}
+			u.screen.SetCell(startX+width-1, y, indicator, s)
+		}
+
 		// Draw checkmark if item is checkable and checked (but not readonly)
 		checkmark := ' '
 		labelOffset := 1
@@ -170,18 +197,18 @@ func (u *UI) drawMenuDropdown() {
 		if item.IsReadOnly && item.GetValue != nil {
 			label = item.Label + ": " + item.GetValue(u)
 		}
-		
+
 		// Find position of shortcut key to underline it
 		shortcutPos := -1
 		if item.ShortcutKey != 0 {
-			for i, r := range label {
+			for j, r := range label {
 				if r == item.ShortcutKey || r == item.ShortcutKey-32 { // case insensitive
-					shortcutPos = i
+					shortcutPos = j
 					break
 				}
 			}
 		}
-		
+
 		for j, r := range label {
 			if labelOffset+j < width {
 				styleToUse := s
