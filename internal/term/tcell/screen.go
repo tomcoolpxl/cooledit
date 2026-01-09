@@ -1,6 +1,8 @@
 package tcell
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 
 	"cooledit/internal/term"
@@ -89,10 +91,58 @@ func (s *Screen) PushEvent(ev term.Event) {
 
 func (s *Screen) SetCell(x, y int, ch rune, st term.Style) {
 	style := tcell.StyleDefault
+	
+	// Apply colors if not using inverse mode
 	if st.Inverse {
+		// Legacy inverse mode - use reverse video
 		style = style.Reverse(true)
+	} else {
+		// Apply foreground color
+		if st.Foreground != "" && st.Foreground != term.ColorDefault {
+			style = style.Foreground(parseColor(st.Foreground))
+		}
+		// Apply background color
+		if st.Background != "" && st.Background != term.ColorDefault {
+			style = style.Background(parseColor(st.Background))
+		}
 	}
+	
 	s.screen.SetContent(x, y, ch, nil, style)
+}
+
+// parseColor converts our Color type to tcell.Color
+func parseColor(c term.Color) tcell.Color {
+	s := string(c)
+	
+	// Handle hex colors (#RRGGBB)
+	if strings.HasPrefix(s, "#") && len(s) == 7 {
+		return tcell.GetColor(s)
+	}
+	
+	// Handle named colors
+	switch c {
+	case term.ColorDefault:
+		return tcell.ColorDefault
+	case term.ColorBlack:
+		return tcell.ColorBlack
+	case term.ColorRed:
+		return tcell.ColorRed
+	case term.ColorGreen:
+		return tcell.ColorGreen
+	case term.ColorYellow:
+		return tcell.ColorYellow
+	case term.ColorBlue:
+		return tcell.ColorBlue
+	case term.ColorMagenta:
+		return tcell.ColorPurple
+	case term.ColorCyan:
+		return tcell.ColorTeal
+	case term.ColorWhite:
+		return tcell.ColorWhite
+	default:
+		// Try to parse as hex or tcell color name
+		return tcell.GetColor(s)
+	}
 }
 
 func (s *Screen) Show() {

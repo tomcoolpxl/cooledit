@@ -6,7 +6,10 @@ type MenuItem struct {
 	Label       string
 	Accelerator string // e.g. "Ctrl+S"
 	Command     core.Command
-	Action      func(*UI) // Special actions like "Quit" or "Toggle"
+	Action      func(*UI)   // Special actions like "Quit" or "Toggle"
+	Submenu     []MenuItem  // Submenu items (e.g., for Themes)
+	IsCheckable bool        // If true, item can be checked
+	IsChecked   func(*UI) bool // Function to determine if checked
 }
 
 type Menu struct {
@@ -35,6 +38,8 @@ func NewMenubar() *Menubar {
 }
 
 func (m *Menubar) initDefaults() {
+	themeItems := m.buildThemeItems()
+	
 	m.Menus = []Menu{
 		{
 			Title: "File",
@@ -65,7 +70,7 @@ func (m *Menubar) initDefaults() {
 		},
 		{
 			Title: "View",
-			Items: []MenuItem{
+			Items: append([]MenuItem{
 				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", Action: func(u *UI) {
 					u.showLineNumbers = !u.showLineNumbers
 					u.saveConfig()
@@ -74,7 +79,7 @@ func (m *Menubar) initDefaults() {
 					u.softWrap = !u.softWrap
 					u.saveConfig()
 				}},
-			},
+			}, themeItems...),
 		},
 		{
 			Title: "Help",
@@ -83,6 +88,40 @@ func (m *Menubar) initDefaults() {
 			},
 		},
 	}
+}
+
+// buildThemeItems creates menu items for all available themes
+func (m *Menubar) buildThemeItems() []MenuItem {
+	themes := []string{
+		"default",
+		"dark",
+		"light",
+		"monokai",
+		"solarized-dark",
+		"solarized-light",
+		"gruvbox-dark",
+		"gruvbox-light",
+		"dracula",
+		"nord",
+	}
+
+	items := make([]MenuItem, len(themes))
+	for i, themeName := range themes {
+		// Capture themeName in closure
+		name := themeName
+		items[i] = MenuItem{
+			Label:       "Theme: " + name,
+			Accelerator: "",
+			IsCheckable: true,
+			IsChecked: func(u *UI) bool {
+				return u.GetCurrentThemeName() == name
+			},
+			Action: func(u *UI) {
+				u.SwitchTheme(name)
+			},
+		}
+	}
+	return items
 }
 
 // Navigation methods

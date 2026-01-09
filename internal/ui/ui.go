@@ -6,6 +6,7 @@ import (
 	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/term"
+	"cooledit/internal/theme"
 )
 
 type UIMode int
@@ -63,6 +64,9 @@ type UI struct {
 	showLineNumbers bool
 	softWrap        bool
 
+	// Theme
+	theme *theme.Theme
+
 	// Configuration
 	config *config.Config
 }
@@ -76,6 +80,7 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		showMenubar: false,
 		insertMode:  true, // Always start in insert mode
 		config:      cfg,
+		theme:       cfg.GetCurrentTheme(),
 	}
 }
 
@@ -551,4 +556,32 @@ func (u *UI) enterMessage(msg string) {
 		// Push a redraw event to trigger screen update
 		u.screen.PushEvent(term.RedrawEvent{})
 	})
+}
+
+// SwitchTheme changes the current theme and saves the config
+func (u *UI) SwitchTheme(themeName string) {
+	// Load the new theme
+	newTheme := u.config.GetTheme(themeName)
+	if newTheme == nil {
+		u.enterMessage("Theme not found: " + themeName)
+		return
+	}
+
+	// Update the theme
+	u.theme = newTheme
+	u.config.UI.Theme = themeName
+
+	// Save the config
+	if err := config.Save(u.config); err != nil {
+		u.enterMessage("Failed to save config: " + err.Error())
+		return
+	}
+
+	u.enterMessage("Theme changed to: " + themeName)
+	u.screen.PushEvent(term.RedrawEvent{})
+}
+
+// GetCurrentThemeName returns the name of the current theme
+func (u *UI) GetCurrentThemeName() string {
+	return u.config.UI.Theme
 }

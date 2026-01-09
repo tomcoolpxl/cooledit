@@ -46,8 +46,24 @@ const (
 	ModShift
 )
 
+type Color string
+
+const (
+	ColorDefault Color = "default"
+	ColorBlack   Color = "black"
+	ColorRed     Color = "red"
+	ColorGreen   Color = "green"
+	ColorYellow  Color = "yellow"
+	ColorBlue    Color = "blue"
+	ColorMagenta Color = "magenta"
+	ColorCyan    Color = "cyan"
+	ColorWhite   Color = "white"
+)
+
 type Style struct {
-	Inverse bool
+	Foreground Color
+	Background Color
+	Inverse    bool // Legacy support, overrides colors when true
 }
 
 type CursorShape int

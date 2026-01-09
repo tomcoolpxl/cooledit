@@ -46,11 +46,12 @@ func (u *UI) draw() {
 
 func (u *UI) drawSmallScreenWarning(w, h int) {
 	msg := "Screen too small"
+	style := u.getStatusStyle()
 	for x, r := range msg {
 		if x >= w {
 			break
 		}
-		u.screen.SetCell(x, 0, r, term.Style{Inverse: true})
+		u.screen.SetCell(x, 0, r, style)
 	}
 }
 
@@ -60,8 +61,8 @@ func (u *UI) drawMenubar() {
 		return
 	}
 
-	style := term.Style{Inverse: true}
-	styleSelected := term.Style{Inverse: false}
+	style := u.getMenuStyle()
+	styleSelected := u.getMenuSelectedStyle()
 
 	// Fill background
 	for x := 0; x < rect.W; x++ {
@@ -123,8 +124,8 @@ func (u *UI) drawMenuDropdown() {
 		startX = u.layout.Width - width
 	}
 
-	style := term.Style{Inverse: true}
-	styleSelected := term.Style{Inverse: false}
+	style := u.getDropdownStyle()
+	styleSelected := u.getDropdownSelectedStyle()
 
 	for i, item := range items {
 		y := startY + i
@@ -142,10 +143,18 @@ func (u *UI) drawMenuDropdown() {
 			u.screen.SetCell(startX+x, y, ' ', s)
 		}
 
+		// Draw checkmark if item is checkable and checked
+		checkmark := ' '
+		labelOffset := 1
+		if item.IsCheckable && item.IsChecked != nil && item.IsChecked(u) {
+			checkmark = '✓'
+			u.screen.SetCell(startX, y, checkmark, s)
+		}
+
 		// Draw Label
 		for j, r := range item.Label {
-			if j < width {
-				u.screen.SetCell(startX+1+j, y, r, s)
+			if labelOffset+j < width {
+				u.screen.SetCell(startX+labelOffset+j, y, r, s)
 			}
 		}
 
@@ -199,22 +208,23 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 		docY := vp.TopLine + sy
 
 		// Draw Gutter
+		gutterStyle := u.getLineNumberStyle()
 		if u.showLineNumbers {
 			if docY < len(lines) {
 				numStr := fmt.Sprintf("%d", docY+1) // 1-based
 				// Right align
 				padding := gutterWidth - len(numStr) - 1
 				for i := 0; i < padding; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
 				}
 				for i, r := range numStr {
-					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, term.Style{})
+					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, gutterStyle)
 				}
-				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', term.Style{})
+				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', gutterStyle)
 			} else {
 				// Empty gutter
 				for i := 0; i < gutterWidth; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
 				}
 			}
 		}
@@ -230,6 +240,9 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 		}
 
 		drawX := vpRect.X + gutterWidth
+		
+		editorStyle := u.getEditorStyle()
+		selectionStyle := u.getSelectionStyle()
 
 		for sx := 0; sx < availW; sx++ {
 			docX := start + sx
@@ -253,15 +266,15 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 				}
 			}
 
-			style := term.Style{}
+			style := editorStyle
 			if isSelected {
-				style.Inverse = true
+				style = selectionStyle
 			}
 
 			if docX >= len(line) {
 				// Past end of line - highlight newline if selected
 				if hasSelection && docY >= sl && docY < el {
-					u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+					u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', selectionStyle)
 				}
 				break
 			}
@@ -276,7 +289,7 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 		if lineLen >= vp.LeftCol && lineLen < vp.LeftCol+availW {
 			sx := lineLen - vp.LeftCol
 			if hasSelection && docY >= sl && docY < el {
-				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', selectionStyle)
 			}
 		}
 	}
@@ -330,6 +343,10 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	}
 
 	// Draw wrapped lines starting from vp.TopLine
+	gutterStyle := u.getLineNumberStyle()
+	editorStyle := u.getEditorStyle()
+	selectionStyle := u.getSelectionStyle()
+	
 	for sy := 0; sy < vpRect.H; sy++ {
 		wrappedIdx := vp.TopLine + sy
 
@@ -349,16 +366,16 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				numStr := fmt.Sprintf("%d", lineNum+1) // 1-based
 				padding := gutterWidth - len(numStr) - 1
 				for i := 0; i < padding; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
 				}
 				for i, r := range numStr {
-					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, term.Style{})
+					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, gutterStyle)
 				}
-				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', term.Style{})
+				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', gutterStyle)
 			} else {
 				// Empty gutter
 				for i := 0; i < gutterWidth; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
 				}
 			}
 		}
@@ -398,9 +415,9 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				}
 			}
 
-			style := term.Style{}
+			style := editorStyle
 			if isSelected {
-				style.Inverse = true
+				style = selectionStyle
 			}
 
 			u.screen.SetCell(drawX+sx, vpRect.Y+sy, r, style)
@@ -412,7 +429,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 			if hasSelection && wLine.lineNum >= sl && wLine.lineNum < el {
 				endX := len(wLine.content)
 				if endX < availW {
-					u.screen.SetCell(drawX+endX, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+					u.screen.SetCell(drawX+endX, vpRect.Y+sy, ' ', selectionStyle)
 				}
 			}
 		}
@@ -466,7 +483,7 @@ func (u *UI) drawStatusBar() {
 		return
 	}
 
-	style := term.Style{Inverse: true}
+	style := u.getStatusStyle()
 
 	// Background
 	for x := 0; x < rect.W; x++ {
@@ -599,7 +616,7 @@ func (u *UI) drawPrompt() {
 		return
 	}
 
-	style := term.Style{Inverse: true} // Maybe different style for prompt?
+	style := u.getPromptStyle()
 
 	// Clear prompt area
 	for x := 0; x < rect.W; x++ {
@@ -678,8 +695,8 @@ func (u *UI) drawHelp(w, h int) {
 
 	footer := "  Press any key to close"
 
-	style := term.Style{}
-	titleStyle := term.Style{Inverse: true}
+	style := u.getHelpStyle()
+	titleStyle := u.getHelpTitleStyle()
 
 	// Determine if we can use two columns (need at least 80 width)
 	useTwoColumns := w >= 80
@@ -774,9 +791,93 @@ func (u *UI) drawHelp(w, h int) {
 
 func (u *UI) clear() {
 	w, h := u.layout.Width, u.layout.Height
+	bgStyle := u.getEditorStyle()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			u.screen.SetCell(x, y, ' ', term.Style{})
+			u.screen.SetCell(x, y, ' ', bgStyle)
 		}
 	}
 }
+
+// Theme style helpers - use inverse mode for "default" theme, colors for others
+func (u *UI) isDefaultTheme() bool {
+	return u.theme.Name == "default"
+}
+
+func (u *UI) getEditorStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+	}
+	return term.Style{Foreground: u.theme.Editor.Fg, Background: u.theme.Editor.Bg}
+}
+
+func (u *UI) getSelectionStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Inverse: true}
+	}
+	return term.Style{Foreground: u.theme.Editor.SelectionFg, Background: u.theme.Editor.SelectionBg}
+}
+
+func (u *UI) getLineNumberStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+	}
+	return term.Style{Foreground: u.theme.Editor.LineNumbersFg, Background: u.theme.Editor.LineNumbersBg}
+}
+
+func (u *UI) getStatusStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Inverse: true}
+	}
+	return term.Style{Foreground: u.theme.Status.Fg, Background: u.theme.Status.Bg}
+}
+
+func (u *UI) getMenuStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Inverse: true}
+	}
+	return term.Style{Foreground: u.theme.Menu.Fg, Background: u.theme.Menu.Bg}
+}
+
+func (u *UI) getMenuSelectedStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+	}
+	return term.Style{Foreground: u.theme.Menu.SelectedFg, Background: u.theme.Menu.SelectedBg}
+}
+
+func (u *UI) getDropdownStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Inverse: true}
+	}
+	return term.Style{Foreground: u.theme.Menu.DropdownFg, Background: u.theme.Menu.DropdownBg}
+}
+
+func (u *UI) getDropdownSelectedStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+	}
+	return term.Style{Foreground: u.theme.Menu.DropdownSelFg, Background: u.theme.Menu.DropdownSelBg}
+}
+
+func (u *UI) getPromptStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Inverse: true}
+	}
+	return term.Style{Foreground: u.theme.Prompt.Fg, Background: u.theme.Prompt.Bg}
+}
+
+func (u *UI) getHelpStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+	}
+	return term.Style{Foreground: u.theme.Help.Fg, Background: u.theme.Help.Bg}
+}
+
+func (u *UI) getHelpTitleStyle() term.Style {
+	if u.isDefaultTheme() {
+		return term.Style{Inverse: true}
+	}
+	return term.Style{Foreground: u.theme.Help.TitleFg, Background: u.theme.Help.TitleBg}
+}
+

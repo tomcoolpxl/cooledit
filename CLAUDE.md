@@ -56,9 +56,20 @@ internal/
 - ✅ Soft wrap implementation with adaptive line wrapping
 - ✅ Insert/Replace mode toggle with Insert key and cursor shape indicators
 
-### Planned (Milestone 4)
-- ⏳ Theme/Color system with 10 built-in themes + custom themes from config
-- ⏳ UI menu (View → Themes) to switch themes interactively
+### Implemented (Milestone 4 - Theme System)
+- ✅ Term.Style extended with Foreground/Background color fields
+- ✅ Theme package with comprehensive color element definitions
+- ✅ 10 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord
+- ✅ Custom theme support from config file
+- ✅ All UI elements use theme colors (editor, menubar, status bar, prompt, help)
+- ✅ View menu with theme selection (checkmarks for current theme)
+- ✅ Interactive theme switching with auto-save to config
+- ✅ Graceful terminal capability detection via tcell (true color → 256 → 16 → monochrome)
+- ✅ Backward compatibility with "default" theme using inverse video
+
+### Planned (Milestone 4 Remaining)
+- ⏳ Add --config CLI flag for alternate config file location
+- ⏳ Add tests for theme system (ParseColor, theme loading, switching)
 
 ### Future/Optional
 - Keybinding customization (config-file-only, no UI)
@@ -279,15 +290,15 @@ title_fg = "default"
 title_bg = "default"
 ```
 
-**Keybinding Customization (Planned):**
+**Keybinding Customization (Future/Optional):**
 - Custom keybindings defined in `[keybindings]` section
 - No UI for editing keybindings - config file only
 - Users edit config.toml manually to customize shortcuts
 - Invalid or conflicting bindings fall back to defaults with warning
 
-**Theme System (Planned):**
+**Theme System (Implemented):**
 - 10 built-in themes (hardcoded, no external dependencies required):
-  1. `default` - Terminal defaults with inverse video (current behavior)
+  1. `default` - Terminal defaults with inverse video (backward compatibility)
   2. `dark` - Classic dark background with light text
   3. `light` - Classic light background with dark text
   4. `monokai` - Popular dark theme with vibrant colors
@@ -299,18 +310,18 @@ title_bg = "default"
   10. `nord` - Arctic, bluish dark theme
 - Custom themes can be defined in `[themes.custom_name]` sections of config file
 - Built-in themes always available without config file
-- UI menu support: View → Themes submenu to switch themes interactively
+- View menu includes theme menu items with checkmarks showing current theme
 - Theme selection automatically saved to config
 - Each theme element has `fg` (foreground) and `bg` (background) colors
-- Color formats: named colors, hex `#RRGGBB`, or `"default"` for terminal default
-- Automatic graceful degradation for terminals with limited color support (tcell handles this)
+- Color formats: named colors (e.g., "red", "blue"), hex `#RRGGBB`, or `"default"` for terminal default
+- Automatic graceful degradation for terminals with limited color support (tcell handles this automatically)
 - Active theme selected via `ui.theme` config value
-- CLI flag: `--config <path>` to override config file location
+- TODO: CLI flag `--config <path>` to override config file location (planned)
 
 **Behavior:**
-- Config file created automatically on first toggle action
+- Config file created automatically on first toggle action or theme switch
 - CLI flags override config values
-- Toggle actions (Ctrl+L, Ctrl+W) automatically save config
+- Toggle actions (Ctrl+L, Ctrl+W) and theme switches automatically save config
 - Missing config file or fields use sensible defaults
 
 ## Non-Goals
