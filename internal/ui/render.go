@@ -34,6 +34,12 @@ func (u *UI) draw() {
 		return
 	}
 
+	if u.mode == ModeAbout {
+		u.drawAbout(w, h)
+		u.screen.Show()
+		return
+	}
+
 	u.drawMenubar()
 	u.drawViewport()
 	u.drawStatusBar()
@@ -883,6 +889,58 @@ func (u *UI) drawHelp(w, h int) {
 					u.screen.SetCell(startX+i, h-1, r, titleStyle)
 				}
 			}
+		}
+	}
+}
+
+func (u *UI) drawAbout(w, h int) {
+	lines := []string{
+		"",
+		"  CoolEdit",
+		"",
+		"  A terminal text editor",
+		"",
+		"  Author: Tom Cool",
+		"  License: GPL-3.0",
+		"",
+		"  https://github.com/tomcoolpxl/cooledit",
+		"",
+		"",
+		"  Press any key to close",
+	}
+
+	style := u.getHelpStyle()
+	titleStyle := u.getHelpTitleStyle()
+
+	// Center vertically if space allows
+	startY := 0
+	if h > len(lines) {
+		startY = (h - len(lines)) / 2
+	}
+
+	for i, line := range lines {
+		y := startY + i
+		if y >= h {
+			break
+		}
+
+		s := style
+		// Title line uses title style
+		if i == 1 {
+			s = titleStyle
+		}
+
+		// Center horizontally
+		startX := 0
+		if w > len(line) {
+			startX = (w - len(line)) / 2
+		}
+
+		for x, r := range line {
+			if startX+x >= w {
+				break
+			}
+			u.screen.SetCell(startX+x, y, r, s)
 		}
 	}
 }

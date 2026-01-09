@@ -109,6 +109,7 @@ func (m *Menubar) initDefaults() {
 			Title: "Help",
 			Items: []MenuItem{
 				{Label: "Keyboard Shortcuts", Accelerator: "F1", ShortcutKey: 'k', Action: func(u *UI) { u.mode = ModeHelp }},
+				{Label: "About", ShortcutKey: 'a', Action: func(u *UI) { u.mode = ModeAbout }},
 			},
 		},
 	}

@@ -16,6 +16,7 @@ const (
 	ModeMessage
 	ModePrompt
 	ModeHelp
+	ModeAbout
 	ModeMenu
 	ModeFindReplace
 	ModeVimCommand
@@ -154,6 +155,11 @@ func (u *UI) Run() error {
 
 		case term.KeyEvent:
 			if u.mode == ModeHelp {
+				u.mode = ModeNormal
+				continue
+			}
+
+			if u.mode == ModeAbout {
 				u.mode = ModeNormal
 				continue
 			}
