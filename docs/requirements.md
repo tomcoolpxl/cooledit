@@ -194,6 +194,8 @@ Menus to include:
 
 * Store user preferences (key mappings, line numbers, menubar visibility).
 * Load on startup.
+* **Keybinding customization**: Config-file-only (no UI for editing keybindings).
+* Users manually edit config file to customize keyboard shortcuts.
 
 **7.2 Default Behavior**
 

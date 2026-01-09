@@ -57,7 +57,7 @@ internal/
 - ✅ Insert/Replace mode toggle with Insert key and cursor shape indicators
 
 ### Planned (Milestone 4)
-- ⏳ Keybinding customization
+- ⏳ Keybinding customization (config-file-only, no UI)
 
 ## Important Keyboard Shortcuts
 
@@ -193,6 +193,12 @@ mouse_enabled = false # Enable mouse support
 [search]
 case_sensitive = true # Case-sensitive search by default
 ```
+
+**Keybinding Customization (Planned):**
+- Custom keybindings defined in `[keybindings]` section
+- No UI for editing keybindings - config file only
+- Users edit config.toml manually to customize shortcuts
+- Invalid or conflicting bindings fall back to defaults with warning
 
 **Behavior:**
 - Config file created automatically on first toggle action

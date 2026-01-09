@@ -169,7 +169,7 @@ cooledit/
       menubar.go          // Menubar data model
       clipboard.go        // Clipboard implementation
       prompt.go           // Prompt handling logic
-      keymap/             // (Planned)
+      keymap/             // (Planned - config-file-only, no UI)
 
     term/
       backend.go          // Screen interface
