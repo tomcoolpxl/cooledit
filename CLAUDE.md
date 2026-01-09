@@ -226,10 +226,15 @@ internal/
 - **Tab key inserts spaces** (not literal `\t` characters)
 - **Configurable tab width** (default: 4 spaces, set via `tab_width` in config)
 - **Smart indentation**: Tab moves cursor to next tab stop (e.g., column 4, 8, 12...)
-- **Smart backspace**: In leading spaces-only whitespace at a tab stop boundary, backspace removes one full indentation unit; otherwise deletes single character
+- **Simple backspace**: Backspace always deletes one character at a time (space, tab, or any character) - no smart deletion
 - **Literal tabs**: Press `Ctrl+Tab` to insert a raw `\t` character
 - **Rendering**: Literal tab characters render with proper width via tcell
-- **Undo/Redo**: Tab insertion and smart backspace are atomic operations
+- **Undo/Redo**: Tab insertion is an atomic operation
+
+### Enter Key Behavior
+- **Enter creates new line**: Splits current line at cursor position
+- **No auto-indent**: Does NOT copy indentation from previous line (unlike nano/vim)
+- **Simple behavior**: Just inserts newline - use Tab to manually indent if needed
 - **Rendering**: Literal tab characters render with proper width via tcell
 - **Undo/Redo**: Tab insertion and smart backspace are atomic operations
 
@@ -427,6 +432,7 @@ title_bg = "default"
 - ❌ Multiple simultaneous file buffers
 - ❌ Markdown rendering
 - ❌ Plugin system (not initial scope)
+- ❌ Auto-indentation (preserving indentation from previous line on Enter)
 
 ## Development Context
 

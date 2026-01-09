@@ -755,7 +755,8 @@ func (u *UI) drawHelp(w, h int) {
 		"    Ctrl+V        Paste",
 		"    Ctrl+A        Select all",
 		"    Insert        Insert/Replace mode",
-		"    Tab           Insert spaces (smart indent)",
+		"    Tab           Insert spaces to tab stop",
+		"    Backspace     Delete one character",
 		"    Ctrl+Tab      Insert literal tab (\\t)",
 	}
 

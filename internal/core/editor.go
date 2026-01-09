@@ -581,50 +581,8 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 		line, col := e.buf.Cursor()
 
-		// Simple backspace: delete one character (space or tab)
-		// Smart indentation: in leading whitespace with only spaces, delete to previous tab stop
-		if col > 0 && e.TabWidth > 0 {
-			lines := e.buf.Lines()
-			if line < len(lines) {
-				lineText := lines[line]
-
-				// Check if we're in leading whitespace with ONLY spaces (no tabs)
-				inLeadingSpaces := true
-				hasOnlySpaces := true
-				for i := 0; i < col; i++ {
-					if lineText[i] == '\t' {
-						hasOnlySpaces = false
-						break
-					}
-					if lineText[i] != ' ' {
-						inLeadingSpaces = false
-						hasOnlySpaces = false
-						break
-					}
-				}
-
-				// If we're in leading spaces and aligned with tab stops, delete to previous tab stop
-				if inLeadingSpaces && hasOnlySpaces && col > 0 && col%e.TabWidth == 0 {
-					// Delete back to previous tab stop (delete e.TabWidth spaces as one unit)
-					actions := make([]Action, e.TabWidth)
-					for i := 0; i < e.TabWidth; i++ {
-						actions[i] = &BackspaceAction{
-							DeletedRune: ' ',
-							Line:        line,
-							Col:         col - i,
-							IsMerge:     false,
-						}
-					}
-
-					composite := &CompositeAction{Actions: actions}
-					e.undo.Push(composite)
-					composite.Apply(e)
-					return Result{}
-				}
-			}
-		}
-
-		// Default: delete single character (space, tab, or any other character)
+		// Simple backspace: always delete one character at a time
+		// No smart indentation - just delete whatever is before the cursor
 		var action *BackspaceAction
 
 		if col > 0 {
