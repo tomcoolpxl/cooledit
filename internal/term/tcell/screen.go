@@ -9,7 +9,7 @@ import (
 )
 
 type Screen struct {
-	screen            tcell.Screen
+	screen              tcell.Screen
 	originalCursorStyle tcell.CursorStyle
 }
 
@@ -25,12 +25,12 @@ func (s *Screen) Init(enableMouse bool) error {
 	if err := ts.Init(); err != nil {
 		return err
 	}
-	
+
 	// Save the original cursor style to restore on exit
 	// Note: tcell doesn't provide a way to query current cursor style,
 	// so we save the default which will be restored on Fini
 	s.originalCursorStyle = tcell.CursorStyleDefault
-	
+
 	ts.Clear()
 	if enableMouse {
 		ts.EnableMouse(tcell.MouseButtonEvents)
