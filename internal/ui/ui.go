@@ -208,10 +208,10 @@ func (u *UI) Run() error {
 				}
 			}
 
-	case term.MouseEvent:
-		u.handleMouseEvent(e)
+		case term.MouseEvent:
+			u.handleMouseEvent(e)
+		}
 	}
-}
 }
 
 func (u *UI) toggleMenuFocus() {
