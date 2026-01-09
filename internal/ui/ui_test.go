@@ -393,7 +393,7 @@ func TestSearchUIIntegration(t *testing.T) {
 
 	// Q to quit find mode
 	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'q'})
-	
+
 	if ui.mode != ModeNormal {
 		t.Fatalf("expected ModeNormal after quit, got mode %d", ui.mode)
 	}
