@@ -5,6 +5,7 @@ import "cooledit/internal/core"
 type MenuItem struct {
 	Label       string
 	Accelerator string // e.g. "Ctrl+S"
+	ShortcutKey rune   // Single letter shortcut when menu is open (e.g. 's' for Save)
 	Command     core.Command
 	Action      func(*UI)        // Special actions like "Quit" or "Toggle"
 	Submenu     []MenuItem       // Submenu items (e.g., for Themes)
@@ -48,28 +49,28 @@ func (m *Menubar) initDefaults() {
 		{
 			Title: "File",
 			Items: []MenuItem{
-				{Label: "Save", Accelerator: "Ctrl+S", Command: core.CmdSave{}},
-				{Label: "Save As", Accelerator: "Ctrl+Shift+S", Action: func(u *UI) { u.enterSaveAs(false) }},
-				{Label: "Quit", Accelerator: "Ctrl+Q", Action: func(u *UI) { u.startQuitFlow() }},
+				{Label: "Save", Accelerator: "Ctrl+S", ShortcutKey: 's', Command: core.CmdSave{}},
+				{Label: "Save As", Accelerator: "Ctrl+Shift+S", ShortcutKey: 'a', Action: func(u *UI) { u.enterSaveAs(false) }},
+				{Label: "Quit", Accelerator: "Ctrl+Q", ShortcutKey: 'q', Action: func(u *UI) { u.startQuitFlow() }},
 			},
 		},
 		{
 			Title: "Edit",
 			Items: []MenuItem{
-				{Label: "Undo", Accelerator: "Ctrl+Z", Command: core.CmdUndo{}},
-				{Label: "Redo", Accelerator: "Ctrl+Y", Command: core.CmdRedo{}},
-				{Label: "Cut", Accelerator: "Ctrl+X", Command: core.CmdCut{}},
-				{Label: "Copy", Accelerator: "Ctrl+C", Command: core.CmdCopy{}},
-				{Label: "Paste", Accelerator: "Ctrl+V", Command: core.CmdPaste{}},
-				{Label: "Go to Line", Accelerator: "Ctrl+G", Action: func(u *UI) { u.enterGoToLine() }},
+				{Label: "Undo", Accelerator: "Ctrl+Z", ShortcutKey: 'u', Command: core.CmdUndo{}},
+				{Label: "Redo", Accelerator: "Ctrl+Y", ShortcutKey: 'r', Command: core.CmdRedo{}},
+				{Label: "Cut", Accelerator: "Ctrl+X", ShortcutKey: 't', Command: core.CmdCut{}},
+				{Label: "Copy", Accelerator: "Ctrl+C", ShortcutKey: 'c', Command: core.CmdCopy{}},
+				{Label: "Paste", Accelerator: "Ctrl+V", ShortcutKey: 'p', Command: core.CmdPaste{}},
+				{Label: "Go to Line", Accelerator: "Ctrl+G", ShortcutKey: 'g', Action: func(u *UI) { u.enterGoToLine() }},
 			},
 		},
 		{
 			Title: "Search",
 			Items: []MenuItem{
-				{Label: "Find / Replace", Accelerator: "Ctrl+F", Action: func(u *UI) { u.enterFind() }},
-				{Label: "Find Next", Accelerator: "F3", Command: core.CmdFindNext{}},
-				{Label: "Find Previous", Accelerator: "Shift+F3", Command: core.CmdFindPrev{}},
+				{Label: "Find / Replace", Accelerator: "Ctrl+F", ShortcutKey: 'f', Action: func(u *UI) { u.enterFind() }},
+				{Label: "Find Next", Accelerator: "F3", ShortcutKey: 'n', Command: core.CmdFindNext{}},
+				{Label: "Find Previous", Accelerator: "Shift+F3", ShortcutKey: 'p', Command: core.CmdFindPrev{}},
 			},
 		},
 		{
@@ -106,7 +107,7 @@ func (m *Menubar) initDefaults() {
 		{
 			Title: "Help",
 			Items: []MenuItem{
-				{Label: "Keyboard Shortcuts", Accelerator: "F1", Action: func(u *UI) { u.mode = ModeHelp }},
+				{Label: "Keyboard Shortcuts", Accelerator: "F1", ShortcutKey: 'k', Action: func(u *UI) { u.mode = ModeHelp }},
 			},
 		},
 	}

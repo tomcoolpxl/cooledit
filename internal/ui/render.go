@@ -170,9 +170,31 @@ func (u *UI) drawMenuDropdown() {
 		if item.IsReadOnly && item.GetValue != nil {
 			label = item.Label + ": " + item.GetValue(u)
 		}
+		
+		// Find position of shortcut key to underline it
+		shortcutPos := -1
+		if item.ShortcutKey != 0 {
+			for i, r := range label {
+				if r == item.ShortcutKey || r == item.ShortcutKey-32 { // case insensitive
+					shortcutPos = i
+					break
+				}
+			}
+		}
+		
 		for j, r := range label {
 			if labelOffset+j < width {
-				u.screen.SetCell(startX+labelOffset+j, y, r, s)
+				styleToUse := s
+				// Underline the shortcut key
+				if j == shortcutPos {
+					styleToUse = term.Style{
+						Foreground: s.Foreground,
+						Background: s.Background,
+						Inverse:    s.Inverse,
+						Underline:  true,
+					}
+				}
+				u.screen.SetCell(startX+labelOffset+j, y, r, styleToUse)
 			}
 		}
 

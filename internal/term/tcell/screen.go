@@ -116,7 +116,12 @@ func (s *Screen) SetCell(x, y int, ch rune, st term.Style) {
 		}
 	}
 
-	s.screen.SetContent(x, y, ch, nil, style)
+// Apply underline if requested
+if st.Underline {
+	style = style.Underline(true)
+}
+
+s.screen.SetContent(x, y, ch, nil, style)
 }
 
 // parseColor converts our Color type to tcell.Color

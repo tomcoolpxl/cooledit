@@ -64,6 +64,7 @@ type Style struct {
 	Foreground Color
 	Background Color
 	Inverse    bool // Legacy support, overrides colors when true
+	Underline  bool // Underline text
 }
 
 type CursorShape int

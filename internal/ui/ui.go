@@ -259,6 +259,15 @@ func (u *UI) handleMenuKey(e term.KeyEvent) bool {
 			u.vimCommand = nil
 			return true
 		}
+		// Check for menu item shortcut keys
+		menu := u.menubar.Menus[u.menubar.SelectedMenuIndex]
+		for i, item := range menu.Items {
+			if item.ShortcutKey != 0 && (e.Rune == item.ShortcutKey || e.Rune == item.ShortcutKey-32) { // case insensitive
+				u.menubar.SelectedItemIndex = i
+				u.executeMenuItem()
+				return true
+			}
+		}
 	}
 	return false
 }
