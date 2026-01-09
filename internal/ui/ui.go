@@ -18,6 +18,7 @@ const (
 	ModeHelp
 	ModeMenu
 	ModeFindReplace
+	ModeVimCommand
 )
 
 type UI struct {
@@ -59,6 +60,9 @@ type UI struct {
 
 	// Edit mode state
 	insertMode bool // true = insert, false = replace/overwrite
+
+	// Vim command mode
+	vimCommand []rune
 
 	// Features
 	showLineNumbers bool
@@ -160,11 +164,11 @@ func (u *UI) Run() error {
 				}
 			}
 
-			if u.mode == ModeFindReplace {
-				if u.handleFindReplaceKey(e) {
-					continue
-				}
+		if u.mode == ModeVimCommand {
+			if u.handleVimCommandKey(e) {
+				continue
 			}
+		}
 
 			if u.mode == ModeMenu {
 				if u.handleMenuKey(e) {
@@ -186,6 +190,13 @@ func (u *UI) Run() error {
 					u.toggleMenuFocus()
 					continue
 				}
+				continue
+			}
+
+			// Secret vim command mode
+			if u.mode == ModeNormal && e.Key == term.KeyRune && e.Rune == ':' {
+				u.mode = ModeVimCommand
+				u.vimCommand = nil
 				continue
 			}
 
@@ -239,6 +250,15 @@ func (u *UI) handleMenuKey(e term.KeyEvent) bool {
 	case term.KeyEnter:
 		u.executeMenuItem()
 		return true
+	case term.KeyRune:
+		// Secret vim command mode from menu
+		if e.Rune == ':' {
+			u.mode = ModeVimCommand
+			u.menubar.Active = false
+			u.showMenubar = false
+			u.vimCommand = nil
+			return true
+		}
 	}
 	return false
 }
@@ -611,4 +631,68 @@ func (u *UI) SwitchTheme(themeName string) {
 // GetCurrentThemeName returns the name of the current theme
 func (u *UI) GetCurrentThemeName() string {
 	return u.config.UI.Theme
+}
+
+func (u *UI) handleVimCommandKey(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyEscape:
+		u.mode = ModeNormal
+		u.vimCommand = nil
+		return true
+
+	case term.KeyBackspace:
+		if len(u.vimCommand) > 0 {
+			u.vimCommand = u.vimCommand[:len(u.vimCommand)-1]
+		}
+		return true
+
+	case term.KeyEnter:
+		u.executeVimCommand()
+		return true
+
+	case term.KeyRune:
+		u.vimCommand = append(u.vimCommand, e.Rune)
+		return true
+	}
+	return false
+}
+
+func (u *UI) executeVimCommand() {
+	cmd := string(u.vimCommand)
+	u.mode = ModeNormal
+	u.vimCommand = nil
+
+	switch cmd {
+	case "w", "w!":
+		// Save file
+		res := u.editor.Apply(core.CmdSave{}, u.layout.Viewport.H)
+		if res.Message != "" {
+			u.enterMessage(res.Message)
+		}
+
+	case "q":
+		// Quit if no unsaved changes
+		if u.editor.Modified() {
+			u.enterMessage("No write since last change (use :q! to override)")
+		} else {
+			u.quitNow = true
+		}
+
+	case "q!":
+		// Quit without saving
+		u.quitNow = true
+
+	case "wq":
+		// Save and quit
+		res := u.editor.Apply(core.CmdSave{}, u.layout.Viewport.H)
+		if res.Message != "" {
+			u.enterMessage(res.Message)
+		}
+		if !u.editor.Modified() {
+			u.quitNow = true
+		}
+
+	default:
+		u.enterMessage("Unknown command: :" + cmd)
+	}
 }

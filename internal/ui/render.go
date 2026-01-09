@@ -508,6 +508,22 @@ func (u *UI) drawStatusBar() {
 		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
 	}
 
+	// Special status bar for vim command mode
+	if u.mode == ModeVimCommand {
+		vimCmd := ":" + string(u.vimCommand)
+		for i, r := range vimCmd {
+			if i >= rect.W {
+				break
+			}
+			u.screen.SetCell(rect.X+i, rect.Y, r, style)
+		}
+		// Show cursor after the text
+		if len(vimCmd) < rect.W {
+			u.screen.ShowCursor(rect.X+len(vimCmd), rect.Y)
+		}
+		return
+	}
+
 	var left string
 
 	// Special status bar for find/replace mode
@@ -727,8 +743,15 @@ func (u *UI) drawHelp(w, h int) {
 	useTwoColumns := w >= 80
 
 	if useTwoColumns {
-		// Two-column layout
-		colWidth := 40
+		// Two-column layout - calculate left column width
+		colWidth := 0
+		for _, line := range leftCol {
+			if len(line) > colWidth {
+				colWidth = len(line)
+			}
+		}
+		colWidth += 2 // Add spacing between columns
+		
 		maxLines := len(leftCol)
 		if len(rightCol) > maxLines {
 			maxLines = len(rightCol)
