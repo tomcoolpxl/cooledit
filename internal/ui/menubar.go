@@ -42,6 +42,7 @@ func NewMenubar() *Menubar {
 
 func (m *Menubar) initDefaults() {
 	themeItems := m.buildThemeItems()
+	cursorItems := m.buildCursorShapeItems()
 
 	m.Menus = []Menu{
 		{
@@ -100,7 +101,7 @@ func (m *Menubar) initDefaults() {
 					return u.editor.File().Encoding
 				}},
 				{IsSeparator: true},
-			}, themeItems...),
+			}, append(cursorItems, append([]MenuItem{{IsSeparator: true}}, themeItems...)...)...),
 		},
 		{
 			Title: "Help",
@@ -140,6 +141,30 @@ func (m *Menubar) buildThemeItems() []MenuItem {
 			},
 			Action: func(u *UI) {
 				u.SwitchTheme(name)
+			},
+		}
+	}
+	return items
+}
+
+// buildCursorShapeItems creates menu items for cursor shapes
+func (m *Menubar) buildCursorShapeItems() []MenuItem {
+	cursorShapes := []string{"block", "underline", "bar"}
+	items := make([]MenuItem, len(cursorShapes))
+	
+	for i, shapeName := range cursorShapes {
+		// Capture shapeName in closure
+		name := shapeName
+		items[i] = MenuItem{
+			Label:       "Cursor: " + name,
+			Accelerator: "",
+			IsCheckable: true,
+			IsChecked: func(u *UI) bool {
+				return u.config.UI.CursorShape == name
+			},
+			Action: func(u *UI) {
+				u.config.UI.CursorShape = name
+				u.saveConfig()
 			},
 		}
 	}

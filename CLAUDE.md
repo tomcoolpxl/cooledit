@@ -125,6 +125,8 @@ internal/
   - CRLF status (readonly, shows current line ending: LF or CRLF)
   - Encoding status (readonly, shows current file encoding)
   - **Separator line**
+  - Cursor shapes (block, underline, bar with checkmark for active shape)
+  - **Separator line**
   - Themes submenu (all available themes with checkmark for active theme)
 - Navigation via arrow keys or mouse (if enabled)
 - Menu items support: checkmarks, separators (visual lines), and readonly items (informational only)
@@ -178,12 +180,23 @@ internal/
 - Line numbers shown only on first wrapped segment
 
 ### Insert/Replace Mode
-- **Insert mode by default** (block cursor)
-- Toggle with Insert key to replace/overwrite mode (underline cursor)
+- **Insert mode by default** (uses configured cursor shape)
+- Toggle with Insert key to replace/overwrite mode (uses alternate cursor shape)
 - Replace mode shows **"REPLACE"** indicator in status bar
 - Replace mode overwrites characters instead of inserting
 - At end of line, behaves like insert mode
 - State not saved - always starts in insert mode
+
+### Cursor Shapes
+- **Configurable cursor shapes**: Choose from block, underline, or bar (vertical line)
+- **Default**: Block cursor for insert mode
+- **Smart alternation**: Replace mode automatically uses an alternate shape:
+  - If insert cursor is **block** → replace cursor is **underline**
+  - If insert cursor is **underline** → replace cursor is **block**
+  - If insert cursor is **bar** → replace cursor is **block**
+- **Persistent**: Cursor shape preference saved to config file
+- **Menu access**: View → Cursor submenu (block, underline, bar with checkmarks)
+- **All three shapes supported**: Block (█), Underline (_), Bar (|)
 
 ### Tab Handling
 - **Tab key inserts spaces** (not literal `\t` characters)
@@ -193,7 +206,6 @@ internal/
 - **Literal tabs**: Press `Ctrl+Tab` to insert a raw `\t` character
 - **Rendering**: Literal tab characters render with proper width via tcell
 - **Undo/Redo**: Tab insertion and smart backspace are atomic operations
-- Cursor shapes customizable in future
 
 ## Testing Strategy
 
@@ -286,6 +298,7 @@ show_menubar = false     # Show menubar by default
 show_statusbar = true    # Show status bar (F11 toggles Zen mode)
 mouse_enabled = false    # Enable mouse support
 theme = "default"        # Active theme name
+cursor_shape = "block"   # Cursor shape: "block", "underline", or "bar"
 
 [search]
 case_sensitive = true # Case-sensitive search by default

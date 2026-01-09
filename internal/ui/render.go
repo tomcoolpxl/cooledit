@@ -12,10 +12,11 @@ func (u *UI) draw() {
 	u.clear()
 
 	// Set cursor shape based on insert/replace mode
+	insertShape := ParseCursorShape(u.config.UI.CursorShape)
 	if u.insertMode {
-		u.screen.SetCursorShape(term.CursorBlock)
+		u.screen.SetCursorShape(insertShape)
 	} else {
-		u.screen.SetCursorShape(term.CursorUnderline)
+		u.screen.SetCursorShape(GetAlternateCursorShape(insertShape))
 	}
 
 	w, h := u.layout.Width, u.layout.Height
@@ -710,6 +711,7 @@ func (u *UI) drawHelp(w, h int) {
 		"  VIEW",
 		"    Ctrl+L        Line numbers",
 		"    Ctrl+W        Word wrap",
+		"    View menu     Cursor shapes",
 		"",
 		"  THEMES",
 		"    View menu     11 built-in themes",

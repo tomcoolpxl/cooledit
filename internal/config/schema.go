@@ -21,6 +21,7 @@ type UI struct {
 	ShowStatusBar bool   `toml:"show_statusbar"`
 	MouseEnabled  bool   `toml:"mouse_enabled"`
 	Theme         string `toml:"theme"`
+	CursorShape   string `toml:"cursor_shape"`
 }
 
 // Search contains search-related settings
@@ -114,6 +115,7 @@ func Default() *Config {
 			ShowStatusBar: true,
 			MouseEnabled:  false,
 			Theme:         "default",
+			CursorShape:   "block",
 		},
 		Search: Search{
 			CaseSensitive: true,
