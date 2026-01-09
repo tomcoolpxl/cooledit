@@ -164,11 +164,11 @@ func (u *UI) Run() error {
 				}
 			}
 
-		if u.mode == ModeVimCommand {
-			if u.handleVimCommandKey(e) {
-				continue
+			if u.mode == ModeVimCommand {
+				if u.handleVimCommandKey(e) {
+					continue
+				}
 			}
-		}
 
 			if u.mode == ModeMenu {
 				if u.handleMenuKey(e) {

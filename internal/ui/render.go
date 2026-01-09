@@ -751,7 +751,7 @@ func (u *UI) drawHelp(w, h int) {
 			}
 		}
 		colWidth += 2 // Add spacing between columns
-		
+
 		maxLines := len(leftCol)
 		if len(rightCol) > maxLines {
 			maxLines = len(rightCol)
