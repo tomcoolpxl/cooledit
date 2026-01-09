@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"cooledit/internal/core/buffer"
@@ -47,6 +48,13 @@ func (e *Editor) HasSelection() bool {
 
 func (e *Editor) ClearSelection() {
 	e.selectionActive = false
+}
+
+func (e *Editor) SetSelection(line, col, length int) {
+	e.selectionActive = true
+	e.selectionAnchor.Line = line
+	e.selectionAnchor.Col = col + length
+	e.buf.SetCursor(line, col)
 }
 
 func (e *Editor) GetSelectionRange() (sl, sc, el, ec int) {
@@ -151,7 +159,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		line, col := e.buf.Cursor()
 		fl, fc, found := Search(e.buf.Lines(), c.Query, line, col, SearchForward)
 		if found {
-			e.buf.SetCursor(fl, fc)
+			e.SetSelection(fl, fc, len(c.Query))
 			return Result{Message: "Found: " + c.Query}
 		}
 		return Result{Message: "Not found: " + c.Query}
@@ -164,7 +172,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		// Start search after current position
 		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+1, SearchForward)
 		if found {
-			e.buf.SetCursor(fl, fc)
+			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found next: " + e.search.LastQuery}
 		}
 		return Result{Message: "Not found (next): " + e.search.LastQuery}
@@ -176,7 +184,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		line, col := e.buf.Cursor()
 		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col, SearchBackward)
 		if found {
-			e.buf.SetCursor(fl, fc)
+			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found prev: " + e.search.LastQuery}
 		}
 		return Result{Message: "Not found (prev): " + e.search.LastQuery}
@@ -334,6 +342,107 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		e.ClearSelection()
 		e.buf.SetCursor(target, 0)
 		return Result{}
+
+	case CmdReplace:
+		// Replace the current match (assumes cursor is on a match)
+		// and find the next match
+		if c.Find == "" {
+			return Result{Message: "Replace: empty search term"}
+		}
+
+		line, col := e.buf.Cursor()
+		lines := e.buf.Lines()
+
+		// Verify we're on a match
+		if line >= len(lines) {
+			return Result{Message: "No more matches"}
+		}
+
+		lineText := string(lines[line])
+		if col >= len(lineText) || col+len(c.Find) > len(lineText) {
+			// Not on a match, try to find next
+			return e.Apply(CmdFindNext{}, 0)
+		}
+
+		if lineText[col:col+len(c.Find)] != c.Find {
+			// Not on a match, try to find next
+			return e.Apply(CmdFindNext{}, 0)
+		}
+
+		// Replace the match
+		before := lineText[:col]
+		after := lineText[col+len(c.Find):]
+		newLine := []rune(before + c.Replace + after)
+
+		action := &ReplaceLinesAction{
+			StartLine:  line,
+			OldLines:   [][]rune{lines[line]},
+			NewLines:   [][]rune{newLine},
+			BeforeLine: line,
+			BeforeCol:  col,
+			AfterLine:  line,
+			AfterCol:   col + len(c.Replace),
+		}
+
+		e.undo.Push(action)
+		action.Apply(e)
+
+		// Find next match
+		fl, fc, found := Search(e.buf.Lines(), c.Find, line, col+len(c.Replace), SearchForward)
+		if found {
+			e.buf.SetCursor(fl, fc)
+			return Result{}
+		}
+		return Result{Message: "Replaced (no more matches)"}
+
+	case CmdReplaceAll:
+		// Replace all remaining matches from current cursor position
+		if c.Find == "" {
+			return Result{Message: "Replace: empty search term"}
+		}
+
+		count := 0
+		line, col := e.buf.Cursor()
+
+		// Keep replacing until no more matches
+		for {
+			lines := e.buf.Lines()
+			fl, fc, found := Search(lines, c.Find, line, col, SearchForward)
+			if !found {
+				break
+			}
+
+			// Replace this match
+			lineText := string(lines[fl])
+			before := lineText[:fc]
+			after := lineText[fc+len(c.Find):]
+			newLine := []rune(before + c.Replace + after)
+
+			action := &ReplaceLinesAction{
+				StartLine:  fl,
+				OldLines:   [][]rune{lines[fl]},
+				NewLines:   [][]rune{newLine},
+				BeforeLine: fl,
+				BeforeCol:  fc,
+				AfterLine:  fl,
+				AfterCol:   fc + len(c.Replace),
+			}
+
+			e.undo.Push(action)
+			action.Apply(e)
+
+			count++
+			line = fl
+			col = fc + len(c.Replace)
+		}
+
+		if count == 0 {
+			return Result{Message: "No matches found"}
+		}
+		if count == 1 {
+			return Result{Message: "Replaced 1 occurrence"}
+		}
+		return Result{Message: fmt.Sprintf("Replaced %d occurrences", count)}
 
 	case CmdClick:
 		e.buf.SetCursor(c.Line, c.Col)

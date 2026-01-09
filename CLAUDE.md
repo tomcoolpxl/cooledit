@@ -42,6 +42,7 @@ internal/
 - ✅ File load/save with encoding detection (UTF-8, ISO-8859-1, etc.)
 - ✅ EOL format detection and preservation (LF/CRLF)
 - ✅ Search (Find/Next/Previous)
+- ✅ Replace (Replace one/Skip/Replace all) with review mode
 - ✅ Undo/Redo with command pattern
 - ✅ Text selection via Shift+Arrow keys
 - ✅ System clipboard integration (Cut/Copy/Paste)
@@ -66,6 +67,7 @@ internal/
 - `Ctrl+Z` - Undo
 - `Ctrl+Y` - Redo
 - `Ctrl+F` - Find
+- `Ctrl+H` - Replace
 - `F3` / `Shift+F3` - Find Next/Previous
 - `F1` - Help overlay
 - `F10` - Toggle menubar
@@ -92,6 +94,25 @@ Displays: filename, modified indicator, line:col position, encoding, EOL type
 - `Ctrl+S` on unnamed buffer → triggers Save As
 - Save As only prompts for overwrite if file exists and is different from current
 - Normal save never prompts (VS Code behavior)
+
+### Replace Workflow (Nano-Style)
+1. `Ctrl+H` opens "Replace: " prompt (pre-filled with last search term)
+2. Enter search term → `Enter`
+3. Prompt changes to "Replace with: " (pre-filled with last replacement)
+4. Enter replacement → `Enter`
+5. Editor jumps to first match (highlighted with selection)
+6. Status bar shows: **"Replace this instance? (y)es, (n)o, (a)ll, (c)ancel"**
+7. User presses:
+   - `Y` - Replace this match and move to next
+   - `N` - Skip this match and move to next
+   - `A` - Replace all remaining matches
+   - `C` or `Esc` - Cancel and exit replace mode
+
+**Key Features:**
+- Find and Replace share the same search term
+- Previous search/replace values are remembered
+- Found text is highlighted during search
+- Each replace operation is undoable
 
 ### Word Wrap
 - **Off by default**

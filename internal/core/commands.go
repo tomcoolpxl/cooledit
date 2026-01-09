@@ -127,3 +127,17 @@ type CmdClick struct {
 }
 
 func (CmdClick) isCommand() {}
+
+type CmdReplace struct {
+	Find    string
+	Replace string
+}
+
+func (CmdReplace) isCommand() {}
+
+type CmdReplaceAll struct {
+	Find    string
+	Replace string
+}
+
+func (CmdReplaceAll) isCommand() {}

@@ -313,15 +313,22 @@ func (u *UI) drawStatusBar() {
 		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
 	}
 
-	fs := u.editor.File()
-	mod := ""
-	if u.editor.Modified() {
-		mod = "*"
+	var left string
+
+	// Special status bar for replace review mode
+	if u.mode == ModeReplaceReview {
+		left = "Replace this instance? (y)es, (n)o, (a)ll, (c)ancel"
+	} else {
+		fs := u.editor.File()
+		mod := ""
+		if u.editor.Modified() {
+			mod = "*"
+		}
+		left = fmt.Sprintf("%s%s  Ctrl+S Save  Ctrl+Q Quit  F1 Help  F10 Menu", fs.BaseName, mod)
 	}
 
-	left := fmt.Sprintf("%s%s  Ctrl+S Save  Ctrl+Q Quit  F1 Help  F10 Menu", fs.BaseName, mod)
-
 	cy, cx := u.editor.Cursor()
+	fs := u.editor.File()
 	eol := "LF"
 	if fs.EOL == "\r\n" {
 		eol = "CRLF"

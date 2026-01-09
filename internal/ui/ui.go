@@ -15,6 +15,7 @@ const (
 	ModePrompt
 	ModeHelp
 	ModeMenu
+	ModeReplaceReview
 )
 
 type UI struct {
@@ -42,6 +43,14 @@ type UI struct {
 	// used by quit flow
 	quitAfterSave bool
 	quitNow       bool
+
+	// replace review mode
+	replaceFindTerm string
+	replaceWithTerm string
+
+	// remember last search/replace terms
+	lastFindTerm    string
+	lastReplaceTerm string
 
 	// Features
 	showLineNumbers bool
@@ -105,6 +114,12 @@ func (u *UI) Run() error {
 
 			if u.mode == ModePrompt {
 				if u.handlePromptKey(e) {
+					continue
+				}
+			}
+
+			if u.mode == ModeReplaceReview {
+				if u.handleReplaceReviewKey(e) {
 					continue
 				}
 			}
@@ -354,6 +369,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.enterFind()
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == 'h' && (e.Modifiers&term.ModCtrl) != 0:
+		u.enterReplace()
+		return nil
+
 	case e.Key == term.KeyRune && e.Rune == 'g' && (e.Modifiers&term.ModCtrl) != 0:
 		u.enterGoToLine()
 		return nil
@@ -402,6 +421,62 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	}
 
 	return nil
+}
+
+func (u *UI) handleReplaceReviewKey(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyEscape:
+		// Cancel replace
+		u.mode = ModeNormal
+		return true
+
+	case term.KeyRune:
+		switch e.Rune {
+		case 'r', 'R', 'y', 'Y':
+			// Replace current match and find next
+			res := u.editor.Apply(core.CmdReplace{
+				Find:    u.replaceFindTerm,
+				Replace: u.replaceWithTerm,
+			}, u.layout.Viewport.H)
+
+			if res.Message != "" {
+				// No more matches
+				u.mode = ModeNormal
+				u.enterMessage(res.Message)
+			}
+			// Otherwise stay in replace review mode for next match
+			return true
+
+		case 's', 'S', 'n', 'N':
+			// Skip this match and find next
+			res := u.editor.Apply(core.CmdFindNext{}, u.layout.Viewport.H)
+			if res.Message != "" {
+				// No more matches
+				u.mode = ModeNormal
+				u.enterMessage(res.Message)
+			}
+			return true
+
+		case 'a', 'A':
+			// Replace all remaining matches
+			res := u.editor.Apply(core.CmdReplaceAll{
+				Find:    u.replaceFindTerm,
+				Replace: u.replaceWithTerm,
+			}, u.layout.Viewport.H)
+			u.mode = ModeNormal
+			if res.Message != "" {
+				u.enterMessage(res.Message)
+			}
+			return true
+
+		case 'q', 'Q', 'c', 'C':
+			// Quit replace mode
+			u.mode = ModeNormal
+			return true
+		}
+	}
+
+	return true
 }
 
 func (u *UI) enterMessage(msg string) {

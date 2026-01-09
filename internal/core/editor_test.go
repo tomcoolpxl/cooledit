@@ -453,3 +453,123 @@ func TestDeleteWithSelection(t *testing.T) {
 		t.Fatalf("selection should be cleared after delete")
 	}
 }
+
+func TestSearchHighlightsText(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertRune{Rune: 'h'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'e'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'l'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'l'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'o'}, 10)
+	e.Apply(CmdMoveHome{}, 10)
+
+	// Search for "ell"
+	res := e.Apply(CmdFind{Query: "ell"}, 10)
+	if res.Message != "Found: ell" {
+		t.Fatalf("expected to find 'ell', got message: %s", res.Message)
+	}
+
+	// Should have selection
+	if !e.HasSelection() {
+		t.Fatalf("search should create selection")
+	}
+
+	sl, sc, el, ec := e.GetSelectionRange()
+	if sl != 0 || sc != 1 || el != 0 || ec != 4 {
+		t.Fatalf("expected selection (0,1)-(0,4), got (%d,%d)-(%d,%d)", sl, sc, el, ec)
+	}
+}
+
+func TestReplaceOne(t *testing.T) {
+	e := newTestEditor()
+	// "hello world hello"
+	for _, r := range "hello world hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// Find "hello"
+	e.Apply(CmdFind{Query: "hello"}, 10)
+
+	// Replace with "hi"
+	e.Apply(CmdReplace{Find: "hello", Replace: "hi"}, 10)
+
+	lines := e.Lines()
+	text := string(lines[0])
+	expected := "hi world hello"
+	if text != expected {
+		t.Fatalf("expected %q after replace, got %q", expected, text)
+	}
+
+	// Should be at next match
+	if !e.HasSelection() {
+		t.Fatalf("should have selection on next match")
+	}
+}
+
+func TestReplaceAll(t *testing.T) {
+	e := newTestEditor()
+	// "hello world hello"
+	for _, r := range "hello world hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// Replace all "hello" with "hi"
+	res := e.Apply(CmdReplaceAll{Find: "hello", Replace: "hi"}, 10)
+
+	if res.Message != "Replaced 2 occurrences" {
+		t.Fatalf("expected 'Replaced 2 occurrences', got: %s", res.Message)
+	}
+
+	lines := e.Lines()
+	text := string(lines[0])
+	expected := "hi world hi"
+	if text != expected {
+		t.Fatalf("expected %q after replace all, got %q", expected, text)
+	}
+}
+
+func TestReplaceNotFound(t *testing.T) {
+	e := newTestEditor()
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	res := e.Apply(CmdReplaceAll{Find: "xyz", Replace: "abc"}, 10)
+
+	if res.Message != "No matches found" {
+		t.Fatalf("expected 'No matches found', got: %s", res.Message)
+	}
+
+	lines := e.Lines()
+	text := string(lines[0])
+	if text != "hello" {
+		t.Fatalf("text should be unchanged, got %q", text)
+	}
+}
+
+func TestReplaceUndoable(t *testing.T) {
+	e := newTestEditor()
+	for _, r := range "hello world" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// Replace all
+	e.Apply(CmdReplaceAll{Find: "hello", Replace: "hi"}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "hi world" {
+		t.Fatalf("expected 'hi world' after replace, got %q", string(lines[0]))
+	}
+
+	// Undo
+	e.Apply(CmdUndo{}, 10)
+
+	lines = e.Lines()
+	if string(lines[0]) != "hello world" {
+		t.Fatalf("expected 'hello world' after undo, got %q", string(lines[0]))
+	}
+}
