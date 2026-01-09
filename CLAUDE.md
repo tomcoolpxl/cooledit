@@ -53,10 +53,11 @@ internal/
 - ✅ Adaptive help screen (F1) with two-column layout for wide terminals
 - ✅ Configuration persistence with TOML file
 - ✅ Toggle settings auto-save (line numbers, soft wrap)
+- ✅ Soft wrap implementation with adaptive line wrapping
+- ✅ Insert/Replace mode toggle with Insert key and cursor shape indicators
 
 ### Planned (Milestone 4)
 - ⏳ Keybinding customization
-- 🔧 Soft wrap - Partially implemented (toggle exists, rendering may be incomplete)
 
 ## Important Keyboard Shortcuts
 
@@ -71,6 +72,7 @@ internal/
 - `Ctrl+F` - Find/Replace (unified mode)
 - `F3` / `Shift+F3` - Find Next/Previous
 - `Ctrl+G` - Go to Line (always available)
+- `Insert` - Toggle Insert/Replace mode
 - `F1` - Help overlay (adaptive two-column/single-column layout)
 - `F10` / `Esc` - Toggle menubar
 
@@ -131,7 +133,17 @@ internal/
 
 ### Word Wrap
 - **Off by default**
-- Can be toggled (to be implemented)
+- Can be toggled with Ctrl+W
+- Adaptive wrapping to viewport width
+- Line numbers shown only on first wrapped segment
+
+### Insert/Replace Mode
+- **Insert mode by default** (block cursor)
+- Toggle with Insert key to replace/overwrite mode (underline cursor)
+- Replace mode overwrites characters instead of inserting
+- At end of line, behaves like insert mode
+- State not saved - always starts in insert mode
+- Cursor shapes customizable in future
 
 ## Testing Strategy
 
@@ -151,6 +163,8 @@ internal/
   - Status bar rendering (TestStatusBarCursorPosition)
   - Configuration save/load (TestDefaultConfig, TestSaveAndLoad, TestPartialConfig)
   - Toggle actions save config (TestToggleLineNumbersSavesConfig, TestToggleSoftWrapSavesConfig)
+  - Soft wrap rendering (TestSoftWrapRendering, TestSoftWrapVsNoWrap)
+  - Insert/Replace mode (TestInsertMode, TestReplaceMode, TestReplaceModeAtEndOfLine, TestInsertKeyToggle)
 
 ### EOL Format
 - Auto-detect (LF vs CRLF)
@@ -211,11 +225,12 @@ Project is fully functional with all core features complete:
 - ✅ Message bar persistence during find/replace operations
 - ✅ Configuration system with TOML persistence
 - ✅ Toggle settings auto-save to config file
-- ✅ Comprehensive test coverage (110+ tests, all passing)
+- ✅ Soft wrap rendering with proper line wrapping and cursor positioning
+- ✅ Insert/Replace mode with Insert key toggle and cursor shape indicators
+- ✅ Comprehensive test coverage (120+ tests, all passing)
 
 Focus areas:
 - Keybinding customization
-- Completing soft wrap rendering logic
 
 ## When Working on This Project
 

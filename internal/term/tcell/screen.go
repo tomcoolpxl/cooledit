@@ -99,6 +99,21 @@ func (s *Screen) Show() {
 	s.screen.Show()
 }
 
+func (s *Screen) SetCursorShape(shape term.CursorShape) {
+	var cursorStyle tcell.CursorStyle
+	switch shape {
+	case term.CursorBlock:
+		cursorStyle = tcell.CursorStyleBlinkingBlock
+	case term.CursorUnderline:
+		cursorStyle = tcell.CursorStyleBlinkingUnderline
+	case term.CursorBar:
+		cursorStyle = tcell.CursorStyleBlinkingBar
+	default:
+		cursorStyle = tcell.CursorStyleDefault
+	}
+	s.screen.SetCursorStyle(cursorStyle)
+}
+
 func (s *Screen) ShowCursor(x, y int) {
 	s.screen.ShowCursor(x, y)
 }

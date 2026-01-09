@@ -485,6 +485,64 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		e.undo.Push(action)
 		action.Apply(e)
 
+	case CmdReplaceRune:
+		// Replace mode: overwrite character at cursor
+		if e.selectionActive {
+			// If there's a selection, delete it first (like insert mode)
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+
+			line, col := e.buf.Cursor()
+			insAction := &InsertRuneAction{
+				Rune: c.Rune,
+				Line: line,
+				Col:  col,
+			}
+			insAction.Apply(e)
+
+			e.undo.Push(&CompositeAction{Actions: []Action{delAction, insAction}})
+			return Result{}
+		}
+
+		line, col := e.buf.Cursor()
+		lines := e.buf.Lines()
+		
+		// If at end of line or on empty line, just insert
+		if line >= len(lines) || col >= len(lines[line]) {
+			action := &InsertRuneAction{
+				Rune: c.Rune,
+				Line: line,
+				Col:  col,
+			}
+			e.undo.Push(action)
+			action.Apply(e)
+		} else {
+			// Replace: capture old char, use backspace to delete, then insert
+			oldRune := lines[line][col]
+			
+			// Create a backspace action to delete current char
+			// First move cursor forward, then backspace
+			e.buf.SetCursor(line, col+1)
+			backAction := &BackspaceAction{
+				DeletedRune: oldRune,
+				Line:        line,
+				Col:         col + 1,
+				IsMerge:     false,
+			}
+			backAction.Apply(e)
+			
+			// Now insert the new character (cursor is at col after backspace)
+			insAction := &InsertRuneAction{
+				Rune: c.Rune,
+				Line: line,
+				Col:  col,
+			}
+			insAction.Apply(e)
+			
+			e.undo.Push(&CompositeAction{Actions: []Action{backAction, insAction}})
+		}
+
 	case CmdInsertNewline:
 		if e.selectionActive {
 			delAction := e.deleteSelection()

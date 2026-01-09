@@ -50,6 +50,14 @@ type Style struct {
 	Inverse bool
 }
 
+type CursorShape int
+
+const (
+	CursorBlock CursorShape = iota
+	CursorUnderline
+	CursorBar
+)
+
 type Event interface {
 	isEvent()
 }
@@ -102,6 +110,7 @@ type Screen interface {
 	SetCell(x, y int, ch rune, style Style)
 	Show()
 
+	SetCursorShape(shape CursorShape)
 	ShowCursor(x, y int)
 	HideCursor()
 }

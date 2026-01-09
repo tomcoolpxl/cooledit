@@ -3,12 +3,20 @@ package ui
 import (
 	"fmt"
 
+	"cooledit/internal/core"
 	"cooledit/internal/term"
 )
 
 func (u *UI) draw() {
 	u.screen.HideCursor()
 	u.clear()
+
+	// Set cursor shape based on insert/replace mode
+	if u.insertMode {
+		u.screen.SetCursorShape(term.CursorBlock)
+	} else {
+		u.screen.SetCursorShape(term.CursorUnderline)
+	}
 
 	w, h := u.layout.Width, u.layout.Height
 
@@ -174,6 +182,19 @@ func (u *UI) drawViewport() {
 		gutterWidth = len(fmt.Sprintf("%d", totalLines)) + 1 // +1 for padding
 	}
 
+	availW := vpRect.W - gutterWidth
+	if availW < 0 {
+		availW = 0
+	}
+
+	if u.softWrap {
+		u.drawViewportWrapped(vpRect, gutterWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
+	} else {
+		u.drawViewportNoWrap(vpRect, gutterWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
+	}
+}
+
+func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
 	for sy := 0; sy < vpRect.H; sy++ {
 		docY := vp.TopLine + sy
 
@@ -187,7 +208,7 @@ func (u *UI) drawViewport() {
 					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
 				}
 				for i, r := range numStr {
-					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, term.Style{}) // Maybe diff style?
+					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, term.Style{})
 				}
 				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', term.Style{})
 			} else {
@@ -209,21 +230,9 @@ func (u *UI) drawViewport() {
 		}
 
 		drawX := vpRect.X + gutterWidth
-		availW := vpRect.W - gutterWidth
-		if availW < 0 {
-			availW = 0
-		}
 
 		for sx := 0; sx < availW; sx++ {
 			docX := start + sx
-			// We check if docX is in selection range [sl:sc, el:ec)
-			// But wait, GetSelectionRange returns normalized range? Yes.
-			// Is it inclusive of end?
-			// RangeText logic: [start, end) usually?
-			// Let's re-read RangeText: "for l := sl; l <= el".
-			// "if l == el { end = ec }".
-			// So it includes up to ec-1.
-			// e.g. "abc", select "a". Range 0,0 -> 0,1.
 
 			isSelected := false
 			if hasSelection {
@@ -250,13 +259,8 @@ func (u *UI) drawViewport() {
 			}
 
 			if docX >= len(line) {
-				// Past end of line, maybe show selection if it spans newline?
-				// If selection goes to next line, we should highlight the "newline char" (space)
-				// RangeText logic: includes newline if l < el.
+				// Past end of line - highlight newline if selected
 				if hasSelection && docY >= sl && docY < el {
-					// We are on a selected line, but not the last one.
-					// The "newline" at the end should be selected.
-					// Draw a space with inverse style.
 					u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
 				}
 				break
@@ -264,38 +268,194 @@ func (u *UI) drawViewport() {
 			u.screen.SetCell(drawX+sx, vpRect.Y+sy, line[docX], style)
 		}
 
-		// Edge case: Empty line selection or selection extending past end of line logic above
-		// The loop above breaks if docX >= len(line).
-		// If line is empty, len(line) is 0. start is 0. Loop runs once for sx=0?
-		// No, if vpRect.W > 0, sx=0. docX=0. if 0 >= 0 -> break.
-		// So it breaks immediately. We need to handle the "newline" highlighting outside the loop or ensure loop runs.
-		// Actually, simpler to check if we need to draw the newline highlight after the loop.
-		// But we need the correct sx.
-
+		// Highlight newline at end of line if selected
 		lineLen := len(line)
-		if lineLen < start {
-			lineLen = start
-		} // Should not happen if start clamped
-
-		// If the line end is visible
-		if lineLen >= start && lineLen < start+availW {
-			sx := lineLen - start
+		if lineLen < vp.LeftCol {
+			lineLen = vp.LeftCol
+		}
+		if lineLen >= vp.LeftCol && lineLen < vp.LeftCol+availW {
+			sx := lineLen - vp.LeftCol
 			if hasSelection && docY >= sl && docY < el {
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
 			}
 		}
 	}
 
+	// Draw cursor
 	if u.mode == ModeNormal || u.mode == ModeMessage {
 		cy, cx := u.editor.Cursor()
 		sx := cx - vp.LeftCol
 		sy := cy - vp.TopLine
 
 		drawX := vpRect.X + gutterWidth
-		availW := vpRect.W - gutterWidth
 
 		if sx >= 0 && sx < availW && sy >= 0 && sy < vpRect.H {
 			u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
+		}
+	}
+}
+
+// drawViewportWrapped renders the viewport with soft wrap enabled
+func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
+	if availW <= 0 {
+		return
+	}
+
+	// Build wrapped lines structure
+	type wrappedLine struct {
+		lineNum int      // Original line number
+		start   int      // Start column in original line
+		content []rune   // Wrapped segment
+	}
+	
+	var wrapped []wrappedLine
+	for lineNum, line := range lines {
+		if len(line) == 0 {
+			wrapped = append(wrapped, wrappedLine{lineNum: lineNum, start: 0, content: []rune{}})
+			continue
+		}
+		
+		// Wrap line into segments of availW width
+		for start := 0; start < len(line); start += availW {
+			end := start + availW
+			if end > len(line) {
+				end = len(line)
+			}
+			wrapped = append(wrapped, wrappedLine{
+				lineNum: lineNum,
+				start:   start,
+				content: line[start:end],
+			})
+		}
+	}
+
+	// Draw wrapped lines starting from vp.TopLine
+	for sy := 0; sy < vpRect.H; sy++ {
+		wrappedIdx := vp.TopLine + sy
+		
+		// Draw Gutter - show line number for first wrap of each line
+		if u.showLineNumbers {
+			shouldShowNum := false
+			lineNum := 0
+			if wrappedIdx >= 0 && wrappedIdx < len(wrapped) {
+				lineNum = wrapped[wrappedIdx].lineNum
+				// Check if this is the first wrapped segment of this line
+				if wrappedIdx == 0 || wrapped[wrappedIdx-1].lineNum != lineNum {
+					shouldShowNum = true
+				}
+			}
+			
+			if shouldShowNum {
+				numStr := fmt.Sprintf("%d", lineNum+1) // 1-based
+				padding := gutterWidth - len(numStr) - 1
+				for i := 0; i < padding; i++ {
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+				}
+				for i, r := range numStr {
+					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, term.Style{})
+				}
+				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', term.Style{})
+			} else {
+				// Empty gutter
+				for i := 0; i < gutterWidth; i++ {
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+				}
+			}
+		}
+
+		if wrappedIdx < 0 || wrappedIdx >= len(wrapped) {
+			continue
+		}
+
+		wLine := wrapped[wrappedIdx]
+		drawX := vpRect.X + gutterWidth
+
+		// Draw the wrapped line segment
+		for sx, r := range wLine.content {
+			if sx >= availW {
+				break
+			}
+			
+			docY := wLine.lineNum
+			docX := wLine.start + sx
+
+			isSelected := false
+			if hasSelection {
+				if docY > sl && docY < el {
+					isSelected = true
+				} else if docY == sl && docY == el {
+					if docX >= sc && docX < ec {
+						isSelected = true
+					}
+				} else if docY == sl {
+					if docX >= sc {
+						isSelected = true
+					}
+				} else if docY == el {
+					if docX < ec {
+						isSelected = true
+					}
+				}
+			}
+
+			style := term.Style{}
+			if isSelected {
+				style.Inverse = true
+			}
+
+			u.screen.SetCell(drawX+sx, vpRect.Y+sy, r, style)
+		}
+
+		// Highlight newline at end of last wrap segment for this line if selected
+		if wrappedIdx+1 >= len(wrapped) || wrapped[wrappedIdx+1].lineNum != wLine.lineNum {
+			// This is the last segment of this line
+			if hasSelection && wLine.lineNum >= sl && wLine.lineNum < el {
+				endX := len(wLine.content)
+				if endX < availW {
+					u.screen.SetCell(drawX+endX, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+				}
+			}
+		}
+	}
+
+	// Draw cursor
+	if u.mode == ModeNormal || u.mode == ModeMessage {
+		cy, cx := u.editor.Cursor()
+		
+		// Find which wrapped line contains this cursor position
+		screenY := 0
+		for wrappedIdx, wLine := range wrapped {
+			if wLine.lineNum == cy {
+				// Check if cursor is in this segment
+				if cx >= wLine.start && cx < wLine.start+len(wLine.content) {
+					sx := cx - wLine.start
+					sy := wrappedIdx - vp.TopLine
+					
+					drawX := vpRect.X + gutterWidth
+					
+					if sy >= 0 && sy < vpRect.H && sx >= 0 && sx < availW {
+						u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
+						return
+					}
+				} else if cx == wLine.start+len(wLine.content) {
+					// Cursor at end of this segment
+					// Check if this is the last segment or if cursor should be on next segment
+					isLastSegment := (wrappedIdx+1 >= len(wrapped) || wrapped[wrappedIdx+1].lineNum != cy)
+					if isLastSegment || len(wLine.content) < availW {
+						// Show cursor at end of this segment
+						sx := len(wLine.content)
+						sy := wrappedIdx - vp.TopLine
+						
+						drawX := vpRect.X + gutterWidth
+						
+						if sy >= 0 && sy < vpRect.H && sx >= 0 && sx < availW {
+							u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
+							return
+						}
+					}
+				}
+				screenY++
+			}
 		}
 	}
 }

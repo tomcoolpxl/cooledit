@@ -1073,3 +1073,158 @@ func TestToggleSoftWrapSavesConfig(t *testing.T) {
 		t.Error("Config should have SoftWrap=false after toggle")
 	}
 }
+
+func TestSoftWrapRendering(t *testing.T) {
+	ui, screen := newTestUI(20, 10) // Narrow terminal to force wrapping
+	ui.softWrap = true
+	
+	// Type a long line that will wrap
+	typeString(ui, "This is a very long line that should wrap across multiple screen lines")
+	draw(ui)
+	
+	// With wrap enabled, text should appear on multiple lines
+	// First line should have "This is a very long"
+	firstLine := ""
+	for x := 0; x < 20; x++ {
+		if screen.Cell(x, 0) == 0 {
+			break
+		}
+		firstLine += string(screen.Cell(x, 0))
+	}
+	
+	if len(firstLine) == 0 {
+		t.Error("First line should have content with soft wrap enabled")
+	}
+	
+	// Second line should have continuation
+	secondLine := ""
+	for x := 0; x < 20; x++ {
+		r := screen.Cell(x, 1)
+		if r == 0 || r == ' ' {
+			break
+		}
+		secondLine += string(r)
+	}
+	
+	if len(secondLine) == 0 {
+		t.Error("Second line should have wrapped content")
+	}
+}
+
+func TestSoftWrapVsNoWrap(t *testing.T) {
+	// Test that wrap off uses horizontal scrolling
+	ui, screen := newTestUI(20, 10)
+	ui.softWrap = false
+	
+	typeString(ui, "This is a very long line that should scroll horizontally")
+	draw(ui)
+	
+	// With wrap disabled, cursor should be at end of visible area
+	// and we should see only first 20 chars
+	firstLine := ""
+	for x := 0; x < 20; x++ {
+		r := screen.Cell(x, 0)
+		if r == 0 {
+			break
+		}
+		firstLine += string(r)
+	}
+	
+	// Second line should be empty (no wrap)
+	secondLineEmpty := true
+	for x := 0; x < 20; x++ {
+		r := screen.Cell(x, 1)
+		if r != 0 && r != ' ' {
+			secondLineEmpty = false
+			break
+		}
+	}
+	
+	if !secondLineEmpty {
+		t.Error("Second line should be empty with soft wrap disabled")
+	}
+}
+
+func TestInsertMode(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+	
+	// Should start in insert mode
+	if !ui.insertMode {
+		t.Error("Should start in insert mode")
+	}
+	
+	// Type "hello"
+	typeString(ui, "hello")
+	
+	// Result should be "hello"
+	lines := ui.editor.Lines()
+	if len(lines) == 0 || string(lines[0]) != "hello" {
+		t.Errorf("Expected 'hello', got %q", string(lines[0]))
+	}
+}
+
+func TestReplaceMode(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+	
+	// Type "hello"
+	typeString(ui, "hello")
+	
+	// Move to start
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome})
+	
+	// Toggle to replace mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyInsert})
+	
+	if ui.insertMode {
+		t.Error("Should be in replace mode after Insert key")
+	}
+	
+	// Type "HELLO" - should overwrite
+	typeString(ui, "HELLO")
+	
+	// Result should be "HELLO" (replaced all 5 chars)
+	lines := ui.editor.Lines()
+	if len(lines) == 0 || string(lines[0]) != "HELLO" {
+		t.Errorf("Expected 'HELLO', got %q", string(lines[0]))
+	}
+}
+
+func TestReplaceModeAtEndOfLine(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+	
+	// Type "hi"
+	typeString(ui, "hi")
+	
+	// Toggle to replace mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyInsert})
+	
+	// Type " there" at end - should insert since nothing to replace
+	typeString(ui, " there")
+	
+	lines := ui.editor.Lines()
+	if len(lines) == 0 || string(lines[0]) != "hi there" {
+		t.Errorf("Expected 'hi there', got %q", string(lines[0]))
+	}
+}
+
+func TestInsertKeyToggle(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+	
+	if !ui.insertMode {
+		t.Error("Should start in insert mode")
+	}
+	
+	// Toggle to replace
+	dispatch(ui, term.KeyEvent{Key: term.KeyInsert})
+	if ui.insertMode {
+		t.Error("Should be in replace mode")
+	}
+	
+	// Toggle back to insert
+	dispatch(ui, term.KeyEvent{Key: term.KeyInsert})
+	if !ui.insertMode {
+		t.Error("Should be back in insert mode")
+	}
+}
+
+

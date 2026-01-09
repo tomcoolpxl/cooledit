@@ -202,7 +202,8 @@ cooledit/
 * Clipboard integration.
 * Configuration persistence with TOML.
 * Toggle settings auto-save.
+* Soft wrap rendering with line wrapping.
+* Insert/Replace mode with cursor shape indicators.
 
 ### Milestone 4 (Planned)
 * Keybinding customization.
-* Complete soft wrap rendering.

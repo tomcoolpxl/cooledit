@@ -115,7 +115,11 @@ Menus to include:
 * `F3` Find next
 * `Shift+F3` Find previous
 
-**4.5 Display**
+**4.5 Edit Mode**
+
+* `Insert` Toggle Insert/Replace mode
+
+**4.6 Display**
 
 * `F1` Help overlay
 * `F10` Toggle Menubar focus
@@ -262,11 +266,12 @@ Not in initial scope but candidates:
 * Text Selection and System Clipboard.
 * Configuration persistence with TOML.
 * Toggle settings auto-save.
+* Soft wrap rendering with adaptive line wrapping.
+* Insert/Replace mode with Insert key and cursor shapes.
 
 **Milestone 4 (Planned)**
 
 * Keybinding customization.
-* Complete soft wrap rendering.
 
 
 

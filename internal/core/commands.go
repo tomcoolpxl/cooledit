@@ -12,6 +12,10 @@ type CmdInsertRune struct{ Rune rune }
 
 func (CmdInsertRune) isCommand() {}
 
+type CmdReplaceRune struct{ Rune rune }
+
+func (CmdReplaceRune) isCommand() {}
+
 type CmdInsertNewline struct{}
 
 func (CmdInsertNewline) isCommand() {}

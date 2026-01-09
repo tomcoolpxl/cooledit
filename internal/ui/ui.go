@@ -56,6 +56,9 @@ type UI struct {
 	// find/replace mode state
 	replacingAll bool
 
+	// Edit mode state
+	insertMode bool // true = insert, false = replace/overwrite
+
 	// Features
 	showLineNumbers bool
 	softWrap        bool
@@ -71,6 +74,7 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		menubar:     NewMenubar(),
 		mode:        ModeNormal,
 		showMenubar: false,
+		insertMode:  true, // Always start in insert mode
 		config:      cfg,
 	}
 }
@@ -339,6 +343,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.mode = ModeHelp
 		return nil
 
+	case e.Key == term.KeyInsert:
+		u.insertMode = !u.insertMode
+		return nil
+
 	case e.Key == term.KeyRune && e.Rune == 'l' && (e.Modifiers&term.ModCtrl) != 0:
 		u.showLineNumbers = !u.showLineNumbers
 		u.saveConfig()
@@ -404,7 +412,11 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return core.CmdFindNext{}
 
 	case e.Key == term.KeyRune && e.Modifiers == 0:
-		return core.CmdInsertRune{Rune: e.Rune}
+		if u.insertMode {
+			return core.CmdInsertRune{Rune: e.Rune}
+		} else {
+			return core.CmdReplaceRune{Rune: e.Rune}
+		}
 
 	case e.Key == term.KeyEnter:
 		return core.CmdInsertNewline{}
