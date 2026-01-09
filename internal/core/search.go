@@ -52,11 +52,11 @@ func searchForward(lines [][]rune, query string, startLine, startCol int) (int, 
 	// Check current line starting from startCol
 	// But if startCol is in middle of line, we need to match carefully.
 	// Simplest: Convert line to string, search.
-	
+
 	// Scan lines
 	for i := startLine; i < len(lines); i++ {
 		lineStr := string(lines[i])
-		
+
 		startIdx := 0
 		if i == startLine {
 			startIdx = startCol
@@ -65,14 +65,14 @@ func searchForward(lines [][]rune, query string, startLine, startCol int) (int, 
 				continue
 			}
 		}
-		
+
 		// Optimization: simple string search in the substring
 		matchIdx := strings.Index(lineStr[startIdx:], query)
 		if matchIdx != -1 {
 			return i, startIdx + matchIdx, true
 		}
 	}
-	
+
 	return -1, -1, false
 }
 
@@ -80,19 +80,19 @@ func searchBackward(lines [][]rune, query string, startLine, startCol int) (int,
 	// Scan lines backwards
 	for i := startLine; i >= 0; i-- {
 		lineStr := string(lines[i])
-		
+
 		endIdx := len(lineStr)
 		if i == startLine {
 			endIdx = startCol
 		}
-		
+
 		// We want the *last* occurrence that starts before endIdx.
 		// LastIndex gives last occurrence in the whole string.
 		// We search in lineStr[:endIdx] ?
 		// Wait, LastIndex of "abc" in "abcabc" is 3.
 		// If cursor is at 4.
 		// We want to search in substring.
-		
+
 		searchSpace := lineStr
 		if i == startLine {
 			if endIdx > len(lineStr) {
@@ -100,7 +100,7 @@ func searchBackward(lines [][]rune, query string, startLine, startCol int) (int,
 			}
 			searchSpace = lineStr[:endIdx]
 		}
-		
+
 		matchIdx := strings.LastIndex(searchSpace, query)
 		if matchIdx != -1 {
 			return i, matchIdx, true

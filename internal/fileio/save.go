@@ -43,7 +43,7 @@ func Save(path string, lines [][]rune, eol string, encoding string) error {
 	if err := os.WriteFile(tmp, data, 0644); err != nil {
 		return err
 	}
-	
+
 	err := os.Rename(tmp, path)
 	if err != nil {
 		// If rename failed (e.g. on Windows if target exists), fall back to direct write

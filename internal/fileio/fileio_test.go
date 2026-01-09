@@ -25,16 +25,16 @@ func TestOpenAndSaveUTF8(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "utf8.txt")
 	content := []byte("hello\nworld")
-	
+
 	if err := os.WriteFile(path, content, 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	fd, err := Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if fd.Encoding != "UTF-8" {
 		t.Errorf("expected UTF-8, got %s", fd.Encoding)
 	}
@@ -47,12 +47,12 @@ func TestOpenAndSaveUTF8(t *testing.T) {
 	if string(fd.Lines[0]) != "hello" {
 		t.Errorf("expected 'hello', got %q", string(fd.Lines[0]))
 	}
-	
+
 	// Save back
 	if err := Save(path, fd.Lines, fd.EOL, fd.Encoding); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	readBack, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -66,28 +66,28 @@ func TestOpenCRLF(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "crlf.txt")
 	content := []byte("hello\r\nworld")
-	
+
 	if err := os.WriteFile(path, content, 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	fd, err := Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if fd.EOL != "\r\n" {
 		t.Errorf("expected CRLF, got %q", fd.EOL)
 	}
 	if string(fd.Lines[0]) != "hello" {
 		t.Errorf("expected 'hello', got %q", string(fd.Lines[0]))
 	}
-	
+
 	// Save should preserve CRLF
 	if err := Save(path, fd.Lines, fd.EOL, fd.Encoding); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	readBack, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -102,20 +102,20 @@ func TestOpenISO88591(t *testing.T) {
 	path := filepath.Join(dir, "latin1.txt")
 	// 0xFF is valid ISO-8859-1 (ÿ) but invalid UTF-8
 	content := []byte{0x68, 0x65, 0xFF, 0x6C, 0x6F} // heÿlo
-	
+
 	if err := os.WriteFile(path, content, 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	fd, err := Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if fd.Encoding != "ISO-8859-1" {
 		t.Errorf("expected ISO-8859-1, got %s", fd.Encoding)
 	}
-	
+
 	// Check internal representation (should be rune 255)
 	if len(fd.Lines[0]) != 5 {
 		t.Fatalf("expected length 5, got %d", len(fd.Lines[0]))
@@ -123,12 +123,12 @@ func TestOpenISO88591(t *testing.T) {
 	if fd.Lines[0][2] != 0xFF {
 		t.Errorf("expected rune 0xFF, got %x", fd.Lines[0][2])
 	}
-	
+
 	// Save back
 	if err := Save(path, fd.Lines, fd.EOL, fd.Encoding); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	readBack, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
