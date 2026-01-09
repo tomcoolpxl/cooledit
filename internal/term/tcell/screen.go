@@ -161,7 +161,7 @@ func (s *Screen) SetCursorShape(shape term.CursorShape, color term.Color) {
 	default:
 		cursorStyle = tcell.CursorStyleDefault
 	}
-	
+
 	// Set cursor style with color (terminal support varies)
 	tcellColor := parseColor(color)
 	s.screen.SetCursorStyle(cursorStyle, tcellColor)
