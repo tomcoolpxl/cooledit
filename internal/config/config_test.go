@@ -29,9 +29,6 @@ func TestDefaultConfig(t *testing.T) {
 	if !cfg.Search.CaseSensitive {
 		t.Error("Expected CaseSensitive to be true by default")
 	}
-	if !cfg.Search.RememberTerms {
-		t.Error("Expected RememberTerms to be true by default")
-	}
 }
 
 func TestSaveAndLoad(t *testing.T) {
@@ -61,7 +58,6 @@ func TestSaveAndLoad(t *testing.T) {
 		},
 		Search: Search{
 			CaseSensitive: true,
-			RememberTerms: false,
 		},
 	}
 
@@ -99,9 +95,6 @@ func TestSaveAndLoad(t *testing.T) {
 	}
 	if loaded.Search.CaseSensitive != true {
 		t.Error("CaseSensitive not loaded correctly")
-	}
-	if loaded.Search.RememberTerms != false {
-		t.Error("RememberTerms not loaded correctly")
 	}
 }
 

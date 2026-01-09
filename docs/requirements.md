@@ -145,8 +145,27 @@ Menus to include:
 **5.5 Mouse Support**
 
 * **Disabled by default**.
-* Enabled via `-mouse` command line flag.
+* Enabled via `-mouse` command line flag or config file.
 * When enabled: Click to move cursor, scroll wheel support.
+
+**5.6 Configuration Persistence**
+
+* Settings stored in TOML format.
+* Location:
+  * Linux/macOS: `~/.config/cooledit/config.toml`
+  * Windows: `%APPDATA%\cooledit\config.toml`
+* Supported settings:
+  * `editor.line_numbers` - Show line numbers column
+  * `editor.soft_wrap` - Enable word wrap
+  * `editor.tab_width` - Spaces per tab
+  * `ui.show_menubar` - Show menubar by default
+  * `ui.mouse_enabled` - Enable mouse support
+  * `search.case_sensitive` - Case-sensitive search by default
+* Behavior:
+  * Config file created automatically on first toggle action
+  * CLI flags override config values
+  * Toggle actions (Ctrl+L, Ctrl+W) automatically save config
+  * Missing config file or fields use sensible defaults
 
 ---
 
@@ -239,15 +258,15 @@ Not in initial scope but candidates:
 **Milestone 3 (Complete)**
 
 * Menubar (Auto-hide).
-* Mouse support (Optional via flag).
+* Mouse support (Optional via flag/config).
 * Text Selection and System Clipboard.
+* Configuration persistence with TOML.
+* Toggle settings auto-save.
 
 **Milestone 4 (Planned)**
 
-* Configuration persistence (settings file).
 * Keybinding customization.
-* Go to Line.
-* Soft Wrap.
+* Complete soft wrap rendering.
 
 
 

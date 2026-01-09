@@ -23,7 +23,6 @@ type UI struct {
 // Search contains search-related settings
 type Search struct {
 	CaseSensitive bool `toml:"case_sensitive"`
-	RememberTerms bool `toml:"remember_terms"`
 }
 
 // Default returns a Config with default values
@@ -40,7 +39,6 @@ func Default() *Config {
 		},
 		Search: Search{
 			CaseSensitive: true,
-			RememberTerms: true,
 		},
 	}
 }

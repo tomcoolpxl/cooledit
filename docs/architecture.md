@@ -176,7 +176,8 @@ cooledit/
       tcell/              // tcell implementation
 
     config/
-      config.go           // (Planned)
+      config.go           // Config load/save, path management
+      schema.go           // Config data structures
 ```
 
 ---
@@ -196,10 +197,12 @@ cooledit/
 
 ### Milestone 3 (Complete)
 * Menubar (Auto-hide).
-* Mouse support (Optional via flag).
+* Mouse support (Optional via flag/config).
 * Text Selection.
 * Clipboard integration.
+* Configuration persistence with TOML.
+* Toggle settings auto-save.
 
 ### Milestone 4 (Planned)
-* Configuration (persistence).
 * Keybinding customization.
+* Complete soft wrap rendering.

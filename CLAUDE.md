@@ -48,12 +48,13 @@ internal/
 - ✅ System clipboard integration (Cut/Copy/Paste)
 - ✅ Status bar with priority-based layout and centered mini-help
 - ✅ Auto-hiding menubar (toggle with F10 or Esc)
-- ✅ Mouse support (optional via `-mouse` flag)
-- ✅ Go to Line (Ctrl+G) - Always available without CLI flag
+- ✅ Mouse support (optional via CLI flag or config)
+- ✅ Go to Line (Ctrl+G) - Always available
 - ✅ Adaptive help screen (F1) with two-column layout for wide terminals
+- ✅ Configuration persistence with TOML file
+- ✅ Toggle settings auto-save (line numbers, soft wrap)
 
 ### Planned (Milestone 4)
-- ⏳ Configuration persistence
 - ⏳ Keybinding customization
 - 🔧 Soft wrap - Partially implemented (toggle exists, rendering may be incomplete)
 
@@ -148,26 +149,40 @@ internal/
   - Help screen adaptive layout (TestHelpScreenWideTerminal, TestHelpScreenNarrowTerminal)
   - Help mode (TestHelpMode)
   - Status bar rendering (TestStatusBarCursorPosition)
-
-## File Handling
-
-### Encoding Detection
-- Auto-detect on file open
-- Display in status bar
-- Preserve on save
+  - Configuration save/load (TestDefaultConfig, TestSaveAndLoad, TestPartialConfig)
+  - Toggle actions save config (TestToggleLineNumbersSavesConfig, TestToggleSoftWrapSavesConfig)
 
 ### EOL Format
 - Auto-detect (LF vs CRLF)
 - Display in status bar
 - Preserve original format on save
 
-## Configuration (Future)
+## Configuration System
 
-Will support:
-- Custom keybindings
-- Line numbers toggle persistence
-- Menubar visibility preference
-- Default settings
+**Location:**
+- Linux/macOS: `~/.config/cooledit/config.toml`
+- Windows: `%APPDATA%\cooledit\config.toml`
+
+**Settings:**
+```toml
+[editor]
+line_numbers = false  # Show line numbers column
+soft_wrap = false     # Enable word wrap
+tab_width = 4         # Spaces per tab
+
+[ui]
+show_menubar = false  # Show menubar by default
+mouse_enabled = false # Enable mouse support
+
+[search]
+case_sensitive = true # Case-sensitive search by default
+```
+
+**Behavior:**
+- Config file created automatically on first toggle action
+- CLI flags override config values
+- Toggle actions (Ctrl+L, Ctrl+W) automatically save config
+- Missing config file or fields use sensible defaults
 
 ## Non-Goals
 
@@ -184,21 +199,21 @@ Will support:
 - Terminal abstraction allows for different backend implementations
 - Test coverage is important - maintain tests for core functionality
 
-## When Working on This Project
+## Current Status
 
-1. **No syntax highlighting** - If asked about it, refer to design decision
-2. **Follow exislly functional with all core features complete:
-- ✅ Go to Line is always available (CLI flag removed)
+Project is fully functional with all core features complete:
+- ✅ Go to Line is always available
 - ✅ Unified Find/Replace mode with nano-style workflow
 - ✅ Non-overlapping search (proper match advancement)
 - ✅ Replace All starts from beginning of file
 - ✅ Priority-based status bar with adaptive centered mini-help
 - ✅ Adaptive help screen with two-column layout for wide terminals
 - ✅ Message bar persistence during find/replace operations
-- ✅ Comprehensive test coverage (102+ tests, all passing)
+- ✅ Configuration system with TOML persistence
+- ✅ Toggle settings auto-save to config file
+- ✅ Comprehensive test coverage (110+ tests, all passing)
 
 Focus areas:
-- Configuration persistence (to remove need for command-line flags)
 - Keybinding customization
 - Completing soft wrap rendering logic
 
