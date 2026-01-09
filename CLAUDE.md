@@ -226,8 +226,10 @@ internal/
 - **Tab key inserts spaces** (not literal `\t` characters)
 - **Configurable tab width** (default: 4 spaces, set via `tab_width` in config)
 - **Smart indentation**: Tab moves cursor to next tab stop (e.g., column 4, 8, 12...)
-- **Smart backspace**: When in leading whitespace, backspace removes one indentation unit
+- **Smart backspace**: In leading spaces-only whitespace at a tab stop boundary, backspace removes one full indentation unit; otherwise deletes single character
 - **Literal tabs**: Press `Ctrl+Tab` to insert a raw `\t` character
+- **Rendering**: Literal tab characters render with proper width via tcell
+- **Undo/Redo**: Tab insertion and smart backspace are atomic operations
 - **Rendering**: Literal tab characters render with proper width via tcell
 - **Undo/Redo**: Tab insertion and smart backspace are atomic operations
 

@@ -581,56 +581,50 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 		line, col := e.buf.Cursor()
 
-		// Smart backspace: if at the start of whitespace indentation, remove one indentation unit
+		// Simple backspace: delete one character (space or tab)
+		// Smart indentation: in leading whitespace with only spaces, delete to previous tab stop
 		if col > 0 && e.TabWidth > 0 {
 			lines := e.buf.Lines()
 			if line < len(lines) {
 				lineText := lines[line]
-				// Check if we're in leading whitespace
-				isInLeadingWhitespace := true
+				
+				// Check if we're in leading whitespace with ONLY spaces (no tabs)
+				inLeadingSpaces := true
+				hasOnlySpaces := true
 				for i := 0; i < col; i++ {
-					if lineText[i] != ' ' && lineText[i] != '\t' {
-						isInLeadingWhitespace = false
+					if lineText[i] == '\t' {
+						hasOnlySpaces = false
+						break
+					}
+					if lineText[i] != ' ' {
+						inLeadingSpaces = false
+						hasOnlySpaces = false
 						break
 					}
 				}
 
-				if isInLeadingWhitespace && col > 0 {
-					// Calculate how many spaces to delete to reach previous tab stop
-					spacesToDelete := col % e.TabWidth
-					if spacesToDelete == 0 {
-						spacesToDelete = e.TabWidth
-					}
-
-					// Check if we have that many spaces before cursor
-					hasSpaces := true
-					for i := col - spacesToDelete; i < col && hasSpaces; i++ {
-						if i < 0 || lineText[i] != ' ' {
-							hasSpaces = false
+				// If we're in leading spaces and aligned with tab stops, delete to previous tab stop
+				if inLeadingSpaces && hasOnlySpaces && col > 0 && col%e.TabWidth == 0 {
+					// Delete back to previous tab stop (delete e.TabWidth spaces as one unit)
+					actions := make([]Action, e.TabWidth)
+					for i := 0; i < e.TabWidth; i++ {
+						actions[i] = &BackspaceAction{
+							DeletedRune: ' ',
+							Line:        line,
+							Col:         col - i,
+							IsMerge:     false,
 						}
 					}
 
-					if hasSpaces && spacesToDelete > 1 {
-						// Delete multiple spaces as one unit
-						actions := make([]Action, spacesToDelete)
-						for i := 0; i < spacesToDelete; i++ {
-							actions[i] = &BackspaceAction{
-								DeletedRune: ' ',
-								Line:        line,
-								Col:         col - i,
-								IsMerge:     false,
-							}
-						}
-
-						composite := &CompositeAction{Actions: actions}
-						e.undo.Push(composite)
-						composite.Apply(e)
-						return Result{}
-					}
+					composite := &CompositeAction{Actions: actions}
+					e.undo.Push(composite)
+					composite.Apply(e)
+					return Result{}
 				}
 			}
 		}
 
+		// Default: delete single character (space, tab, or any other character)
 		var action *BackspaceAction
 
 		if col > 0 {
