@@ -507,7 +507,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 		line, col := e.buf.Cursor()
 		lines := e.buf.Lines()
-		
+
 		// If at end of line or on empty line, just insert
 		if line >= len(lines) || col >= len(lines[line]) {
 			action := &InsertRuneAction{
@@ -520,7 +520,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		} else {
 			// Replace: capture old char, use backspace to delete, then insert
 			oldRune := lines[line][col]
-			
+
 			// Create a backspace action to delete current char
 			// First move cursor forward, then backspace
 			e.buf.SetCursor(line, col+1)
@@ -531,7 +531,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 				IsMerge:     false,
 			}
 			backAction.Apply(e)
-			
+
 			// Now insert the new character (cursor is at col after backspace)
 			insAction := &InsertRuneAction{
 				Rune: c.Rune,
@@ -539,7 +539,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 				Col:  col,
 			}
 			insAction.Apply(e)
-			
+
 			e.undo.Push(&CompositeAction{Actions: []Action{backAction, insAction}})
 		}
 

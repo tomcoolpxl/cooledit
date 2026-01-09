@@ -303,18 +303,18 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 	// Build wrapped lines structure
 	type wrappedLine struct {
-		lineNum int      // Original line number
-		start   int      // Start column in original line
-		content []rune   // Wrapped segment
+		lineNum int    // Original line number
+		start   int    // Start column in original line
+		content []rune // Wrapped segment
 	}
-	
+
 	var wrapped []wrappedLine
 	for lineNum, line := range lines {
 		if len(line) == 0 {
 			wrapped = append(wrapped, wrappedLine{lineNum: lineNum, start: 0, content: []rune{}})
 			continue
 		}
-		
+
 		// Wrap line into segments of availW width
 		for start := 0; start < len(line); start += availW {
 			end := start + availW
@@ -332,7 +332,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	// Draw wrapped lines starting from vp.TopLine
 	for sy := 0; sy < vpRect.H; sy++ {
 		wrappedIdx := vp.TopLine + sy
-		
+
 		// Draw Gutter - show line number for first wrap of each line
 		if u.showLineNumbers {
 			shouldShowNum := false
@@ -344,7 +344,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 					shouldShowNum = true
 				}
 			}
-			
+
 			if shouldShowNum {
 				numStr := fmt.Sprintf("%d", lineNum+1) // 1-based
 				padding := gutterWidth - len(numStr) - 1
@@ -375,7 +375,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 			if sx >= availW {
 				break
 			}
-			
+
 			docY := wLine.lineNum
 			docX := wLine.start + sx
 
@@ -421,7 +421,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	// Draw cursor
 	if u.mode == ModeNormal || u.mode == ModeMessage {
 		cy, cx := u.editor.Cursor()
-		
+
 		// Find which wrapped line contains this cursor position
 		screenY := 0
 		for wrappedIdx, wLine := range wrapped {
@@ -430,9 +430,9 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				if cx >= wLine.start && cx < wLine.start+len(wLine.content) {
 					sx := cx - wLine.start
 					sy := wrappedIdx - vp.TopLine
-					
+
 					drawX := vpRect.X + gutterWidth
-					
+
 					if sy >= 0 && sy < vpRect.H && sx >= 0 && sx < availW {
 						u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
 						return
@@ -445,9 +445,9 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 						// Show cursor at end of this segment
 						sx := len(wLine.content)
 						sy := wrappedIdx - vp.TopLine
-						
+
 						drawX := vpRect.X + gutterWidth
-						
+
 						if sy >= 0 && sy < vpRect.H && sx >= 0 && sx < availW {
 							u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
 							return
