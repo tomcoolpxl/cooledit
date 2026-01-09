@@ -3,6 +3,7 @@ package ui
 import (
 	"time"
 
+	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/term"
 )
@@ -58,21 +59,39 @@ type UI struct {
 	// Features
 	showLineNumbers bool
 	softWrap        bool
+
+	// Configuration
+	config *config.Config
 }
 
-func New(screen term.Screen, editor *core.Editor) *UI {
+func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 	return &UI{
 		screen:      screen,
 		editor:      editor,
 		menubar:     NewMenubar(),
 		mode:        ModeNormal,
 		showMenubar: false,
+		config:      cfg,
 	}
 }
 
 func (u *UI) SetOptions(lineNumbers, softWrap bool) {
 	u.showLineNumbers = lineNumbers
 	u.softWrap = softWrap
+}
+
+// saveConfig persists the current settings to the config file
+func (u *UI) saveConfig() {
+	if u.config == nil {
+		return
+	}
+
+	// Update config with current values
+	u.config.Editor.LineNumbers = u.showLineNumbers
+	u.config.Editor.SoftWrap = u.softWrap
+
+	// Save to file (ignore errors - don't interrupt user)
+	_ = config.Save(u.config)
 }
 
 func (u *UI) Run() error {
@@ -322,10 +341,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyRune && e.Rune == 'l' && (e.Modifiers&term.ModCtrl) != 0:
 		u.showLineNumbers = !u.showLineNumbers
+		u.saveConfig()
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == 'w' && (e.Modifiers&term.ModCtrl) != 0:
 		u.softWrap = !u.softWrap
+		u.saveConfig()
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == 'q' && (e.Modifiers&term.ModCtrl) != 0:

@@ -3,6 +3,7 @@ package app
 import (
 	"testing"
 
+	"cooledit/internal/config"
 	"cooledit/internal/term"
 )
 
@@ -47,9 +48,11 @@ func (m *mockScreen) HideCursor()                                 {}
 func TestRunWithScreenMouseSetting(t *testing.T) {
 	t.Run("MouseEnabled", func(t *testing.T) {
 		m := &mockScreen{}
+		cfg := config.Default()
+		cfg.UI.MouseEnabled = true
 		// RunWithScreen will call Run which loops.
 		// Our mock returns Ctrl+Q which sets quitNow=true.
-		err := RunWithScreen("", true, false, m)
+		err := RunWithScreen("", true, false, cfg, m)
 		if err != nil {
 			t.Fatalf("Run failed: %v", err)
 		}
@@ -66,7 +69,9 @@ func TestRunWithScreenMouseSetting(t *testing.T) {
 
 	t.Run("MouseDisabled", func(t *testing.T) {
 		m := &mockScreen{}
-		err := RunWithScreen("", false, false, m)
+		cfg := config.Default()
+		cfg.UI.MouseEnabled = false
+		err := RunWithScreen("", false, false, cfg, m)
 		if err != nil {
 			t.Fatalf("Run failed: %v", err)
 		}

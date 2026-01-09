@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/term"
 )
@@ -13,7 +14,8 @@ import (
 func newTestUI(w, h int) (*UI, *FakeScreen) {
 	screen := NewFakeScreen(w, h)
 	editor := core.NewEditor(nil)
-	ui := New(screen, editor)
+	cfg := config.Default()
+	ui := New(screen, editor, cfg)
 	ui.showMenubar = false // Disable by default for tests to match old layout assumptions
 	return ui, screen
 }
@@ -1005,5 +1007,69 @@ func TestDeleteKeyUndo(t *testing.T) {
 	}
 	if screen.Cell(1, 0) != 'e' {
 		t.Fatalf("expected 'e' at position 1 after undo")
+	}
+}
+
+func TestToggleLineNumbersSavesConfig(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.toml")
+
+	// Override ConfigPath
+	origConfigPath := config.ConfigPath
+	defer func() { config.ConfigPath = origConfigPath }()
+	config.ConfigPath = func() (string, error) {
+		return configFile, nil
+	}
+
+	ui, _ := newTestUI(80, 24)
+	ui.showLineNumbers = true
+
+	// Toggle line numbers off
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'l', Modifiers: term.ModCtrl})
+
+	if ui.showLineNumbers {
+		t.Error("Line numbers should be toggled off")
+	}
+
+	// Load config and verify it was saved
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("Failed to load saved config: %v", err)
+	}
+
+	if cfg.Editor.LineNumbers {
+		t.Error("Config should have LineNumbers=false after toggle")
+	}
+}
+
+func TestToggleSoftWrapSavesConfig(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.toml")
+
+	// Override ConfigPath
+	origConfigPath := config.ConfigPath
+	defer func() { config.ConfigPath = origConfigPath }()
+	config.ConfigPath = func() (string, error) {
+		return configFile, nil
+	}
+
+	ui, _ := newTestUI(80, 24)
+	ui.softWrap = true
+
+	// Toggle soft wrap off
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'w', Modifiers: term.ModCtrl})
+
+	if ui.softWrap {
+		t.Error("Soft wrap should be toggled off")
+	}
+
+	// Load config and verify it was saved
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("Failed to load saved config: %v", err)
+	}
+
+	if cfg.Editor.SoftWrap {
+		t.Error("Config should have SoftWrap=false after toggle")
 	}
 }

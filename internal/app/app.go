@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/fileio"
 	"cooledit/internal/term"
@@ -8,12 +9,12 @@ import (
 	"cooledit/internal/ui"
 )
 
-func Run(path string, enableMouse, lineNumbers bool) error {
-	return RunWithScreen(path, enableMouse, lineNumbers, tcell.New())
+func Run(path string, enableMouse, lineNumbers bool, cfg *config.Config) error {
+	return RunWithScreen(path, enableMouse, lineNumbers, cfg, tcell.New())
 }
 
 // RunWithScreen is exported for testing or custom backends
-func RunWithScreen(path string, enableMouse, lineNumbers bool, screen term.Screen) error {
+func RunWithScreen(path string, enableMouse, lineNumbers bool, cfg *config.Config, screen term.Screen) error {
 	if err := screen.Init(enableMouse); err != nil {
 		return err
 	}
@@ -29,7 +30,7 @@ func RunWithScreen(path string, enableMouse, lineNumbers bool, screen term.Scree
 		editor.LoadFile(fd)
 	}
 
-	u := ui.New(screen, editor)
-	u.SetOptions(lineNumbers, false)
+	u := ui.New(screen, editor, cfg)
+	u.SetOptions(lineNumbers, cfg.Editor.SoftWrap)
 	return u.Run()
 }

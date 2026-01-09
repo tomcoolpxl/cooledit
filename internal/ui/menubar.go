@@ -66,8 +66,14 @@ func (m *Menubar) initDefaults() {
 		{
 			Title: "View",
 			Items: []MenuItem{
-				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", Action: func(u *UI) { u.showLineNumbers = !u.showLineNumbers }},
-				{Label: "Toggle Word Wrap", Accelerator: "Ctrl+W", Action: func(u *UI) { u.softWrap = !u.softWrap }},
+				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", Action: func(u *UI) {
+					u.showLineNumbers = !u.showLineNumbers
+					u.saveConfig()
+				}},
+				{Label: "Toggle Word Wrap", Accelerator: "Ctrl+W", Action: func(u *UI) {
+					u.softWrap = !u.softWrap
+					u.saveConfig()
+				}},
 			},
 		},
 		{
