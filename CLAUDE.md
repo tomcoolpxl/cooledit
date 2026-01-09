@@ -89,6 +89,9 @@ internal/
 - `Ctrl+F` - Find/Replace (unified mode)
 - `F3` / `Shift+F3` - Find Next/Previous
 - `Ctrl+G` - Go to Line (always available)
+- `Ctrl+L` - Toggle line numbers
+- `Ctrl+W` - Toggle word wrap
+- `F11` - Toggle status bar (Zen mode)
 - `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
 - `Ctrl+Tab` - Insert literal tab character (\t)
 - `Insert` - Toggle Insert/Replace mode
@@ -97,21 +100,34 @@ internal/
 
 ## Key Design Decisions
 
-### Status Bar (Always Visible, Priority-Based Layout)
+### Status Bar (Zen Mode Support)
 **Left** (priority 2): Filename with modified indicator (`*`)
 **Center** (priority 3): Mini-help with adaptive display:
   - `F1 Help` → `Esc/F10 Menu` → `Ctrl+Q Quit` → `Ctrl+S Save` → `Ctrl+F Find/Replace`
   - Shows as many items as fit, removes from right to left when space is limited
 **Right** (priority 1): `REPLACE  Ln X, Col Y  Encoding EOL` (replace mode indicator when active, cursor position and file status)
 
+**Zen Mode**: Press `F11` to toggle status bar visibility for distraction-free editing. The status bar automatically reappears when needed during:
+- Prompt/message dialogs
+- Find/Replace mode
+- Go to Line
+- Save As
+- Overwrite confirmation
+
 ### Menubar (Auto-hidden by Default)
 - Toggle with F10 or Esc
 - Menus: File, Edit, Search, View, Help
 - View menu includes:
-  - Toggle Line Numbers
-  - Toggle Word Wrap
-  - Themes (submenu with all available themes)
+  - Toggle Line Numbers (checkmark when enabled)
+  - Toggle Word Wrap (checkmark when enabled)
+  - Toggle Status Bar (checkmark when enabled)
+  - **Separator line**
+  - CRLF status (readonly, shows current line ending: LF or CRLF)
+  - Encoding status (readonly, shows current file encoding)
+  - **Separator line**
+  - Themes submenu (all available themes with checkmark for active theme)
 - Navigation via arrow keys or mouse (if enabled)
+- Menu items support: checkmarks, separators (visual lines), and readonly items (informational only)
 
 ### Command-Line Flags
 - `-mouse` - Enable mouse support (click to position cursor, scroll)
@@ -266,9 +282,10 @@ soft_wrap = false     # Enable word wrap
 tab_width = 4         # Spaces per tab
 
 [ui]
-show_menubar = false  # Show menubar by default
-mouse_enabled = false # Enable mouse support
-theme = "default"     # Active theme name
+show_menubar = false     # Show menubar by default
+show_statusbar = true    # Show status bar (F11 toggles Zen mode)
+mouse_enabled = false    # Enable mouse support
+theme = "default"        # Active theme name
 
 [search]
 case_sensitive = true # Case-sensitive search by default

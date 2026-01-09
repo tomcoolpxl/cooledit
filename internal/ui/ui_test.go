@@ -21,7 +21,7 @@ func newTestUI(w, h int) (*UI, *FakeScreen) {
 }
 
 func updateTestLayout(ui *UI, w, h int) {
-	ui.layout = ComputeLayout(w, h, ui.mode, ui.showMenubar)
+	ui.layout = ComputeLayout(w, h, ui.mode, ui.showMenubar, true)
 }
 
 func draw(ui *UI) {

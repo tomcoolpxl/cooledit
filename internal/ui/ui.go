@@ -62,6 +62,7 @@ type UI struct {
 
 	// Features
 	showLineNumbers bool
+	showStatusBar   bool
 	softWrap        bool
 
 	// Theme
@@ -76,20 +77,26 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 	editor.TabWidth = cfg.Editor.TabWidth
 
 	return &UI{
-		screen:      screen,
-		editor:      editor,
-		menubar:     NewMenubar(),
-		mode:        ModeNormal,
-		showMenubar: false,
-		insertMode:  true, // Always start in insert mode
-		config:      cfg,
-		theme:       cfg.GetCurrentTheme(),
+		screen:          screen,
+		editor:          editor,
+		menubar:         NewMenubar(),
+		mode:            ModeNormal,
+		showMenubar:     false,
+		showStatusBar:   cfg.UI.ShowStatusBar,
+		insertMode:      true, // Always start in insert mode
+		config:          cfg,
+		theme:           cfg.GetCurrentTheme(),
 	}
 }
 
 func (u *UI) SetOptions(lineNumbers, softWrap bool) {
 	u.showLineNumbers = lineNumbers
 	u.softWrap = softWrap
+}
+
+// SetStatusBarVisibility sets the statusbar visibility
+func (u *UI) SetStatusBarVisibility(show bool) {
+	u.showStatusBar = show
 }
 
 // saveConfig persists the current settings to the config file
@@ -101,6 +108,7 @@ func (u *UI) saveConfig() {
 	// Update config with current values
 	u.config.Editor.LineNumbers = u.showLineNumbers
 	u.config.Editor.SoftWrap = u.softWrap
+	u.config.UI.ShowStatusBar = u.showStatusBar
 
 	// Save to file (ignore errors - don't interrupt user)
 	_ = config.Save(u.config)
@@ -126,7 +134,7 @@ func (u *UI) Run() error {
 			u.mode = ModeNormal
 		}
 
-		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar)
+		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar)
 
 		u.draw()
 
@@ -239,6 +247,11 @@ func (u *UI) executeMenuItem() {
 	menu := u.menubar.Menus[u.menubar.SelectedMenuIndex]
 	item := menu.Items[u.menubar.SelectedItemIndex]
 
+	// Skip separators and readonly items
+	if item.IsSeparator || item.IsReadOnly {
+		return
+	}
+
 	// Exit menu mode
 	u.mode = ModeNormal
 	u.menubar.Active = false
@@ -349,6 +362,11 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	switch {
 	case e.Key == term.KeyF1:
 		u.mode = ModeHelp
+		return nil
+
+	case e.Key == term.KeyF11:
+		u.showStatusBar = !u.showStatusBar
+		u.saveConfig()
 		return nil
 
 	case e.Key == term.KeyInsert:

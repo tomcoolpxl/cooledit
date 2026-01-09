@@ -133,9 +133,21 @@ func (u *UI) drawMenuDropdown() {
 			break
 		}
 
+		// Check if separator
+		if item.IsSeparator {
+			// Draw separator line
+			for x := 0; x < width; x++ {
+				u.screen.SetCell(startX+x, y, '─', style)
+			}
+			continue
+		}
+
 		s := style
 		if i == u.menubar.SelectedItemIndex {
-			s = styleSelected
+			// Don't highlight readonly items or separators
+			if !item.IsReadOnly {
+				s = styleSelected
+			}
 		}
 
 		// Fill line
@@ -152,7 +164,11 @@ func (u *UI) drawMenuDropdown() {
 		}
 
 		// Draw Label
-		for j, r := range item.Label {
+		label := item.Label
+		if item.IsReadOnly && item.GetValue != nil {
+			label = item.Label + ": " + item.GetValue(u)
+		}
+		for j, r := range label {
 			if labelOffset+j < width {
 				u.screen.SetCell(startX+labelOffset+j, y, r, s)
 			}
@@ -657,6 +673,7 @@ func (u *UI) drawHelp(w, h int) {
 		"  MENU & HELP",
 		"    F10, Esc      Menu bar",
 		"    F1            This help",
+		"    F11           Toggle status bar (Zen mode)",
 		"",
 		"  FILE",
 		"    Ctrl+S        Save",
@@ -671,6 +688,8 @@ func (u *UI) drawHelp(w, h int) {
 		"    Ctrl+V        Paste",
 		"    Ctrl+A        Select all",
 		"    Insert        Insert/Replace mode",
+		"    Tab           Insert spaces (smart indent)",
+		"    Ctrl+Tab      Insert literal tab (\\t)",
 	}
 
 	rightCol := []string{
@@ -691,6 +710,9 @@ func (u *UI) drawHelp(w, h int) {
 		"  VIEW",
 		"    Ctrl+L        Line numbers",
 		"    Ctrl+W        Word wrap",
+		"",
+		"  THEMES",
+		"    View menu     11 built-in themes",
 	}
 
 	footer := "  Press any key to close"

@@ -10,6 +10,9 @@ type MenuItem struct {
 	Submenu     []MenuItem     // Submenu items (e.g., for Themes)
 	IsCheckable bool           // If true, item can be checked
 	IsChecked   func(*UI) bool // Function to determine if checked
+	IsSeparator bool           // If true, renders as separator line
+	IsReadOnly  bool           // If true, item is not clickable (display only)
+	GetValue    func(*UI) string // For readonly items, returns current value
 }
 
 type Menu struct {
@@ -71,14 +74,32 @@ func (m *Menubar) initDefaults() {
 		{
 			Title: "View",
 			Items: append([]MenuItem{
-				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", Action: func(u *UI) {
+				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.showLineNumbers
+				}, Action: func(u *UI) {
 					u.showLineNumbers = !u.showLineNumbers
 					u.saveConfig()
 				}},
-				{Label: "Toggle Word Wrap", Accelerator: "Ctrl+W", Action: func(u *UI) {
+				{Label: "Toggle Word Wrap", Accelerator: "Ctrl+W", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.softWrap
+				}, Action: func(u *UI) {
 					u.softWrap = !u.softWrap
 					u.saveConfig()
 				}},
+				{Label: "Toggle Status Bar", Accelerator: "F11", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.showStatusBar
+				}, Action: func(u *UI) {
+					u.showStatusBar = !u.showStatusBar
+					u.saveConfig()
+				}},
+				{IsSeparator: true},
+				{Label: "EOL Format", IsReadOnly: true, GetValue: func(u *UI) string {
+					return u.editor.File().EOL
+				}},
+				{Label: "Encoding", IsReadOnly: true, GetValue: func(u *UI) string {
+					return u.editor.File().Encoding
+				}},
+				{IsSeparator: true},
 			}, themeItems...),
 		},
 		{

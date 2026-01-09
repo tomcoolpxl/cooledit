@@ -17,9 +17,10 @@ type Editor struct {
 
 // UI contains user interface settings
 type UI struct {
-	ShowMenubar  bool   `toml:"show_menubar"`
-	MouseEnabled bool   `toml:"mouse_enabled"`
-	Theme        string `toml:"theme"`
+	ShowMenubar   bool   `toml:"show_menubar"`
+	ShowStatusBar bool   `toml:"show_statusbar"`
+	MouseEnabled  bool   `toml:"mouse_enabled"`
+	Theme         string `toml:"theme"`
 }
 
 // Search contains search-related settings
@@ -109,9 +110,10 @@ func Default() *Config {
 			TabWidth:    4,
 		},
 		UI: UI{
-			ShowMenubar:  false,
-			MouseEnabled: false,
-			Theme:        "default",
+			ShowMenubar:   false,
+			ShowStatusBar: true,
+			MouseEnabled:  false,
+			Theme:         "default",
 		},
 		Search: Search{
 			CaseSensitive: true,
