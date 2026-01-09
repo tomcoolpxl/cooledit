@@ -45,7 +45,6 @@ type UI struct {
 
 	// Features
 	showLineNumbers bool
-	enableGoToLine  bool
 	softWrap        bool
 }
 
@@ -59,9 +58,8 @@ func New(screen term.Screen, editor *core.Editor) *UI {
 	}
 }
 
-func (u *UI) SetOptions(lineNumbers, goToLine, softWrap bool) {
+func (u *UI) SetOptions(lineNumbers, softWrap bool) {
 	u.showLineNumbers = lineNumbers
-	u.enableGoToLine = goToLine
 	u.softWrap = softWrap
 }
 
@@ -357,11 +355,8 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == 'g' && (e.Modifiers&term.ModCtrl) != 0:
-		if u.enableGoToLine {
-			u.enterGoToLine()
-			return nil
-		}
-		return core.CmdGoToLine{Line: -1} // Invalid, effectively no-op or specific command
+		u.enterGoToLine()
+		return nil
 
 	case e.Key == term.KeyF3:
 		if e.Modifiers == term.ModShift {

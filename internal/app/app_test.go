@@ -49,7 +49,7 @@ func TestRunWithScreenMouseSetting(t *testing.T) {
 		m := &mockScreen{}
 		// RunWithScreen will call Run which loops.
 		// Our mock returns Ctrl+Q which sets quitNow=true.
-		err := RunWithScreen("", true, false, false, m)
+		err := RunWithScreen("", true, false, m)
 		if err != nil {
 			t.Fatalf("Run failed: %v", err)
 		}
@@ -66,7 +66,7 @@ func TestRunWithScreenMouseSetting(t *testing.T) {
 
 	t.Run("MouseDisabled", func(t *testing.T) {
 		m := &mockScreen{}
-		err := RunWithScreen("", false, false, false, m)
+		err := RunWithScreen("", false, false, m)
 		if err != nil {
 			t.Fatalf("Run failed: %v", err)
 		}
