@@ -18,6 +18,7 @@ package ui
 import (
 	"fmt"
 
+	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/term"
 )
@@ -26,7 +27,7 @@ import (
 // Returns the display rune for each screen column
 func expandTabsToColumn(line []rune, maxCols int, tabWidth int) []rune {
 	if tabWidth <= 0 {
-		tabWidth = 4
+		tabWidth = config.DefaultTabWidth
 	}
 
 	result := make([]rune, 0, len(line)*2)
@@ -56,7 +57,7 @@ func expandTabsToColumn(line []rune, maxCols int, tabWidth int) []rune {
 // runeToDisplayCol converts a rune index to display column (accounting for tabs)
 func runeToDisplayCol(line []rune, runeIdx int, tabWidth int) int {
 	if tabWidth <= 0 {
-		tabWidth = 4
+		tabWidth = config.DefaultTabWidth
 	}
 
 	col := 0
@@ -480,7 +481,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 	tabWidth := u.editor.TabWidth
 	if tabWidth <= 0 {
-		tabWidth = 4
+		tabWidth = config.DefaultTabWidth
 	}
 
 	// Build wrapped lines structure with tab expansion

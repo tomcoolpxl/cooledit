@@ -15,6 +15,9 @@
 
 package config
 
+// DefaultTabWidth is the default number of spaces per tab
+const DefaultTabWidth = 4
+
 // Config represents the application configuration
 type Config struct {
 	Editor Editor               `toml:"editor"`
@@ -124,7 +127,7 @@ func Default() *Config {
 		Editor: Editor{
 			LineNumbers: false,
 			SoftWrap:    false,
-			TabWidth:    4,
+			TabWidth:    DefaultTabWidth,
 		},
 		UI: UI{
 			ShowMenubar:   false,

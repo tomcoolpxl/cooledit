@@ -80,8 +80,8 @@ func Save(cfg *Config) error {
 		return err
 	}
 
-	// Open file for writing
-	f, err := os.Create(path)
+	// Open file for writing with restricted permissions (user read/write only)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}

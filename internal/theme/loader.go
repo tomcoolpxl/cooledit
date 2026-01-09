@@ -23,7 +23,9 @@ import (
 // It matches config.ThemeSpec structure
 type ConfigThemeSpec interface{}
 
-// LoadTheme loads a theme by name, checking built-in themes first, then custom themes from config
+// LoadTheme loads a theme by name, checking built-in themes first,
+// then custom themes from the configuration file.
+// If the theme is not found, it returns the default theme.
 func LoadTheme(name string, customThemes map[string]ConfigThemeSpec) *Theme {
 	// Check built-in themes first
 	if theme, ok := BuiltinThemes[name]; ok {
@@ -49,8 +51,12 @@ func convertConfigToTheme(name string, spec ConfigThemeSpec) *Theme {
 	return nil
 }
 
-// ParseColor converts a color string to term.Color
-// Supports: named colors, hex (#RRGGBB), or "default"
+// ParseColor converts a color string to term.Color.
+// Supported formats:
+//   - Named colors: "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"
+//   - Hex colors: "#RRGGBB" (e.g., "#FF0000" for red)
+//   - Default: "" or "default" returns term.ColorDefault
+//   - Unknown strings are passed through as custom colors for tcell to handle
 func ParseColor(s string) term.Color {
 	if s == "" || s == "default" {
 		return term.ColorDefault
@@ -85,7 +91,8 @@ func ParseColor(s string) term.Color {
 	}
 }
 
-// GetAvailableThemes returns all available theme names (built-in + custom)
+// GetAvailableThemes returns all available theme names including
+// both built-in themes and custom themes from configuration.
 func GetAvailableThemes(customThemes map[string]ConfigThemeSpec) []string {
 	themes := ListBuiltinThemes()
 

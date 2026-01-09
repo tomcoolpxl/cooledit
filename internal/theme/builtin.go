@@ -17,7 +17,8 @@ package theme
 
 import "cooledit/internal/term"
 
-// BuiltinThemes contains all 13 hardcoded themes
+// BuiltinThemes contains all 13 hardcoded themes that ship with cooledit.
+// These themes are always available without any configuration file.
 var BuiltinThemes = map[string]*Theme{
 	"default":         defaultTheme(),
 	"dark":            darkTheme(),
@@ -42,7 +43,8 @@ func GetBuiltinTheme(name string) *Theme {
 	return BuiltinThemes["default"]
 }
 
-// ListBuiltinThemes returns a sorted list of built-in theme names
+// ListBuiltinThemes returns a sorted list of all built-in theme names.
+// The list is ordered with "default" first, followed by other themes.
 func ListBuiltinThemes() []string {
 	return []string{
 		"default",

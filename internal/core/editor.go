@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"cooledit/internal/config"
 	"cooledit/internal/core/buffer"
 	"cooledit/internal/fileio"
 )
@@ -213,7 +214,11 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			content = e.buf.RangeText(sl, sc, el, ec)
 		} else {
 			line, _ := e.buf.Cursor()
-			content = string(e.buf.Lines()[line])
+			lines := e.buf.Lines()
+			if line < 0 || line >= len(lines) {
+				return Result{Message: "Copy failed: invalid cursor position"}
+			}
+			content = string(lines[line])
 		}
 
 		if e.clipboard != nil {
@@ -251,7 +256,11 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 
 		line, col := e.buf.Cursor()
-		content := e.buf.Lines()[line]
+		lines := e.buf.Lines()
+		if line < 0 || line >= len(lines) {
+			return Result{Message: "Cut failed: invalid cursor position"}
+		}
+		content := lines[line]
 		if e.clipboard != nil {
 			if err := e.clipboard.Set(string(content)); err != nil {
 				return Result{Message: "Cut failed: " + err.Error()}
@@ -292,6 +301,17 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		// We use ReplaceLinesAction to make it one undo block
 		line, col := e.buf.Cursor()
 		lines := e.buf.Lines()
+
+		// Validate cursor position before array access
+		if line < 0 || line >= len(lines) {
+			return Result{Message: "Paste failed: invalid cursor position"}
+		}
+		if col < 0 {
+			col = 0
+		}
+		if col > len(lines[line]) {
+			col = len(lines[line])
+		}
 
 		var newLines [][]rune
 		// Split text into lines
@@ -651,7 +671,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		line, col := e.buf.Cursor()
 		tabWidth := e.TabWidth
 		if tabWidth <= 0 {
-			tabWidth = 4
+			tabWidth = config.DefaultTabWidth
 		}
 
 		// Calculate spaces to next tab stop

@@ -17,7 +17,9 @@ package theme
 
 import "cooledit/internal/term"
 
-// Theme defines all color elements for the editor UI
+// Theme defines all color elements for the editor UI.
+// Each theme contains color definitions for the editor viewport, search highlights,
+// status bar, menus, prompts, help screens, and messages.
 type Theme struct {
 	Name   string
 	Editor EditorColors

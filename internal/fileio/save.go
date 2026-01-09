@@ -16,6 +16,7 @@
 package fileio
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -38,19 +39,22 @@ func Save(path string, lines [][]rune, eol string, encoding string) error {
 		}
 	}
 
-	// Try atomic save
+	// Try atomic save with restricted permissions (user read/write only)
 	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0644); err != nil {
+	if err := os.WriteFile(tmp, data, 0600); err != nil {
 		return err
 	}
 
 	err := os.Rename(tmp, path)
 	if err != nil {
 		// If rename failed (e.g. on Windows if target exists), fall back to direct write
-		if err := os.WriteFile(path, data, 0644); err != nil {
-			return err
+		writeErr := os.WriteFile(path, data, 0600)
+		if writeErr != nil {
+			_ = os.Remove(tmp) // Best-effort cleanup
+			return fmt.Errorf("save failed: %w", writeErr)
 		}
-		os.Remove(tmp)
+		// Direct write succeeded, clean up temp file (ignore error - file was saved)
+		_ = os.Remove(tmp)
 	}
 	return nil
 }
