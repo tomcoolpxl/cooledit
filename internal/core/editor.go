@@ -546,15 +546,32 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 
 	case CmdInsertNewline:
+		// Detect leading whitespace on current line to copy to new line (nano-style)
+		line, col := e.buf.Cursor()
+		lines := e.buf.Lines()
+		indent := ""
+		if line < len(lines) {
+			lineText := lines[line]
+			// Extract leading whitespace (spaces and tabs)
+			for _, r := range lineText {
+				if r == ' ' || r == '\t' {
+					indent += string(r)
+				} else {
+					break
+				}
+			}
+		}
+
 		if e.selectionActive {
 			delAction := e.deleteSelection()
 			e.ClearSelection()
 			delAction.Apply(e)
 
-			line, col := e.buf.Cursor()
+			line, col = e.buf.Cursor()
 			insAction := &InsertNewlineAction{
-				Line: line,
-				Col:  col,
+				Line:   line,
+				Col:    col,
+				Indent: indent,
 			}
 			insAction.Apply(e)
 
@@ -562,10 +579,10 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{}
 		}
 
-		line, col := e.buf.Cursor()
 		action := &InsertNewlineAction{
-			Line: line,
-			Col:  col,
+			Line:   line,
+			Col:    col,
+			Indent: indent,
 		}
 		e.undo.Push(action)
 		action.Apply(e)

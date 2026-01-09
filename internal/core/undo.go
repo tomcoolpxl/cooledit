@@ -90,16 +90,31 @@ func (a *InsertRuneAction) Undo(e *Editor) {
 }
 
 type InsertNewlineAction struct {
-	Line int
-	Col  int
+	Line   int
+	Col    int
+	Indent string // Leading whitespace to insert on new line
 }
 
 func (a *InsertNewlineAction) Apply(e *Editor) {
 	e.buf.SetCursor(a.Line, a.Col)
 	e.buf.InsertNewline()
+	// Insert indentation if specified
+	if a.Indent != "" {
+		for _, r := range a.Indent {
+			e.buf.InsertRune(r)
+		}
+	}
 }
 
 func (a *InsertNewlineAction) Undo(e *Editor) {
+	// Delete indentation first if it was added
+	if a.Indent != "" {
+		e.buf.SetCursor(a.Line+1, len(a.Indent))
+		for range a.Indent {
+			e.buf.Backspace()
+		}
+	}
+	// Then delete the newline
 	e.buf.SetCursor(a.Line+1, 0)
 	e.buf.Backspace()
 }

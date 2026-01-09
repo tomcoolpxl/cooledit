@@ -233,8 +233,8 @@ internal/
 
 ### Enter Key Behavior
 - **Enter creates new line**: Splits current line at cursor position
-- **No auto-indent**: Does NOT copy indentation from previous line (unlike nano/vim)
-- **Simple behavior**: Just inserts newline - use Tab to manually indent if needed
+- **Auto-indent**: Copies leading whitespace (spaces and tabs) from current line to new line (nano-style)
+- **Smart behavior**: If current line starts with "    code", new line also starts with "    "
 - **Rendering**: Literal tab characters render with proper width via tcell
 - **Undo/Redo**: Tab insertion and smart backspace are atomic operations
 
@@ -432,7 +432,6 @@ title_bg = "default"
 - ❌ Multiple simultaneous file buffers
 - ❌ Markdown rendering
 - ❌ Plugin system (not initial scope)
-- ❌ Auto-indentation (preserving indentation from previous line on Enter)
 
 ## Development Context
 
