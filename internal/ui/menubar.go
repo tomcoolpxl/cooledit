@@ -151,7 +151,7 @@ func (m *Menubar) buildThemeItems() []MenuItem {
 func (m *Menubar) buildCursorShapeItems() []MenuItem {
 	cursorShapes := []string{"block", "underline", "bar"}
 	items := make([]MenuItem, len(cursorShapes))
-	
+
 	for i, shapeName := range cursorShapes {
 		// Capture shapeName in closure
 		name := shapeName
