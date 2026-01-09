@@ -199,13 +199,16 @@ cooledit/
 * Menubar (Auto-hide).
 * Mouse support (Optional via flag/config).
 
-### Milestone 4 (Planned)
-* Keybinding customization (config-file-only).
-
-### Milestone 5 (Planned)
-* Theme/Color system with built-in and custom themes.
+### Milestone 4 (Planned - Next Phase)
+* Theme/Color system with 10 built-in themes + custom themes from config.
 * All UI elements have configurable foreground/background colors.
+* UI menu support (View → Themes) to switch themes interactively.
 * Automatic terminal capability detection and graceful degradation.
+* CLI flag `--config <path>` to override config file location.
+* Built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord.
+
+### Future (Optional)
+* Keybinding customization (config-file-only).
 * Text Selection.
 * Clipboard integration.
 * Configuration persistence with TOML.

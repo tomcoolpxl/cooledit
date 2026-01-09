@@ -80,7 +80,7 @@ Menus to include:
 * `File`: Save, Save As…, Quit.
 * `Edit`: Undo, Redo, Cut, Copy, Paste, Go to Line.
 * `Search`: Find, Find Next/Prev.
-* `View`: Toggle Line Numbers, Toggle Word Wrap.
+* `View`: Toggle Line Numbers, Toggle Word Wrap, Themes (submenu).
 * `Help`: About.
 
 ---
@@ -166,7 +166,7 @@ Menus to include:
   * `ui.mouse_enabled` - Enable mouse support
   * `ui.theme` - Active theme name (default: "default")
   * `search.case_sensitive` - Case-sensitive search by default
-  * `themes.*` - Theme definitions (see Section 8)
+  * `themes.*` - Theme definitions (see Section 9)
 * Behavior:
   * Config file created automatically on first toggle action
   * CLI flags override config values
@@ -175,8 +175,13 @@ Menus to include:
 
 **5.7 Theme System (Planned)**
 
-* Multiple built-in themes provided
-* Users can define custom themes in config file
+* 10 built-in themes (hardcoded, no external dependencies):
+  1. default, 2. dark, 3. light, 4. monokai, 5. solarized-dark,
+  6. solarized-light, 7. gruvbox-dark, 8. gruvbox-light, 9. dracula, 10. nord
+* Custom themes can be defined in config file
+* Built-in themes always available without config file
+* UI menu support: View → Themes submenu to switch themes
+* Theme selection automatically saved to config
 * Each UI element has configurable foreground and background colors
 * Color formats supported:
   * Named colors (e.g., "red", "blue")
@@ -188,17 +193,34 @@ Menus to include:
   * 16-color (ANSI) fallback
   * Monochrome fallback using text attributes (inverse, bold)
 * Works correctly over SSH and in limited terminals
+* CLI flag: `--config <path>` to override config file location
 
 ---
 
-## 6. Encoding and Newline Support
+## 6. Command-Line Interface
+
+**6.1 Command-Line Flags**
+
+* `cooledit [filename]` - Open file for editing
+* `-mouse` - Enable mouse support
+* `-line-numbers` - Show line numbers column
+* `--config <path>` - Use alternate config file location
+
+**6.2 Environment Variables**
+
+* `TERM` - Terminal type (automatically detected)
+* Standard XDG and Windows environment variables for config location
+
+---
+
+## 7. Encoding and Newline Support
 
 **6.1 Encoding Support**
 
 * Detect file encoding on open.
 * Allow user to re-open/convert with specific encoding.
 
-**6.2 Newline Format**
+**7.2 Newline Format**
 
 * Detect type on load (LF or CR+LF).
 * Display type in status bar.
@@ -206,14 +228,14 @@ Menus to include:
 
 ---
 
-## 7. Configuration
+## 8. Configuration
 
-**7.1 Settings File**
+**8.1 Settings File**
 
-* Store user preferences (key mappings, line numbers, menubar visibility).
+* Store user preferences (line numbers, menubar visibility, theme selection).
 * Load on startup.
-* **Keybinding customization**: Config-file-only (no UI for editing keybindings).
-* Users manually edit config file to customize keyboard shortcuts.
+* **Keybinding customization**: Config-file-only (no UI) - Future/Optional feature.
+* Users can manually edit config file to customize keyboard shortcuts (when implemented).
 
 **7.2 Default Behavior**
 
@@ -221,9 +243,9 @@ Menus to include:
 
 ---
 
-## 8. Theme System (Planned - Milestone 5)
+## 9. Theme System (Planned - Milestone 4 - Next Phase)
 
-**8.1 Theme Elements**
+**9.1 Theme Elements**
 
 Each element has `fg` (foreground) and `bg` (background) properties:
 
@@ -235,14 +257,26 @@ Each element has `fg` (foreground) and `bg` (background) properties:
 * **help**: Background, text, titles, footer
 * **message**: Info, warning, error messages
 
-**8.2 Built-in Themes**
+**9.2 Built-in Themes**
 
-* `default` - Terminal defaults with inverse video
-* `dark` - Dark background theme
-* `light` - Light background theme
-* `monokai` - Monokai color scheme
-* `solarized-dark` / `solarized-light` - Solarized themes
-* `gruvbox-dark` / `gruvbox-light` - Gruvbox themes
+10 hardcoded themes (no external dependencies required):
+
+1. `default` - Terminal defaults with inverse video (current behavior)
+2. `dark` - Classic dark background with light text
+3. `light` - Classic light background with dark text  
+4. `monokai` - Popular dark theme with vibrant purple, pink, yellow, green
+5. `solarized-dark` - Ethan Schoonover's precision dark color scheme
+6. `solarized-light` - Ethan Schoonover's precision light color scheme
+7. `gruvbox-dark` - Retro groove colors, warm dark background
+8. `gruvbox-light` - Retro groove colors, warm light background
+9. `dracula` - Dark purple/pink theme, easy on the eyes
+10. `nord` - Arctic bluish theme inspired by northern lights
+
+**Theme Selection:**
+* View → Themes menu shows all available themes
+* Current theme indicated with checkmark
+* Selection automatically saved to config
+* Keyboard shortcut: `Ctrl+T` or customizable
 
 **8.3 Custom Themes**
 
@@ -250,7 +284,7 @@ Each element has `fg` (foreground) and `bg` (background) properties:
 * Each theme element requires `fg` and `bg` properties
 * Select active theme via `ui.theme` setting
 
-**8.4 Color Format**
+**9.4 Color Format**
 
 ```toml
 [themes.custom.editor]
@@ -262,7 +296,7 @@ line_numbers_fg = "default"  # Terminal default
 line_numbers_bg = "default"
 ```
 
-**8.5 Terminal Compatibility**
+**9.5 Terminal Compatibility**
 
 * Automatic detection of terminal color capabilities via tcell
 * Graceful degradation: true color → 256 color → 16 color → monochrome

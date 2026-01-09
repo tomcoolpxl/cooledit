@@ -57,10 +57,11 @@ internal/
 - ✅ Insert/Replace mode toggle with Insert key and cursor shape indicators
 
 ### Planned (Milestone 4)
-- ⏳ Keybinding customization (config-file-only, no UI)
+- ⏳ Theme/Color system with 10 built-in themes + custom themes from config
+- ⏳ UI menu (View → Themes) to switch themes interactively
 
-### Planned (Milestone 5)
-- ⏳ Theme/Color system with multiple built-in themes
+### Future/Optional
+- Keybinding customization (config-file-only, no UI)
 
 ## Important Keyboard Shortcuts
 
@@ -91,11 +92,16 @@ internal/
 ### Menubar (Auto-hidden by Default)
 - Toggle with F10 or Esc
 - Menus: File, Edit, Search, View, Help
+- View menu includes:
+  - Toggle Line Numbers
+  - Toggle Word Wrap
+  - Themes (submenu with all available themes)
 - Navigation via arrow keys or mouse (if enabled)
 
 ### Command-Line Flags
 - `-mouse` - Enable mouse support (click to position cursor, scroll)
 - `-line-numbers` - Show line numbers column
+- `--config <path>` - Use alternate config file location
 
 ### Clipboard Behavior
 - Cut/Copy with no selection operates on current line
@@ -176,7 +182,29 @@ internal/
 - Display in status bar
 - Preserve original format on save
 
-## Theme System (Planned - Milestone 5)
+## Theme System (Planned - Milestone 4)
+
+**Built-in Themes:**
+10 hardcoded themes that work out of the box without any configuration:
+1. `default` - Uses terminal defaults with inverse video (current behavior)
+2. `dark` - Dark background with light text (simple, high contrast)
+3. `light` - Light background with dark text (simple, high contrast)
+4. `monokai` - Popular dark theme with purple, pink, yellow, green accents
+5. `solarized-dark` - Ethan Schoonover's precision dark color scheme
+6. `solarized-light` - Ethan Schoonover's precision light color scheme
+7. `gruvbox-dark` - Retro groove colors, warm dark background
+8. `gruvbox-light` - Retro groove colors, warm light background
+9. `dracula` - Dark theme with purple/pink accents, easy on the eyes
+10. `nord` - Arctic, bluish theme inspired by northern lights
+
+**Custom Themes:**
+Users can define additional themes in config file using `[themes.custom_name]` sections.
+
+**UI Support:**
+- View → Themes menu shows all available themes (built-in + custom)
+- Click to switch theme (saves selection to config)
+- Current theme indicated with checkmark
+- Keyboard shortcut: `Ctrl+T` (or customizable via keybindings)
 
 **Color Elements:**
 Each element has `fg` (foreground) and `bg` (background) properties.
@@ -193,14 +221,6 @@ Each element has `fg` (foreground) and `bg` (background) properties.
 - Named colors: `"black"`, `"red"`, `"green"`, `"blue"`, `"white"`, etc.
 - Hex colors: `"#RRGGBB"` (e.g., `"#282828"`, `"#EBDBB2"`)
 - Terminal default: `"default"` (uses terminal's default colors)
-
-**Built-in Themes (Planned):**
-- `default` - Uses terminal defaults with inverse video (current behavior)
-- `dark` - Dark background with light text
-- `light` - Light background with dark text
-- `monokai` - Popular dark theme
-- `solarized-dark` / `solarized-light` - Solarized color schemes
-- `gruvbox-dark` / `gruvbox-light` - Gruvbox color schemes
 
 **Terminal Compatibility:**
 - tcell automatically detects terminal color capabilities
@@ -266,12 +286,26 @@ title_bg = "default"
 - Invalid or conflicting bindings fall back to defaults with warning
 
 **Theme System (Planned):**
-- Multiple built-in themes (default, dark, light, monokai, solarized, etc.)
-- Custom themes defined in `[themes.custom_name]` sections
+- 10 built-in themes (hardcoded, no external dependencies required):
+  1. `default` - Terminal defaults with inverse video (current behavior)
+  2. `dark` - Classic dark background with light text
+  3. `light` - Classic light background with dark text
+  4. `monokai` - Popular dark theme with vibrant colors
+  5. `solarized-dark` - Precision dark color scheme
+  6. `solarized-light` - Precision light color scheme
+  7. `gruvbox-dark` - Retro groove dark colors
+  8. `gruvbox-light` - Retro groove light colors
+  9. `dracula` - Dark theme with purple accents
+  10. `nord` - Arctic, bluish dark theme
+- Custom themes can be defined in `[themes.custom_name]` sections of config file
+- Built-in themes always available without config file
+- UI menu support: View → Themes submenu to switch themes interactively
+- Theme selection automatically saved to config
 - Each theme element has `fg` (foreground) and `bg` (background) colors
 - Color formats: named colors, hex `#RRGGBB`, or `"default"` for terminal default
 - Automatic graceful degradation for terminals with limited color support (tcell handles this)
 - Active theme selected via `ui.theme` config value
+- CLI flag: `--config <path>` to override config file location
 
 **Behavior:**
 - Config file created automatically on first toggle action
