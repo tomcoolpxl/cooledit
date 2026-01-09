@@ -126,7 +126,7 @@ type Screen interface {
 	SetCell(x, y int, ch rune, style Style)
 	Show()
 
-	SetCursorShape(shape CursorShape)
+	SetCursorShape(shape CursorShape, color Color)
 	ShowCursor(x, y int)
 	HideCursor()
 }

@@ -11,12 +11,13 @@ func (u *UI) draw() {
 	u.screen.HideCursor()
 	u.clear()
 
-	// Set cursor shape based on insert/replace mode
+	// Set cursor shape and color based on insert/replace mode
 	insertShape := ParseCursorShape(u.config.UI.CursorShape)
+	cursorColor := u.theme.Editor.CursorColor
 	if u.insertMode {
-		u.screen.SetCursorShape(insertShape)
+		u.screen.SetCursorShape(insertShape, cursorColor)
 	} else {
-		u.screen.SetCursorShape(GetAlternateCursorShape(insertShape))
+		u.screen.SetCursorShape(GetAlternateCursorShape(insertShape), cursorColor)
 	}
 
 	w, h := u.layout.Width, u.layout.Height

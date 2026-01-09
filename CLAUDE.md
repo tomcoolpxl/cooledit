@@ -197,6 +197,9 @@ internal/
 - **Persistent**: Cursor shape preference saved to config file
 - **Menu access**: View → Cursor submenu (block, underline, bar with checkmarks)
 - **All three shapes supported**: Block (█), Underline (_), Bar (|)
+- **Themed cursor colors**: Each theme defines a cursor color that contrasts well with the background
+- **Color support**: Terminal support varies - some terminals may not display custom cursor colors
+- **Configuration**: Cursor colors can be customized in theme config using hex (#RRGGBB) or named colors
 
 ### Tab Handling
 - **Tab key inserts spaces** (not literal `\t` characters)
@@ -261,7 +264,7 @@ Users can define additional themes in config file using `[themes.custom_name]` s
 **Color Elements:**
 Each element has `fg` (foreground) and `bg` (background) properties.
 
-- **editor**: `fg`, `bg`, `selection_fg`, `selection_bg`, `line_numbers_fg`, `line_numbers_bg`
+- **editor**: `fg`, `bg`, `selection_fg`, `selection_bg`, `line_numbers_fg`, `line_numbers_bg`, `cursor_color`
 - **search**: `match_fg`, `match_bg`, `current_match_fg`, `current_match_bg`
 - **statusbar**: `fg`, `bg`, `filename_fg`, `modified_fg`, `position_fg`, `mode_fg`, `help_fg`
 - **menubar**: `fg`, `bg`, `selected_fg`, `selected_bg`, `dropdown_fg`, `dropdown_bg`, `dropdown_selected_fg`, `dropdown_selected_bg`, `accelerator_fg`
@@ -311,6 +314,7 @@ selection_fg = "default"
 selection_bg = "default"
 line_numbers_fg = "default"
 line_numbers_bg = "default"
+cursor_color = "default"  # Cursor color (terminal support varies)
 
 [themes.default.statusbar]
 fg = "default"

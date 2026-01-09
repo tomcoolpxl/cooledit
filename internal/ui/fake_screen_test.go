@@ -52,8 +52,8 @@ func (s *FakeScreen) SetCell(x, y int, ch rune, _ term.Style) {
 
 func (s *FakeScreen) Show() {}
 
-func (s *FakeScreen) SetCursorShape(shape term.CursorShape) {
-	// Fake screen doesn't need to track cursor shape for tests
+func (s *FakeScreen) SetCursorShape(shape term.CursorShape, color term.Color) {
+	// Fake screen doesn't need to track cursor shape/color for tests
 }
 
 func (s *FakeScreen) ShowCursor(x, y int) {

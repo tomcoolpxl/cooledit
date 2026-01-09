@@ -53,6 +53,7 @@ func defaultTheme() *Theme {
 			SelectionBg:   term.ColorDefault,
 			LineNumbersFg: term.ColorDefault,
 			LineNumbersBg: term.ColorDefault,
+			CursorColor:   term.ColorDefault,
 		},
 		Search: SearchColors{
 			MatchFg:        term.ColorDefault,
@@ -115,6 +116,7 @@ func darkTheme() *Theme {
 			SelectionBg:   "#264F78",
 			LineNumbersFg: "#858585",
 			LineNumbersBg: "#1E1E1E",
+			CursorColor:   "#FFD700",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -177,6 +179,7 @@ func lightTheme() *Theme {
 			SelectionBg:   "#ADD6FF",
 			LineNumbersFg: "#6E6E6E",
 			LineNumbersBg: "#F5F5F5",
+			CursorColor:   "#0078D7",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -239,6 +242,7 @@ func monokaiTheme() *Theme {
 			SelectionBg:   "#49483E",
 			LineNumbersFg: "#90908A",
 			LineNumbersBg: "#272822",
+			CursorColor:   "#F92672",
 		},
 		Search: SearchColors{
 			MatchFg:        "#272822",
@@ -301,6 +305,7 @@ func solarizedDarkTheme() *Theme {
 			SelectionBg:   "#073642",
 			LineNumbersFg: "#586E75",
 			LineNumbersBg: "#002B36",
+			CursorColor:   "#268BD2",
 		},
 		Search: SearchColors{
 			MatchFg:        "#002B36",
@@ -363,6 +368,7 @@ func solarizedLightTheme() *Theme {
 			SelectionBg:   "#EEE8D5",
 			LineNumbersFg: "#93A1A1",
 			LineNumbersBg: "#FDF6E3",
+			CursorColor:   "#268BD2",
 		},
 		Search: SearchColors{
 			MatchFg:        "#FDF6E3",
@@ -425,6 +431,7 @@ func gruvboxDarkTheme() *Theme {
 			SelectionBg:   "#504945",
 			LineNumbersFg: "#928374",
 			LineNumbersBg: "#282828",
+			CursorColor:   "#FE8019",
 		},
 		Search: SearchColors{
 			MatchFg:        "#282828",
@@ -487,6 +494,7 @@ func gruvboxLightTheme() *Theme {
 			SelectionBg:   "#EBDBB2",
 			LineNumbersFg: "#928374",
 			LineNumbersBg: "#FBF1C7",
+			CursorColor:   "#D65D0E",
 		},
 		Search: SearchColors{
 			MatchFg:        "#FBF1C7",
@@ -549,6 +557,7 @@ func draculaTheme() *Theme {
 			SelectionBg:   "#44475A",
 			LineNumbersFg: "#6272A4",
 			LineNumbersBg: "#282A36",
+			CursorColor:   "#FF79C6",
 		},
 		Search: SearchColors{
 			MatchFg:        "#282A36",
@@ -611,6 +620,7 @@ func nordTheme() *Theme {
 			SelectionBg:   "#434C5E",
 			LineNumbersFg: "#4C566A",
 			LineNumbersBg: "#2E3440",
+			CursorColor:   "#88C0D0",
 		},
 		Search: SearchColors{
 			MatchFg:        "#2E3440",
@@ -673,6 +683,7 @@ func dosTheme() *Theme {
 			SelectionBg:   "#00AAAA",
 			LineNumbersFg: "#AAAAAA",
 			LineNumbersBg: "#000055",
+			CursorColor:   "#FFFF00",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",

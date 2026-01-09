@@ -22,6 +22,7 @@ type EditorColors struct {
 	SelectionBg   term.Color // Selected text background
 	LineNumbersFg term.Color // Line numbers foreground
 	LineNumbersBg term.Color // Line numbers background
+	CursorColor   term.Color // Cursor color (terminal support varies)
 }
 
 // SearchColors defines colors for search/find/replace

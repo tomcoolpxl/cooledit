@@ -47,6 +47,7 @@ type EditorThemeSpec struct {
 	SelectionBg   string `toml:"selection_bg"`
 	LineNumbersFg string `toml:"line_numbers_fg"`
 	LineNumbersBg string `toml:"line_numbers_bg"`
+	CursorColor   string `toml:"cursor_color"`
 }
 
 type SearchThemeSpec struct {

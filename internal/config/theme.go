@@ -16,6 +16,7 @@ func ConvertThemeSpec(name string, spec ThemeSpec) *theme.Theme {
 			SelectionBg:   parseColorField(spec.Editor.SelectionBg),
 			LineNumbersFg: parseColorField(spec.Editor.LineNumbersFg),
 			LineNumbersBg: parseColorField(spec.Editor.LineNumbersBg),
+			CursorColor:   parseColorField(spec.Editor.CursorColor),
 		},
 		Search: theme.SearchColors{
 			MatchFg:        parseColorField(spec.Search.MatchFg),

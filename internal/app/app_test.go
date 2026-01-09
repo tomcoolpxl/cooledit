@@ -42,7 +42,7 @@ func (m *mockScreen) PushEvent(ev term.Event) {}
 
 func (m *mockScreen) SetCell(x, y int, ch rune, style term.Style) {}
 func (m *mockScreen) Show()                                       {}
-func (m *mockScreen) SetCursorShape(shape term.CursorShape)       {}
+func (m *mockScreen) SetCursorShape(shape term.CursorShape, color term.Color) {}
 func (m *mockScreen) ShowCursor(x, y int)                         {}
 func (m *mockScreen) HideCursor()                                 {}
 

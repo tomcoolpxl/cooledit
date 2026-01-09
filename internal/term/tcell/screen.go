@@ -149,7 +149,7 @@ func (s *Screen) Show() {
 	s.screen.Show()
 }
 
-func (s *Screen) SetCursorShape(shape term.CursorShape) {
+func (s *Screen) SetCursorShape(shape term.CursorShape, color term.Color) {
 	var cursorStyle tcell.CursorStyle
 	switch shape {
 	case term.CursorBlock:
@@ -161,7 +161,10 @@ func (s *Screen) SetCursorShape(shape term.CursorShape) {
 	default:
 		cursorStyle = tcell.CursorStyleDefault
 	}
-	s.screen.SetCursorStyle(cursorStyle)
+	
+	// Set cursor style with color (terminal support varies)
+	tcellColor := parseColor(color)
+	s.screen.SetCursorStyle(cursorStyle, tcellColor)
 }
 
 func (s *Screen) ShowCursor(x, y int) {
