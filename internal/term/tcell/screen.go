@@ -50,11 +50,11 @@ func (s *Screen) PollEvent() term.Event {
 
 	case *tcell.EventKey:
 		return translateKeyEvent(e)
-		
+
 	case *tcell.EventMouse:
 		x, y := e.Position()
 		btn := e.Buttons()
-		
+
 		var button term.MouseButton
 		switch {
 		case btn&tcell.Button1 != 0:
@@ -70,7 +70,7 @@ func (s *Screen) PollEvent() term.Event {
 		default:
 			return nil // Ignore release/move
 		}
-		
+
 		return term.MouseEvent{X: x, Y: y, Button: button}
 	}
 

@@ -172,7 +172,7 @@ func TestPageDownAndUp(t *testing.T) {
 
 func TestNavigationEdgeCases(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Test on empty buffer
 	e.Apply(CmdMoveLeft{}, 10)
 	e.Apply(CmdMoveUp{}, 10)
@@ -180,8 +180,8 @@ func TestNavigationEdgeCases(t *testing.T) {
 	if row != 0 || col != 0 {
 		t.Fatalf("expected (0,0) on empty buffer, got (%d,%d)", row, col)
 	}
-	
-e.Apply(CmdMoveRight{}, 10)
+
+	e.Apply(CmdMoveRight{}, 10)
 	e.Apply(CmdMoveDown{}, 10)
 	row, col = e.Cursor()
 	if row != 0 || col != 0 {
@@ -194,14 +194,14 @@ e.Apply(CmdMoveRight{}, 10)
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
 	// a
 	// b|
-	
-e.Apply(CmdMoveRight{}, 10) // No-op at EOF
+
+	e.Apply(CmdMoveRight{}, 10) // No-op at EOF
 	row, col = e.Cursor()
 	if row != 1 || col != 1 {
 		t.Fatalf("expected EOF at (1,1), got (%d,%d)", row, col)
 	}
-	
-e.Apply(CmdMoveLeft{}, 10) // At (1,0)
+
+	e.Apply(CmdMoveLeft{}, 10) // At (1,0)
 	e.Apply(CmdMoveLeft{}, 10) // Should wrap to (0,1)
 	row, col = e.Cursor()
 	if row != 0 || col != 1 {
@@ -215,13 +215,13 @@ func TestInsertInMiddleOfBuffer(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
 	e.Apply(CmdMoveLeft{}, 10)
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
-	
+
 	lines := e.Lines()
 	if string(lines[0]) != "abc" {
 		t.Fatalf("expected 'abc', got %q", string(lines[0]))
 	}
-	
-e.Apply(CmdMoveHome{}, 10)
+
+	e.Apply(CmdMoveHome{}, 10)
 	e.Apply(CmdInsertNewline{}, 10)
 	// \n
 	// abc
@@ -238,16 +238,16 @@ func TestBackspaceMergesLines(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
 	// a
 	// b
-	
-e.Apply(CmdMoveHome{}, 10) // At (1,0)
+
+	e.Apply(CmdMoveHome{}, 10) // At (1,0)
 	e.Apply(CmdBackspace{}, 10)
-	
+
 	lines := e.Lines()
 	if len(lines) != 1 || string(lines[0]) != "ab" {
 		t.Fatalf("expected merge to 'ab', got %v", lines)
 	}
-	
-row, col := e.Cursor()
+
+	row, col := e.Cursor()
 	if row != 0 || col != 1 {
 		t.Fatalf("expected cursor at (0,1) after merge, got (%d,%d)", row, col)
 	}
@@ -256,19 +256,19 @@ row, col := e.Cursor()
 func TestSearchEmptyQuery(t *testing.T) {
 	e := newTestEditor()
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
-	
+
 	// CmdFind with empty
 	res := e.Apply(CmdFind{Query: ""}, 10)
 	if res.Message != "Not found: " {
 		t.Fatalf("expected Not Found for empty query, got %q", res.Message)
 	}
-	
+
 	// CmdFindNext with no previous
 	res = e.Apply(CmdFindNext{}, 10)
 	if res.Message != "No previous search" {
 		t.Fatalf("expected No previous search, got %q", res.Message)
 	}
-	
+
 	// CmdFindPrev with no previous
 	res = e.Apply(CmdFindPrev{}, 10)
 	if res.Message != "No previous search" {
@@ -279,7 +279,7 @@ func TestSearchEmptyQuery(t *testing.T) {
 func TestEnsureVisibleSmall(t *testing.T) {
 	e := newTestEditor()
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
-	
+
 	// Check EnsureVisible with 0/0 dims (should not crash)
 	e.EnsureVisible(0, 0)
 	vp := e.Viewport()
@@ -290,23 +290,23 @@ func TestEnsureVisibleSmall(t *testing.T) {
 
 func TestEnsureVisibleScrolling(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Create 20 lines
 	for i := 0; i < 20; i++ {
 		e.Apply(CmdInsertRune{Rune: 'x'}, 10)
 		e.Apply(CmdInsertNewline{}, 10)
 	}
-	
+
 	// Viewport size 5
 	e.EnsureVisible(10, 5)
 	vp := e.Viewport()
-	// Cursor is at row 20. Viewport height 5. 
+	// Cursor is at row 20. Viewport height 5.
 	// TopLine should be 20 - 5 + 1 = 16.
 	if vp.TopLine != 16 {
 		t.Fatalf("expected TopLine 16, got %d", vp.TopLine)
 	}
-	
-e.Apply(CmdFileStart{}, 10)
+
+	e.Apply(CmdFileStart{}, 10)
 	e.EnsureVisible(10, 5)
 	vp = e.Viewport()
 	if vp.TopLine != 0 {
@@ -323,9 +323,9 @@ func TestLoadFile(t *testing.T) {
 		EOL:      "\n",
 		Encoding: "UTF-8",
 	}
-	
-e.LoadFile(fd)
-	
+
+	e.LoadFile(fd)
+
 	if e.File().Path != "test.txt" {
 		t.Errorf("expected path test.txt, got %s", e.File().Path)
 	}
@@ -343,15 +343,15 @@ func TestDeleteCharacter(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
 	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
 	// "abc" cursor at (0,3)
-	
+
 	e.Apply(CmdMoveHome{}, 10) // cursor at (0,0)
-	e.Apply(CmdDelete{}, 10)    // delete 'a'
-	
+	e.Apply(CmdDelete{}, 10)   // delete 'a'
+
 	lines := e.Lines()
 	if string(lines[0]) != "bc" {
 		t.Fatalf("expected 'bc' after delete, got %q", string(lines[0]))
 	}
-	
+
 	row, col := e.Cursor()
 	if row != 0 || col != 0 {
 		t.Fatalf("expected cursor at (0,0) after delete, got (%d,%d)", row, col)
@@ -364,16 +364,16 @@ func TestDeleteMiddleCharacter(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
 	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
 	// "abc" cursor at (0,3)
-	
-	e.Apply(CmdMoveLeft{}, 10)   // cursor at (0,2)
-	e.Apply(CmdMoveLeft{}, 10)   // cursor at (0,1)
-	e.Apply(CmdDelete{}, 10)      // delete 'b'
-	
+
+	e.Apply(CmdMoveLeft{}, 10) // cursor at (0,2)
+	e.Apply(CmdMoveLeft{}, 10) // cursor at (0,1)
+	e.Apply(CmdDelete{}, 10)   // delete 'b'
+
 	lines := e.Lines()
 	if string(lines[0]) != "ac" {
 		t.Fatalf("expected 'ac' after delete, got %q", string(lines[0]))
 	}
-	
+
 	row, col := e.Cursor()
 	if row != 0 || col != 1 {
 		t.Fatalf("expected cursor at (0,1) after delete, got (%d,%d)", row, col)
@@ -387,15 +387,15 @@ func TestDeleteMergesLines(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
 	// a
 	// b
-	
-	e.Apply(CmdMoveUp{}, 10)   // cursor at (0,1)
-	e.Apply(CmdDelete{}, 10)   // delete newline, merge lines
-	
+
+	e.Apply(CmdMoveUp{}, 10) // cursor at (0,1)
+	e.Apply(CmdDelete{}, 10) // delete newline, merge lines
+
 	lines := e.Lines()
 	if len(lines) != 1 || string(lines[0]) != "ab" {
 		t.Fatalf("expected merge to 'ab', got %v", lines)
 	}
-	
+
 	row, col := e.Cursor()
 	if row != 0 || col != 1 {
 		t.Fatalf("expected cursor at (0,1) after merge, got (%d,%d)", row, col)
@@ -408,10 +408,10 @@ func TestDeleteOnEmptyLine(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 	// (empty line)
 	// a
-	
-	e.Apply(CmdMoveUp{}, 10)   // cursor at (0,0) on empty line
-	e.Apply(CmdDelete{}, 10)   // should merge empty line with next
-	
+
+	e.Apply(CmdMoveUp{}, 10) // cursor at (0,0) on empty line
+	e.Apply(CmdDelete{}, 10) // should merge empty line with next
+
 	lines := e.Lines()
 	if len(lines) != 1 || string(lines[0]) != "a" {
 		t.Fatalf("expected 'a' on single line, got %v", lines)
@@ -422,9 +422,9 @@ func TestDeleteAtEndOfLastLine(t *testing.T) {
 	e := newTestEditor()
 	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
 	// "a" cursor at (0,1)
-	
+
 	e.Apply(CmdDelete{}, 10) // at end of last line, should be no-op
-	
+
 	lines := e.Lines()
 	if string(lines[0]) != "a" {
 		t.Fatalf("expected 'a' unchanged, got %q", string(lines[0]))
@@ -437,18 +437,18 @@ func TestDeleteWithSelection(t *testing.T) {
 	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
 	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
 	// "abc"
-	
+
 	e.Apply(CmdMoveHome{}, 10)
-	e.Apply(CmdMoveRight{Select: true}, 10)  // select 'a'
-	e.Apply(CmdMoveRight{Select: true}, 10)  // select 'ab'
-	
+	e.Apply(CmdMoveRight{Select: true}, 10) // select 'a'
+	e.Apply(CmdMoveRight{Select: true}, 10) // select 'ab'
+
 	e.Apply(CmdDelete{}, 10) // should delete selection
-	
+
 	lines := e.Lines()
 	if string(lines[0]) != "c" {
 		t.Fatalf("expected 'c' after delete selection, got %q", string(lines[0]))
 	}
-	
+
 	if e.HasSelection() {
 		t.Fatalf("selection should be cleared after delete")
 	}

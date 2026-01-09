@@ -31,7 +31,7 @@ type Editor struct {
 	undo      *UndoStack
 	search    SearchState
 	clipboard Clipboard
-	
+
 	selectionActive bool
 	selectionAnchor struct{ Line, Col int }
 }
@@ -56,7 +56,7 @@ func (e *Editor) GetSelectionRange() (sl, sc, el, ec int) {
 	}
 	cl, cc := e.buf.Cursor()
 	al, ac := e.selectionAnchor.Line, e.selectionAnchor.Col
-	
+
 	if al < cl || (al == cl && ac < cc) {
 		return al, ac, cl, cc
 	}
@@ -95,7 +95,7 @@ func (e *Editor) deleteSelection() Action {
 	}
 	sl, sc, el, ec := e.GetSelectionRange()
 	text := e.buf.RangeText(sl, sc, el, ec)
-	
+
 	action := &DeleteSelectionAction{
 		StartLine:   sl,
 		StartCol:    sc,
@@ -145,7 +145,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "Redo"}
 		}
 		return Result{Message: "Already at newest change"}
-	
+
 	case CmdFind:
 		e.search.SetQuery(c.Query)
 		line, col := e.buf.Cursor()
@@ -180,7 +180,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "Found prev: " + e.search.LastQuery}
 		}
 		return Result{Message: "Not found (prev): " + e.search.LastQuery}
-	
+
 	case CmdCopy:
 		var content string
 		if e.selectionActive {
@@ -190,7 +190,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			line, _ := e.buf.Cursor()
 			content = string(e.buf.Lines()[line])
 		}
-		
+
 		if e.clipboard != nil {
 			if err := e.clipboard.Set(content); err != nil {
 				return Result{Message: "Copy failed: " + err.Error()}
@@ -205,13 +205,13 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		if e.selectionActive {
 			sl, sc, el, ec := e.GetSelectionRange()
 			content := e.buf.RangeText(sl, sc, el, ec)
-			
+
 			if e.clipboard != nil {
 				if err := e.clipboard.Set(content); err != nil {
 					return Result{Message: "Cut failed: " + err.Error()}
 				}
 			}
-			
+
 			action := &DeleteSelectionAction{
 				StartLine:   sl,
 				StartCol:    sc,
@@ -267,7 +267,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		// We use ReplaceLinesAction to make it one undo block
 		line, col := e.buf.Cursor()
 		lines := e.buf.Lines()
-		
+
 		var newLines [][]rune
 		// Split text into lines
 		var current []rune
@@ -288,8 +288,8 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		if len(newLines) == 1 {
 			// Single line paste at cursor
 			// We'll reuse the ReplaceLines logic below for single line too
-		} 
-		
+		}
+
 		// General logic using ReplaceLinesAction (works for single line too)
 		prefix := append([]rune{}, lines[line][:col]...)
 		suffix := append([]rune{}, lines[line][col:]...)
@@ -312,7 +312,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			AfterLine:  line + len(newLines) - 1,
 			AfterCol:   len(newLines[lastIdx]), // Start of pasted last line + len
 		}
-		
+
 		if len(newLines) == 1 {
 			pasteAction.(*ReplaceLinesAction).AfterCol = col + len(newLines[0])
 		} else {
@@ -320,13 +320,13 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 
 		pasteAction.Apply(e)
-		
+
 		if delAction != nil {
 			e.undo.Push(&CompositeAction{Actions: []Action{delAction, pasteAction}})
 		} else {
 			e.undo.Push(pasteAction)
 		}
-		
+
 		return Result{Message: "Pasted"}
 
 	case CmdGoToLine:
@@ -342,12 +342,12 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		if e.selectionActive {
 			delAction := e.deleteSelection()
 			e.ClearSelection()
-			
+
 			// We need to Apply delete first to update cursor for insert
 			// But we want atomic Undo.
 			// So we apply delete, get new cursor, create insert action.
 			delAction.Apply(e)
-			
+
 			line, col := e.buf.Cursor()
 			insAction := &InsertRuneAction{
 				Rune: c.Rune,
@@ -355,11 +355,11 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 				Col:  col,
 			}
 			insAction.Apply(e)
-			
+
 			e.undo.Push(&CompositeAction{Actions: []Action{delAction, insAction}})
 			return Result{}
 		}
-		
+
 		line, col := e.buf.Cursor()
 		action := &InsertRuneAction{
 			Rune: c.Rune,
@@ -374,18 +374,18 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			delAction := e.deleteSelection()
 			e.ClearSelection()
 			delAction.Apply(e)
-			
+
 			line, col := e.buf.Cursor()
 			insAction := &InsertNewlineAction{
 				Line: line,
 				Col:  col,
 			}
 			insAction.Apply(e)
-			
+
 			e.undo.Push(&CompositeAction{Actions: []Action{delAction, insAction}})
 			return Result{}
 		}
-		
+
 		line, col := e.buf.Cursor()
 		action := &InsertNewlineAction{
 			Line: line,
@@ -402,11 +402,11 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			e.undo.Push(delAction)
 			return Result{}
 		}
-		
+
 		line, col := e.buf.Cursor()
-		
+
 		var action *BackspaceAction
-		
+
 		if col > 0 {
 			r := e.buf.RuneAt(line, col-1)
 			action = &BackspaceAction{
@@ -438,9 +438,9 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			e.undo.Push(delAction)
 			return Result{}
 		}
-		
+
 		line, col := e.buf.Cursor()
-		
+
 		// Delete character at cursor (forward delete)
 		if col < e.buf.LineLen(line) {
 			// Delete char at current position
@@ -538,7 +538,7 @@ func (e *Editor) Cursor() (int, int) { return e.buf.Cursor() }
 func (e *Editor) Viewport() Viewport { return e.vp }
 func (e *Editor) File() FileState    { return e.file }
 
-func (e *Editor) Modified() bool { 
+func (e *Editor) Modified() bool {
 	return !e.undo.IsSaved()
 }
 

@@ -7,10 +7,10 @@ import (
 )
 
 type mockScreen struct {
-	initCalled      bool
-	mouseEnabled    bool
-	finiCalled      bool
-	pollCount       int
+	initCalled   bool
+	mouseEnabled bool
+	finiCalled   bool
+	pollCount    int
 }
 
 func (m *mockScreen) Init(enableMouse bool) error {
@@ -40,9 +40,9 @@ func (m *mockScreen) PollEvent() term.Event {
 func (m *mockScreen) PushEvent(ev term.Event) {}
 
 func (m *mockScreen) SetCell(x, y int, ch rune, style term.Style) {}
-func (m *mockScreen) Show()                                      {}
-func (m *mockScreen) ShowCursor(x, y int)                        {}
-func (m *mockScreen) HideCursor()                                {}
+func (m *mockScreen) Show()                                       {}
+func (m *mockScreen) ShowCursor(x, y int)                         {}
+func (m *mockScreen) HideCursor()                                 {}
 
 func TestRunWithScreenMouseSetting(t *testing.T) {
 	t.Run("MouseEnabled", func(t *testing.T) {

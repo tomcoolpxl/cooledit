@@ -11,7 +11,7 @@ func (u *UI) draw() {
 	u.clear()
 
 	w, h := u.layout.Width, u.layout.Height
-	
+
 	if w < 16 || h < 4 {
 		u.drawSmallScreenWarning(w, h)
 		u.screen.Show()
@@ -28,7 +28,7 @@ func (u *UI) draw() {
 	u.drawViewport()
 	u.drawStatusBar()
 	u.drawPrompt() // Draws prompt or message if active
-	
+
 	if u.menubar.Active {
 		u.drawMenuDropdown()
 	}
@@ -54,21 +54,21 @@ func (u *UI) drawMenubar() {
 
 	style := term.Style{Inverse: true}
 	styleSelected := term.Style{Inverse: false}
-	
+
 	// Fill background
 	for x := 0; x < rect.W; x++ {
 		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
 	}
-	
-x := 0
+
+	x := 0
 	for i, menu := range u.menubar.Menus {
 		label := fmt.Sprintf(" %s ", menu.Title)
-		
+
 		s := style
 		if u.menubar.Active && i == u.menubar.SelectedMenuIndex {
 			s = styleSelected
 		}
-		
+
 		for _, r := range label {
 			if x >= rect.W {
 				break
@@ -85,15 +85,15 @@ func (u *UI) drawMenuDropdown() {
 	if menuIdx < 0 || menuIdx >= len(u.menubar.Menus) {
 		return
 	}
-	
+
 	menuX := 0
 	for i := 0; i < menuIdx; i++ {
 		menuX += len(u.menubar.Menus[i].Title) + 2 // " Title "
 	}
-	
+
 	menu := u.menubar.Menus[menuIdx]
 	items := menu.Items
-	
+
 	// Calculate width
 	width := 0
 	for _, item := range items {
@@ -105,42 +105,42 @@ func (u *UI) drawMenuDropdown() {
 	if width < 10 {
 		width = 10
 	}
-	
+
 	// Draw at (menuX, 1)
 	startX := menuX
 	startY := 1
-	
+
 	// Ensure fits on screen
 	if startX+width > u.layout.Width {
 		startX = u.layout.Width - width
 	}
-	
+
 	style := term.Style{Inverse: true}
 	styleSelected := term.Style{Inverse: false}
-	
+
 	for i, item := range items {
 		y := startY + i
 		if y >= u.layout.Height {
 			break
 		}
-		
+
 		s := style
 		if i == u.menubar.SelectedItemIndex {
 			s = styleSelected
 		}
-		
+
 		// Fill line
 		for x := 0; x < width; x++ {
 			u.screen.SetCell(startX+x, y, ' ', s)
 		}
-		
+
 		// Draw Label
 		for j, r := range item.Label {
 			if j < width {
 				u.screen.SetCell(startX+1+j, y, r, s)
 			}
 		}
-		
+
 		// Draw Accelerator (Right aligned)
 		accelLen := len(item.Accelerator)
 		accelStart := width - 1 - accelLen
@@ -176,7 +176,7 @@ func (u *UI) drawViewport() {
 
 	for sy := 0; sy < vpRect.H; sy++ {
 		docY := vp.TopLine + sy
-		
+
 		// Draw Gutter
 		if u.showLineNumbers {
 			if docY < len(lines) {
@@ -210,7 +210,9 @@ func (u *UI) drawViewport() {
 
 		drawX := vpRect.X + gutterWidth
 		availW := vpRect.W - gutterWidth
-		if availW < 0 { availW = 0 }
+		if availW < 0 {
+			availW = 0
+		}
 
 		for sx := 0; sx < availW; sx++ {
 			docX := start + sx
@@ -222,7 +224,7 @@ func (u *UI) drawViewport() {
 			// "if l == el { end = ec }".
 			// So it includes up to ec-1.
 			// e.g. "abc", select "a". Range 0,0 -> 0,1.
-			
+
 			isSelected := false
 			if hasSelection {
 				if docY > sl && docY < el {
@@ -261,7 +263,7 @@ func (u *UI) drawViewport() {
 			}
 			u.screen.SetCell(drawX+sx, vpRect.Y+sy, line[docX], style)
 		}
-		
+
 		// Edge case: Empty line selection or selection extending past end of line logic above
 		// The loop above breaks if docX >= len(line).
 		// If line is empty, len(line) is 0. start is 0. Loop runs once for sx=0?
@@ -269,12 +271,14 @@ func (u *UI) drawViewport() {
 		// So it breaks immediately. We need to handle the "newline" highlighting outside the loop or ensure loop runs.
 		// Actually, simpler to check if we need to draw the newline highlight after the loop.
 		// But we need the correct sx.
-		
+
 		lineLen := len(line)
-		if lineLen < start { lineLen = start } // Should not happen if start clamped
-		
+		if lineLen < start {
+			lineLen = start
+		} // Should not happen if start clamped
+
 		// If the line end is visible
-		if lineLen >= start && lineLen < start + availW {
+		if lineLen >= start && lineLen < start+availW {
 			sx := lineLen - start
 			if hasSelection && docY >= sl && docY < el {
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
@@ -286,10 +290,10 @@ func (u *UI) drawViewport() {
 		cy, cx := u.editor.Cursor()
 		sx := cx - vp.LeftCol
 		sy := cy - vp.TopLine
-		
+
 		drawX := vpRect.X + gutterWidth
 		availW := vpRect.W - gutterWidth
-		
+
 		if sx >= 0 && sx < availW && sy >= 0 && sy < vpRect.H {
 			u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
 		}
@@ -301,7 +305,7 @@ func (u *UI) drawStatusBar() {
 	if rect.H < 1 {
 		return
 	}
-	
+
 	style := term.Style{Inverse: true}
 
 	// Background
@@ -380,7 +384,7 @@ func (u *UI) drawPrompt() {
 			}
 			u.screen.SetCell(rect.X+i, rect.Y, r, style)
 		}
-		
+
 		// Show cursor in prompt
 		cx := len(u.promptLabel) + len(u.promptText)
 		if cx < rect.W {

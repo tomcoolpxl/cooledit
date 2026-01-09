@@ -18,12 +18,12 @@ const (
 )
 
 type UI struct {
-	screen term.Screen
-	editor *core.Editor
+	screen  term.Screen
+	editor  *core.Editor
 	menubar *Menubar
 
-	mode   UIMode
-	layout Layout
+	mode        UIMode
+	layout      Layout
 	showMenubar bool
 
 	// message mode
@@ -72,21 +72,21 @@ func (u *UI) Run() error {
 			u.messageTimer.Stop()
 		}
 	}()
-	
+
 	for {
 		if u.quitNow {
 			return nil
 		}
 
 		w, h := u.screen.Size()
-		
+
 		// Check if message has expired before computing layout
 		if u.mode == ModeMessage && time.Now().After(u.messageUntil) {
 			u.mode = ModeNormal
 		}
-		
+
 		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar)
-		
+
 		u.draw()
 
 		ev := u.screen.PollEvent()
@@ -98,7 +98,7 @@ func (u *UI) Run() error {
 		case term.RedrawEvent:
 			// Just continue to redraw
 			continue
-			
+
 		case term.KeyEvent:
 			if u.mode == ModeHelp {
 				u.mode = ModeNormal
@@ -110,7 +110,7 @@ func (u *UI) Run() error {
 					continue
 				}
 			}
-			
+
 			if u.mode == ModeMenu {
 				if u.handleMenuKey(e) {
 					continue
@@ -141,7 +141,7 @@ func (u *UI) Run() error {
 					u.enterMessage(res.Message)
 				}
 			}
-			
+
 		case term.MouseEvent:
 			u.handleMouseEvent(e)
 		}
@@ -155,7 +155,7 @@ func (u *UI) toggleMenuFocus() {
 		u.menubar.Active = true
 		return
 	}
-	
+
 	// If visible, hide it
 	u.showMenubar = false
 	u.mode = ModeNormal
@@ -191,12 +191,12 @@ func (u *UI) handleMenuKey(e term.KeyEvent) bool {
 func (u *UI) executeMenuItem() {
 	menu := u.menubar.Menus[u.menubar.SelectedMenuIndex]
 	item := menu.Items[u.menubar.SelectedItemIndex]
-	
+
 	// Exit menu mode
 	u.mode = ModeNormal
 	u.menubar.Active = false
 	u.showMenubar = false
-	
+
 	if item.Action != nil {
 		item.Action(u)
 	} else if item.Command != nil {
@@ -227,7 +227,7 @@ func (u *UI) handleMouseEvent(e term.MouseEvent) {
 		}
 		return
 	}
-	
+
 	// 2. Check Menu Dropdown (if active)
 	if u.mode == ModeMenu {
 		menuIdx := u.menubar.SelectedMenuIndex
@@ -235,19 +235,25 @@ func (u *UI) handleMouseEvent(e term.MouseEvent) {
 		for i := 0; i < menuIdx; i++ {
 			menuX += len(u.menubar.Menus[i].Title) + 2
 		}
-		
+
 		menu := u.menubar.Menus[menuIdx]
 		width := 0
 		for _, item := range menu.Items {
 			w := len(item.Label) + 4 + len(item.Accelerator)
-			if w > width { width = w }
+			if w > width {
+				width = w
+			}
 		}
-		if width < 10 { width = 10 }
-		
+		if width < 10 {
+			width = 10
+		}
+
 		startX := menuX
 		startY := 1
-		if startX+width > u.layout.Width { startX = u.layout.Width - width }
-		
+		if startX+width > u.layout.Width {
+			startX = u.layout.Width - width
+		}
+
 		// Check bounds
 		numItems := len(menu.Items)
 		if e.X >= startX && e.X < startX+width && e.Y >= startY && e.Y < startY+numItems {
@@ -274,12 +280,12 @@ func (u *UI) handleMouseEvent(e term.MouseEvent) {
 		if e.Button == term.MouseLeft {
 			viewX := e.X - vp.X
 			viewY := e.Y - vp.Y
-			
+
 			docLine := u.editor.Viewport().TopLine + viewY
 			docCol := u.editor.Viewport().LeftCol + viewX
-			
+
 			u.editor.Apply(core.CmdClick{Line: docLine, Col: docCol}, u.layout.Viewport.H)
-			
+
 		} else if e.Button == term.MouseWheelUp {
 			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
 			u.editor.Apply(core.CmdMoveUp{}, u.layout.Viewport.H)
@@ -342,10 +348,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyRune && e.Rune == 'y' && (e.Modifiers&term.ModCtrl) != 0:
 		return core.CmdRedo{}
-	
+
 	case e.Key == term.KeyRune && e.Rune == 'z' && (e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
 		return core.CmdRedo{}
-		
+
 	case e.Key == term.KeyRune && e.Rune == 'f' && (e.Modifiers&term.ModCtrl) != 0:
 		u.enterFind()
 		return nil
@@ -407,12 +413,12 @@ func (u *UI) enterMessage(msg string) {
 	u.mode = ModeMessage
 	u.message = msg
 	u.messageUntil = time.Now().Add(2 * time.Second)
-	
+
 	// Cancel any existing timer
 	if u.messageTimer != nil {
 		u.messageTimer.Stop()
 	}
-	
+
 	// Start a new timer to inject a redraw event when message expires
 	u.messageTimer = time.AfterFunc(2*time.Second, func() {
 		// Push a redraw event to trigger screen update
