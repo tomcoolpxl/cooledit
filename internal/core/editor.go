@@ -587,7 +587,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			lines := e.buf.Lines()
 			if line < len(lines) {
 				lineText := lines[line]
-				
+
 				// Check if we're in leading whitespace with ONLY spaces (no tabs)
 				inLeadingSpaces := true
 				hasOnlySpaces := true
