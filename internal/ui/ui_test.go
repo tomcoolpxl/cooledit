@@ -1192,3 +1192,217 @@ func contains(s, substr string) bool {
 		return false
 	}()
 }
+
+func TestLiteralTabRendering(t *testing.T) {
+	ui, screen := newTestUI(40, 10)
+
+	// Insert "hello", then a literal tab, then "world"
+	typeString(ui, "hello")
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'i', Modifiers: term.ModCtrl}) // Ctrl+I for literal tab
+	typeString(ui, "world")
+
+	draw(ui)
+
+	// With default TabWidth=4, "hello\tworld" should render as:
+	// "hello   world" (3 spaces to reach next tab stop at column 8)
+	// Col 0-4: hello (5 chars)
+	// Col 5-7: 3 spaces (to reach column 8, which is next multiple of 4 after 5)
+	// Col 8+: world
+
+	// Check that we see the expected spacing
+	if screen.Cell(0, 0) != 'h' {
+		t.Errorf("Expected 'h' at column 0, got %c", screen.Cell(0, 0))
+	}
+
+	// Column 5-7 should be spaces (tab expansion)
+	for col := 5; col < 8; col++ {
+		if screen.Cell(col, 0) != ' ' {
+			t.Errorf("Expected space at column %d (tab expansion), got %c", col, screen.Cell(col, 0))
+		}
+	}
+
+	// Column 8 should be 'w' (start of "world")
+	if screen.Cell(8, 0) != 'w' {
+		t.Errorf("Expected 'w' at column 8, got %c", screen.Cell(8, 0))
+	}
+
+	// Verify the buffer actually contains a tab character
+	lines := ui.editor.Lines()
+	if len(lines) < 1 {
+		t.Fatal("Expected at least one line")
+	}
+	line := lines[0]
+	if len(line) != 11 { // hello (5) + tab (1) + world (5) = 11
+		t.Errorf("Expected line length 11, got %d", len(line))
+	}
+	if line[5] != '\t' {
+		t.Errorf("Expected tab character at position 5, got %c", line[5])
+	}
+}
+
+func TestLiteralTabAtBeginning(t *testing.T) {
+	ui, screen := newTestUI(40, 10)
+
+	// Type some text first
+	typeString(ui, "world")
+
+	// Move to beginning of line
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome})
+
+	// Insert a literal tab at the beginning
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'i', Modifiers: term.ModCtrl}) // Ctrl+I
+
+	draw(ui)
+
+	// With TabWidth=4, a tab at the beginning should render as 4 spaces
+	// Col 0-3: spaces (tab expansion)
+	// Col 4+: world
+
+	// Check tab expansion at beginning
+	for col := 0; col < 4; col++ {
+		if screen.Cell(col, 0) != ' ' {
+			t.Errorf("Expected space at column %d (tab at beginning), got %c", col, screen.Cell(col, 0))
+		}
+	}
+
+	// Column 4 should be 'w' (start of "world")
+	if screen.Cell(4, 0) != 'w' {
+		t.Errorf("Expected 'w' at column 4, got %c", screen.Cell(4, 0))
+	}
+
+	// Verify buffer contains tab + world
+	lines := ui.editor.Lines()
+	if len(lines) < 1 {
+		t.Fatal("Expected at least one line")
+	}
+	line := lines[0]
+	if len(line) != 6 { // tab (1) + world (5) = 6
+		t.Errorf("Expected line length 6, got %d", len(line))
+	}
+	if line[0] != '\t' {
+		t.Errorf("Expected tab character at position 0, got %c", line[0])
+	}
+	if string(line[1:]) != "world" {
+		t.Errorf("Expected 'world' after tab, got %s", string(line[1:]))
+	}
+}
+
+func TestTabExpansionDebug(t *testing.T) {
+	ui, screen := newTestUI(40, 10)
+
+	// Insert just a tab
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'i', Modifiers: term.ModCtrl})
+
+	draw(ui)
+
+	// Check what's in the buffer
+	lines := ui.editor.Lines()
+	if len(lines) < 1 {
+		t.Fatal("Expected at least one line")
+	}
+
+	t.Logf("Buffer line length: %d", len(lines[0]))
+	if len(lines[0]) > 0 {
+		t.Logf("First character: %q (code %d)", lines[0][0], lines[0][0])
+	}
+
+	// Check what's on screen
+	screenLine := ""
+	for x := 0; x < 10; x++ {
+		r := screen.Cell(x, 0)
+		if r == 0 {
+			screenLine += "·"
+		} else if r == ' ' {
+			screenLine += "·"
+		} else {
+			screenLine += string(r)
+		}
+	}
+	t.Logf("Screen rendering (· = space/empty): %s", screenLine)
+
+	// Tab at position 0 should render as 4 spaces with TabWidth=4
+	spaceCount := 0
+	for x := 0; x < 4; x++ {
+		if screen.Cell(x, 0) == ' ' {
+			spaceCount++
+		}
+	}
+	t.Logf("Space count in first 4 columns: %d", spaceCount)
+
+	if spaceCount != 4 {
+		t.Errorf("Expected 4 spaces for tab at beginning, got %d", spaceCount)
+	}
+}
+
+func TestLiteralTabWithSoftWrap(t *testing.T) {
+	// Test tab rendering when soft-wrap is enabled
+	ui, screen := newTestUI(40, 10)
+	ui.softWrap = true // Enable soft wrap
+	ui.editor.TabWidth = 4
+
+	// Type "hello" and insert a tab
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'h'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'e'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'l'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'l'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'o'})
+
+	// Insert literal tab with Ctrl+I
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'i', Modifiers: term.ModCtrl})
+
+	// Type "world"
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'w'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'o'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'l'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'd'})
+
+	draw(ui)
+
+	// Verify buffer contains "hello\tworld"
+	lines := ui.editor.Lines()
+	if len(lines) < 1 {
+		t.Fatal("Expected at least one line")
+	}
+
+	line := lines[0]
+	expected := []rune("hello\tworld")
+	if len(line) != len(expected) {
+		t.Errorf("Expected line length %d, got %d", len(expected), len(line))
+	}
+
+	if string(line) != string(expected) {
+		t.Errorf("Expected line 'hello\\tworld', got %q", string(line))
+	}
+
+	// With soft-wrap enabled, verify tab renders as spaces
+	// "hello" = 5 chars, tab should expand from column 5 to 8 (next multiple of 4)
+	// So screen should show: "hello   world"
+	//                        01234567890123
+
+	screenLine := make([]rune, 0, 40)
+	for x := 0; x < 13; x++ {
+		r := screen.Cell(x, 0)
+		if r == 0 {
+			break
+		}
+		screenLine = append(screenLine, r)
+	}
+
+	expectedScreen := "hello   world" // 5 chars + 3 spaces (tab expansion) + 5 chars
+	if string(screenLine) != expectedScreen {
+		t.Errorf("With soft-wrap, expected screen to show %q, got %q", expectedScreen, string(screenLine))
+	}
+
+	// Verify the tab character at position 5 in buffer
+	if line[5] != '\t' {
+		t.Errorf("Expected tab character at position 5 in buffer, got %q", line[5])
+	}
+
+	// Verify spaces in the tab expansion area (columns 5-7 on screen)
+	for col := 5; col < 8; col++ {
+		if screen.Cell(col, 0) != ' ' {
+			t.Errorf("Expected space at column %d (tab expansion with soft-wrap), got %c", col, screen.Cell(col, 0))
+		}
+	}
+}

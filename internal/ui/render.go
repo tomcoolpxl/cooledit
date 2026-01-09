@@ -7,6 +7,54 @@ import (
 	"cooledit/internal/term"
 )
 
+// expandTabsToColumn converts a line with tabs into display columns
+// Returns the display rune for each screen column
+func expandTabsToColumn(line []rune, maxCols int, tabWidth int) []rune {
+	if tabWidth <= 0 {
+		tabWidth = 4
+	}
+
+	result := make([]rune, 0, len(line)*2)
+	col := 0
+
+	for _, r := range line {
+		if r == '\t' {
+			// Tab stops at multiples of tabWidth
+			spacesToAdd := tabWidth - (col % tabWidth)
+			for i := 0; i < spacesToAdd && col < maxCols; i++ {
+				result = append(result, ' ')
+				col++
+			}
+		} else {
+			result = append(result, r)
+			col++
+		}
+
+		if col >= maxCols {
+			break
+		}
+	}
+
+	return result
+}
+
+// runeToDisplayCol converts a rune index to display column (accounting for tabs)
+func runeToDisplayCol(line []rune, runeIdx int, tabWidth int) int {
+	if tabWidth <= 0 {
+		tabWidth = 4
+	}
+
+	col := 0
+	for i := 0; i < runeIdx && i < len(line); i++ {
+		if line[i] == '\t' {
+			col += tabWidth - (col % tabWidth)
+		} else {
+			col++
+		}
+	}
+	return col
+}
+
 func (u *UI) draw() {
 	u.screen.HideCursor()
 	u.clear()
@@ -307,33 +355,61 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 		}
 
 		line := lines[docY]
-		start := vp.LeftCol
-		if start > len(line) {
-			start = len(line)
+
+		// Expand tabs to display columns using TabWidth setting
+		tabWidth := u.editor.TabWidth
+		if tabWidth <= 0 {
+			tabWidth = 4
 		}
+		expanded := expandTabsToColumn(line, vp.LeftCol+availW, tabWidth)
 
 		drawX := vpRect.X + gutterWidth
 
 		editorStyle := u.getEditorStyle()
 		selectionStyle := u.getSelectionStyle()
 
+		// Draw from LeftCol in display space
 		for sx := 0; sx < availW; sx++ {
-			docX := start + sx
+			displayCol := vp.LeftCol + sx
+
+			if displayCol >= len(expanded) {
+				// Past end of line
+				break
+			}
+
+			// Find which rune index this display column corresponds to
+			runeIdx := 0
+			col := 0
+			for runeIdx < len(line) {
+				if line[runeIdx] == '\t' {
+					nextStop := ((col / tabWidth) + 1) * tabWidth
+					if displayCol < nextStop {
+						break
+					}
+					col = nextStop
+				} else {
+					if col == displayCol {
+						break
+					}
+					col++
+				}
+				runeIdx++
+			}
 
 			isSelected := false
 			if hasSelection {
 				if docY > sl && docY < el {
 					isSelected = true
 				} else if docY == sl && docY == el {
-					if docX >= sc && docX < ec {
+					if runeIdx >= sc && runeIdx < ec {
 						isSelected = true
 					}
 				} else if docY == sl {
-					if docX >= sc {
+					if runeIdx >= sc {
 						isSelected = true
 					}
 				} else if docY == el {
-					if docX < ec {
+					if runeIdx < ec {
 						isSelected = true
 					}
 				}
@@ -344,23 +420,14 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 				style = selectionStyle
 			}
 
-			if docX >= len(line) {
-				// Past end of line - highlight newline if selected
-				if hasSelection && docY >= sl && docY < el {
-					u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', selectionStyle)
-				}
-				break
-			}
-			u.screen.SetCell(drawX+sx, vpRect.Y+sy, line[docX], style)
+			// Draw the expanded character
+			u.screen.SetCell(drawX+sx, vpRect.Y+sy, expanded[displayCol], style)
 		}
 
 		// Highlight newline at end of line if selected
-		lineLen := len(line)
-		if lineLen < vp.LeftCol {
-			lineLen = vp.LeftCol
-		}
-		if lineLen >= vp.LeftCol && lineLen < vp.LeftCol+availW {
-			sx := lineLen - vp.LeftCol
+		expandedLen := len(expanded)
+		if expandedLen >= vp.LeftCol && expandedLen < vp.LeftCol+availW {
+			sx := expandedLen - vp.LeftCol
 			if hasSelection && docY >= sl && docY < el {
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', selectionStyle)
 			}
@@ -370,13 +437,22 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 	// Draw cursor
 	if u.mode == ModeNormal || u.mode == ModeMessage {
 		cy, cx := u.editor.Cursor()
-		sx := cx - vp.LeftCol
-		sy := cy - vp.TopLine
 
-		drawX := vpRect.X + gutterWidth
+		// Convert cursor rune position to display column
+		if cy >= 0 && cy < len(lines) {
+			tabWidth := u.editor.TabWidth
+			if tabWidth <= 0 {
+				tabWidth = 4
+			}
+			displayCol := runeToDisplayCol(lines[cy], cx, tabWidth)
+			sx := displayCol - vp.LeftCol
+			sy := cy - vp.TopLine
 
-		if sx >= 0 && sx < availW && sy >= 0 && sy < vpRect.H {
-			u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
+			drawX := vpRect.X + gutterWidth
+
+			if sx >= 0 && sx < availW && sy >= 0 && sy < vpRect.H {
+				u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
+			}
 		}
 	}
 }
@@ -387,30 +463,74 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 		return
 	}
 
-	// Build wrapped lines structure
+	tabWidth := u.editor.TabWidth
+	if tabWidth <= 0 {
+		tabWidth = 4
+	}
+
+	// Build wrapped lines structure with tab expansion
 	type wrappedLine struct {
-		lineNum int    // Original line number
-		start   int    // Start column in original line
-		content []rune // Wrapped segment
+		lineNum     int    // Original line number
+		startRune   int    // Start rune index in original line
+		startCol    int    // Start display column
+		content     []rune // Wrapped segment (expanded)
+		runeIndices []int  // Rune index for each display column
 	}
 
 	var wrapped []wrappedLine
 	for lineNum, line := range lines {
 		if len(line) == 0 {
-			wrapped = append(wrapped, wrappedLine{lineNum: lineNum, start: 0, content: []rune{}})
+			wrapped = append(wrapped, wrappedLine{
+				lineNum:     lineNum,
+				startRune:   0,
+				startCol:    0,
+				content:     []rune{},
+				runeIndices: []int{},
+			})
 			continue
 		}
 
-		// Wrap line into segments of availW width
-		for start := 0; start < len(line); start += availW {
-			end := start + availW
-			if end > len(line) {
-				end = len(line)
+		// Expand tabs and wrap by display columns
+		expanded := expandTabsToColumn(line, len(line)*tabWidth, tabWidth)
+
+		// Build rune index mapping (display col -> rune index)
+		runeIndices := make([]int, len(expanded))
+		runeIdx := 0
+		col := 0
+		for runeIdx < len(line) {
+			if line[runeIdx] == '\t' {
+				spacesToAdd := tabWidth - (col % tabWidth)
+				for i := 0; i < spacesToAdd && col < len(expanded); i++ {
+					runeIndices[col] = runeIdx
+					col++
+				}
+			} else {
+				if col < len(expanded) {
+					runeIndices[col] = runeIdx
+				}
+				col++
 			}
+			runeIdx++
+		}
+
+		// Wrap expanded line into segments
+		for startCol := 0; startCol < len(expanded); startCol += availW {
+			endCol := startCol + availW
+			if endCol > len(expanded) {
+				endCol = len(expanded)
+			}
+
+			startRune := 0
+			if startCol < len(runeIndices) {
+				startRune = runeIndices[startCol]
+			}
+
 			wrapped = append(wrapped, wrappedLine{
-				lineNum: lineNum,
-				start:   start,
-				content: line[start:end],
+				lineNum:     lineNum,
+				startRune:   startRune,
+				startCol:    startCol,
+				content:     expanded[startCol:endCol],
+				runeIndices: runeIndices[startCol:endCol],
 			})
 		}
 	}
@@ -460,29 +580,34 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 		wLine := wrapped[wrappedIdx]
 		drawX := vpRect.X + gutterWidth
 
-		// Draw the wrapped line segment
+		// Draw the wrapped line segment (already expanded)
 		for sx, r := range wLine.content {
 			if sx >= availW {
 				break
 			}
 
 			docY := wLine.lineNum
-			docX := wLine.start + sx
+
+			// Get the rune index for this display position
+			runeIdx := wLine.startRune
+			if sx < len(wLine.runeIndices) {
+				runeIdx = wLine.runeIndices[sx]
+			}
 
 			isSelected := false
 			if hasSelection {
 				if docY > sl && docY < el {
 					isSelected = true
 				} else if docY == sl && docY == el {
-					if docX >= sc && docX < ec {
+					if runeIdx >= sc && runeIdx < ec {
 						isSelected = true
 					}
 				} else if docY == sl {
-					if docX >= sc {
+					if runeIdx >= sc {
 						isSelected = true
 					}
 				} else if docY == el {
-					if docX < ec {
+					if runeIdx < ec {
 						isSelected = true
 					}
 				}
@@ -512,13 +637,20 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	if u.mode == ModeNormal || u.mode == ModeMessage {
 		cy, cx := u.editor.Cursor()
 
+		// Convert cursor rune position to display column
+		displayCol := 0
+		if cy >= 0 && cy < len(lines) {
+			displayCol = runeToDisplayCol(lines[cy], cx, tabWidth)
+		}
+
 		// Find which wrapped line contains this cursor position
-		screenY := 0
 		for wrappedIdx, wLine := range wrapped {
 			if wLine.lineNum == cy {
-				// Check if cursor is in this segment
-				if cx >= wLine.start && cx < wLine.start+len(wLine.content) {
-					sx := cx - wLine.start
+				// Check if cursor display column is in this segment
+				segmentEndCol := wLine.startCol + len(wLine.content)
+
+				if displayCol >= wLine.startCol && displayCol < segmentEndCol {
+					sx := displayCol - wLine.startCol
 					sy := wrappedIdx - vp.TopLine
 
 					drawX := vpRect.X + gutterWidth
@@ -527,12 +659,10 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 						u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
 						return
 					}
-				} else if cx == wLine.start+len(wLine.content) {
+				} else if displayCol == segmentEndCol {
 					// Cursor at end of this segment
-					// Check if this is the last segment or if cursor should be on next segment
 					isLastSegment := (wrappedIdx+1 >= len(wrapped) || wrapped[wrappedIdx+1].lineNum != cy)
 					if isLastSegment || len(wLine.content) < availW {
-						// Show cursor at end of this segment
 						sx := len(wLine.content)
 						sy := wrappedIdx - vp.TopLine
 
@@ -544,7 +674,6 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 						}
 					}
 				}
-				screenY++
 			}
 		}
 	}
