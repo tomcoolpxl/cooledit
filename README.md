@@ -195,12 +195,28 @@ go run ./cmd/cooledit filename.txt
 - No plugin system
 - Single file editing only
 
+## Author
+
+Tom Cool
+
 ## License
 
-GPL-3.0 - See LICENSE file for details.
+Copyright (C) 2026 Tom Cool
 
-Author: Tom Cool
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-## Contributing
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-[Add contribution guidelines if desired]
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+See the [LICENSE](LICENSE) file for the complete license text.
+
+## Source Code
+
+The complete source code for this software is available at:
+<https://github.com/tomcoolpxl/cooledit>
+
+## Bug Reports
+
+To report bugs or request features, please open an issue at:
+<https://github.com/tomcoolpxl/cooledit/issues>
