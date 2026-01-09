@@ -27,7 +27,7 @@ The project is split into three layers:
 
 Responsible for:
 * Text buffer and editing operations
-* Cursor, selection (even if you do not expose selection yet), viewport state
+* Cursor, selection state
 * Undo/redo (Implemented via `UndoStack` and `Action` pattern)
 * Search (Implemented via `SearchState` and linear scan)
 * File model (path, modified flag, encoding, EOL type)
@@ -43,6 +43,7 @@ Responsible for:
 * Managing Menubar state (`Menubar` struct)
 * Computing Layout (`Menubar`, `Viewport`, `Prompt`, `StatusBar`)
 * Rendering to the `term.Screen` interface
+* **Clipboard Integration:** Interfacing with system clipboard via `ui.SystemClipboard`
 
 This layer depends on the terminal backend only via a small interface (events in, draw calls out).
 
@@ -52,6 +53,7 @@ Responsible for:
 * Entering alternate screen, raw input mode
 * Reading key/mouse/resize events
 * Rendering a grid of cells (runes + style)
+* **Mouse Handling:** Optional capture via `Init(enableMouse bool)`
 
 ---
 
@@ -71,6 +73,7 @@ Current Implementation: **Line-based slice buffer**
 * `[]Line`, where each `Line` is `[]rune`.
 * Simple and effective for typical file sizes.
 * Cursor tracking via `(line, col)`.
+* **Selection:** Logic for `DeleteRange` and `RangeText`.
 
 ### Cursor and viewport
 
@@ -85,17 +88,21 @@ Current Implementation: **Line-based slice buffer**
 * `Height int`
 * `Width int`
 
+`Selection`
+* `Active bool`
+* `Anchor struct { Line, Col int }`
+
 ---
 
 ## Editor operations and command system
 
 Commands are defined as structs implementing the `Command` interface.
-Examples: `CmdInsertRune`, `CmdMoveDown`, `CmdSave`, `CmdUndo`, `CmdFind`.
+Examples: `CmdInsertRune`, `CmdMoveDown`, `CmdSave`, `CmdUndo`, `CmdFind`, `CmdCopy`, `CmdPaste`.
 
 ### Undo/Redo
 
 * Implemented using the Command pattern.
-* `UndoStack` stores a history of `Action` objects (e.g., `InsertRuneAction`, `BackspaceAction`).
+* `UndoStack` stores a history of `Action` objects (e.g., `InsertRuneAction`, `BackspaceAction`, `ReplaceLinesAction`, `DeleteSelectionAction`).
 * Each `Action` knows how to `Apply` and `Undo` itself.
 * The "Saved" state is tracked by a pointer in the UndoStack to correctly report `Modified` status.
 
@@ -105,12 +112,18 @@ Examples: `CmdInsertRune`, `CmdMoveDown`, `CmdSave`, `CmdUndo`, `CmdFind`.
 * `Search` function performs linear scan (forward/backward) over the buffer lines.
 * UI provides `PromptFind` to capture input.
 
+### Clipboard
+
+* `Clipboard` interface in `core` package.
+* `SystemClipboard` implementation in `ui` package using `atotto/clipboard`.
+* `CmdCopy`, `CmdCut`, `CmdPaste` utilize this interface.
+
 ---
 
 ## UI composition
 
 The UI uses a `Layout` struct to partition the screen:
-1.  **Menubar** (Top, optional)
+1.  **Menubar** (Top, auto-hide)
 2.  **Viewport** (Middle, flexible height)
 3.  **Prompt** (Above Status Bar, transient)
 4.  **Status Bar** (Bottom, fixed height 1)
@@ -154,6 +167,7 @@ cooledit/
       render.go           // Drawing logic
       layout.go           // Layout computation
       menubar.go          // Menubar data model
+      clipboard.go        // Clipboard implementation
       prompt.go           // Prompt handling logic
       keymap/             // (Planned)
 
@@ -181,8 +195,10 @@ cooledit/
 * Layout Engine.
 
 ### Milestone 3 (Complete)
-* Menubar (File, Edit, etc.).
-* Mouse support (Click to move, Click menu, Scroll).
+* Menubar (Auto-hide).
+* Mouse support (Optional via flag).
+* Text Selection.
+* Clipboard integration.
 
 ### Milestone 4 (Planned)
 * Configuration (persistence).

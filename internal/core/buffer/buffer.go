@@ -19,6 +19,9 @@ type Buffer interface {
 	DeleteLine(line int) []rune
 	InsertLine(line int, runes []rune)
 	
+	DeleteRange(startLine, startCol, endLine, endCol int)
+	RangeText(startLine, startCol, endLine, endCol int) string
+
 	// Helper for Undo/Redo to inspect state
 	LineLen(line int) int
 	RuneAt(line, col int) rune

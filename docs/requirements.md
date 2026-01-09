@@ -31,8 +31,10 @@ The editor will **not include syntax highlighting**. Optional features include a
 
 **2.4 Text Manipulation**
 
-* Cut/Cut line, copy, paste.
+* Cut, copy, paste (selection or current line).
+* System Clipboard integration.
 * Undo/Redo.
+* Text Selection via Shift+Arrow keys.
 
 **2.5 Encoding Support**
 
@@ -52,6 +54,7 @@ The editor will **not include syntax highlighting**. Optional features include a
 
 * Displays file contents.
 * Cursor visibly indicated.
+* Selection highlighting.
 * Word wrap **off by default**.
 
 **3.2 Status Bar (persistent at bottom)**
@@ -64,63 +67,56 @@ Must display:
 * **EOL type** (LF / CR+LF).
 * Mode or messages (search prompt, dialogs).
 
-The status bar concept is similar to *nano’s* status and messages region. ([gnu.ist.utl.pt][2])
-
 **3.3 Optional Line Numbers Column**
 
 * Toggleable by user (persisted in settings).
 * Fixed width depending on file size.
 
 **3.4 Optional Menubar**
-A top menubar that can be always on or hidden.
-Menus to include (with shortcuts accessible from anywhere):
+A top menubar that is **auto-hidden by default**.
+Toggled via `F10` or `Esc` (in Normal mode).
+Menus to include:
 
-* `File`: New, Open, Save, Save As…, Quit/Exit.
-* `Edit`: Undo, Redo, Cut, Copy, Paste, Delete Line.
-* `Search`: Find, Find Next/Prev, Replace.
-* `View`: Toggle line numbers, Toggle menubar, Toggle word wrap.
-  Keyboard access via Alt key + letter (e.g., `Alt+F` for File). Menus should work with a keyboard-only UI.
+* `File`: Save, Save As…, Quit.
+* `Edit`: Undo, Redo, Cut, Copy, Paste.
+* `Search`: Find, Find Next/Prev.
+* `Help`: About.
 
 ---
 
 ## 4. Keyboard Shortcuts
 
-Design shortcuts that **improve on nano’s** cumbersome conventions: eliminate multi-step Meta sequences where possible and follow familiar patterns (similar to Notepad where practical), but remain effective in a terminal.
-
 **4.1 File Operations**
 
 * `Ctrl+S` Save
-* `Ctrl+ShiftS` Save As
+* `Ctrl+Shift+S` Save As
 * `Ctrl+Q` Quit/Exit
 
-**4.2 Navigation**
+**4.2 Navigation & Selection**
 
 * `Arrow keys` Move cursor
+* `Shift+Arrow keys` Select text
 * `Ctrl+Home` / `Ctrl+End` Beginning / End of file
-* `Ctrl+G` Go to line dialog
+* `PageUp` / `PageDown` Scroll pages
 
-**4.3 Edit**
+**4.3 Edit (Clipboard)**
 
-* `Ctrl+X` Cut line
-* `Ctrl+C` Copy line
-* `Ctrl+V` Paste
+* `Ctrl+X` / `Shift+Del`: Cut selection (or current line if empty)
+* `Ctrl+C`: Copy selection (or current line if empty)
+* `Ctrl+V` / `Shift+Ins`: Paste from system clipboard
 * `Ctrl+Z` Undo
 * `Ctrl+Y` Redo
 
 **4.4 Search**
 
 * `Ctrl+F` Find
-* `Ctrl+R` Replace
 * `F3` Find next
 * `Shift+F3` Find previous
 
 **4.5 Display**
 
-* `Ctrl+L` Toggle line numbers
-* `Ctrl+W` Toggle word wrap
-* `Ctrl+M` Toggle menubar
-
-These are suggested keys adapted from and improving upon common *nano* commands. ([nano-editor.org][3])
+* `F1` Help overlay
+* `F10` Toggle Menubar focus
 
 ---
 
@@ -139,16 +135,16 @@ These are suggested keys adapted from and improving upon common *nano* commands.
 **5.3 Word Wrap**
 
 * Off by default.
-* If enabled during session, wrap visually without altering file content.
 
 **5.4 Dialogs**
 
 * Inline dialogs (search, replace, go to line) should appear integrated into the UI above status bar.
 
-**5.5 Mouse Support (Optional)**
+**5.5 Mouse Support**
 
-* Click to move cursor.
-* Click menubar entries.
+* **Disabled by default**.
+* Enabled via `-mouse` command line flag.
+* When enabled: Click to move cursor, scroll wheel support.
 
 ---
 
@@ -224,23 +220,32 @@ Not in initial scope but candidates:
 
 ---
 
-## 12. Release Milestones (Draft)
+## 12. Release Milestones
 
-**Milestone 1**
+**Milestone 1 (Complete)**
 
 * Basic buffer editing, file load/save, status bar.
+* Tcell backend.
 
-**Milestone 2**
+**Milestone 2 (Complete)**
 
-* Search/replace, encoding display, newline type.
+* Search (Find/Next/Prev).
+* Undo/Redo.
+* UI Prompts (Save As, Quit, Find).
+* Layout Engine.
 
-**Milestone 3**
+**Milestone 3 (Complete)**
 
-* Optional line numbers, menubar, dialogs.
+* Menubar (Auto-hide).
+* Mouse support (Optional via flag).
+* Text Selection and System Clipboard.
 
-**Milestone 4**
+**Milestone 4 (Planned)**
 
-* Keyboard customization, settings persistence.
+* Configuration persistence (settings file).
+* Keybinding customization.
+* Go to Line.
+* Soft Wrap.
 
 
 

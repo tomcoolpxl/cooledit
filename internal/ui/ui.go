@@ -330,28 +330,28 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return core.CmdBackspace{}
 
 	case e.Key == term.KeyLeft:
-		return core.CmdMoveLeft{}
+		return core.CmdMoveLeft{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyRight:
-		return core.CmdMoveRight{}
+		return core.CmdMoveRight{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyUp:
-		return core.CmdMoveUp{}
+		return core.CmdMoveUp{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyDown:
-		return core.CmdMoveDown{}
+		return core.CmdMoveDown{Select: e.Modifiers&term.ModShift != 0}
 
 	case e.Key == term.KeyPageUp:
-		return core.CmdPageUp{}
+		return core.CmdPageUp{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyPageDown:
-		return core.CmdPageDown{}
+		return core.CmdPageDown{Select: e.Modifiers&term.ModShift != 0}
 
 	case e.Key == term.KeyHome && (e.Modifiers&term.ModCtrl) != 0:
-		return core.CmdFileStart{}
+		return core.CmdFileStart{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyEnd && (e.Modifiers&term.ModCtrl) != 0:
-		return core.CmdFileEnd{}
+		return core.CmdFileEnd{Select: e.Modifiers&term.ModShift != 0}
 
 	case e.Key == term.KeyHome:
-		return core.CmdMoveHome{}
+		return core.CmdMoveHome{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyEnd:
-		return core.CmdMoveEnd{}
+		return core.CmdMoveEnd{Select: e.Modifiers&term.ModShift != 0}
 	}
 
 	return nil

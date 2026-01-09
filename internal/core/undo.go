@@ -180,3 +180,87 @@ func (a *ReplaceLinesAction) Undo(e *Editor) {
 	}
 	e.buf.SetCursor(a.BeforeLine, a.BeforeCol)
 }
+
+type DeleteSelectionAction struct {
+	StartLine, StartCol int
+	EndLine, EndCol     int
+	DeletedText         string
+}
+
+func (a *DeleteSelectionAction) Apply(e *Editor) {
+	e.buf.DeleteRange(a.StartLine, a.StartCol, a.EndLine, a.EndCol)
+}
+
+func (a *DeleteSelectionAction) Undo(e *Editor) {
+	// Restore logic is tricky with ranges.
+	// For simplicity, we can use ReplaceLines logic or re-implement insert logic.
+	// Actually, DeleteRange behaves like ReplaceLines where NewLines is empty/merged.
+	// Let's reuse Paste/Insert logic but localized?
+	// Or we can assume we just insert the DeletedText at Start.
+	
+	// We need to parse DeletedText back into lines.
+	var lines [][]rune
+	var current []rune
+	for _, r := range a.DeletedText {
+		if r == '\n' {
+			lines = append(lines, current)
+			current = nil
+		} else {
+			current = append(current, r)
+		}
+	}
+	lines = append(lines, current)
+	
+	// Now insert 'lines' at StartLine, StartCol.
+	// This mirrors the Paste logic but as an Undo step.
+	// But Buffer interface doesn't have InsertRange.
+	// We can use ReplaceLinesAction logic here manually or add InsertRange to Buffer.
+	// Or we can abuse InsertLine / DeleteLine.
+	
+	// Simplest: We know where we are. We can simulate insertion.
+	// But we need to update e.buf directly.
+	
+	// Let's implement a manual "InsertText" here for Undo.
+	// 1. Split line at StartCol
+	prefix := e.buf.Lines()[a.StartLine][:a.StartCol]
+	suffix := e.buf.Lines()[a.StartLine][a.StartCol:]
+	
+	var newBlock [][]rune
+	newBlock = append(newBlock, append(append([]rune{}, prefix...), lines[0]...))
+	for i := 1; i < len(lines)-1; i++ {
+		newBlock = append(newBlock, lines[i])
+	}
+	lastIdx := len(lines)-1
+	if lastIdx > 0 {
+		finalLine := append(lines[lastIdx], suffix...)
+		newBlock = append(newBlock, finalLine)
+	} else {
+		// Single line restoration
+		newBlock[0] = append(newBlock[0], suffix...)
+	}
+	
+	// Replace StartLine with newBlock
+	e.buf.DeleteLine(a.StartLine)
+	for i := len(newBlock)-1; i >= 0; i-- {
+		e.buf.InsertLine(a.StartLine, newBlock[i])
+	}
+	
+	// Restore cursor selection if we want? Usually Undo restores cursor but not selection state unless tracked.
+	e.buf.SetCursor(a.EndLine, a.EndCol) // Or Start? Usually Start.
+}
+
+type CompositeAction struct {
+	Actions []Action
+}
+
+func (a *CompositeAction) Apply(e *Editor) {
+	for _, action := range a.Actions {
+		action.Apply(e)
+	}
+}
+
+func (a *CompositeAction) Undo(e *Editor) {
+	for i := len(a.Actions) - 1; i >= 0; i-- {
+		a.Actions[i].Undo(e)
+	}
+}

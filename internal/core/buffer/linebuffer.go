@@ -205,6 +205,74 @@ func (b *LineBuffer) InsertLine(line int, runes []rune) {
 	}
 }
 
+func (b *LineBuffer) DeleteRange(sl, sc, el, ec int) {
+	// Normalize order just in case
+	if sl > el || (sl == el && sc > ec) {
+		sl, sc, el, ec = el, ec, sl, sc
+	}
+
+	// Clamp
+	if sl < 0 { sl = 0; sc = 0 }
+	if el >= len(b.lines) { el = len(b.lines)-1; ec = len(b.lines[el]) }
+	
+	if sc < 0 { sc = 0 }
+	if ec > len(b.lines[el]) { ec = len(b.lines[el]) }
+
+	if sl == el {
+		// Single line delete
+		line := b.lines[sl]
+		if sc >= len(line) { return }
+		b.lines[sl] = append(line[:sc], line[ec:]...)
+	} else {
+		// Multi line delete
+		// 1. Keep prefix of sl
+		prefix := b.lines[sl][:sc]
+		// 2. Keep suffix of el
+		suffix := b.lines[el][ec:]
+		// 3. Merge
+		newLine := append(append([]rune{}, prefix...), suffix...)
+		
+		// 4. Construct new lines slice
+		// [0...sl-1] + [newLine] + [el+1...]
+		newLines := make([][]rune, 0, len(b.lines)-(el-sl))
+		newLines = append(newLines, b.lines[:sl]...)
+		newLines = append(newLines, newLine)
+		newLines = append(newLines, b.lines[el+1:]...)
+		b.lines = newLines
+	}
+	
+	// Update cursor to start of deleted range
+	b.SetCursor(sl, sc)
+}
+
+func (b *LineBuffer) RangeText(sl, sc, el, ec int) string {
+	if sl > el || (sl == el && sc > ec) {
+		sl, sc, el, ec = el, ec, sl, sc
+	}
+	
+	var res []rune
+	
+	for l := sl; l <= el; l++ {
+		if l >= len(b.lines) { break }
+		line := b.lines[l]
+		
+		start := 0
+		end := len(line)
+		
+		if l == sl { start = sc }
+		if l == el { end = ec }
+		
+		if start > len(line) { start = len(line) }
+		if end > len(line) { end = len(line) }
+		
+		res = append(res, line[start:end]...)
+		if l < el {
+			res = append(res, '\n') // Assume \n for internal rep
+		}
+	}
+	return string(res)
+}
+
 func (b *LineBuffer) LineLen(line int) int {
 	if line < 0 || line >= len(b.lines) {
 		return 0

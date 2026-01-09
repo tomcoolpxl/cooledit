@@ -31,11 +31,36 @@ type Editor struct {
 	undo      *UndoStack
 	search    SearchState
 	clipboard Clipboard
+	
+	selectionActive bool
+	selectionAnchor struct{ Line, Col int }
 }
 
 type Result struct {
 	Quit    bool
 	Message string
+}
+
+func (e *Editor) HasSelection() bool {
+	return e.selectionActive
+}
+
+func (e *Editor) ClearSelection() {
+	e.selectionActive = false
+}
+
+func (e *Editor) GetSelectionRange() (sl, sc, el, ec int) {
+	if !e.selectionActive {
+		l, c := e.buf.Cursor()
+		return l, c, l, c
+	}
+	cl, cc := e.buf.Cursor()
+	al, ac := e.selectionAnchor.Line, e.selectionAnchor.Col
+	
+	if al < cl || (al == cl && ac < cc) {
+		return al, ac, cl, cc
+	}
+	return cl, cc, al, ac
 }
 
 func NewEditor(cb Clipboard) *Editor {
@@ -62,6 +87,26 @@ func (e *Editor) LoadFile(fd *fileio.FileData) {
 	}
 	e.undo = NewUndoStack()
 	e.undo.MarkSaved()
+}
+
+func (e *Editor) deleteSelection() Action {
+	if !e.selectionActive {
+		return nil
+	}
+	sl, sc, el, ec := e.GetSelectionRange()
+	text := e.buf.RangeText(sl, sc, el, ec)
+	
+	action := &DeleteSelectionAction{
+		StartLine:   sl,
+		StartCol:    sc,
+		EndLine:     el,
+		EndCol:      ec,
+		DeletedText: text,
+	}
+	// Note: We don't apply here, caller applies or adds to composite.
+	// Actually, standard Apply pattern is: create, Push, Apply.
+	// But here we want to return it to be part of Composite if needed.
+	return action
 }
 
 func (e *Editor) Apply(cmd Command, viewHeight int) Result {
@@ -137,16 +182,49 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		return Result{Message: "Not found (prev): " + e.search.LastQuery}
 	
 	case CmdCopy:
-		line, _ := e.buf.Cursor()
-		content := string(e.buf.Lines()[line])
+		var content string
+		if e.selectionActive {
+			sl, sc, el, ec := e.GetSelectionRange()
+			content = e.buf.RangeText(sl, sc, el, ec)
+		} else {
+			line, _ := e.buf.Cursor()
+			content = string(e.buf.Lines()[line])
+		}
+		
 		if e.clipboard != nil {
 			if err := e.clipboard.Set(content); err != nil {
 				return Result{Message: "Copy failed: " + err.Error()}
 			}
 		}
+		if e.selectionActive {
+			return Result{Message: "Selection copied"}
+		}
 		return Result{Message: "Line copied"}
 
 	case CmdCut:
+		if e.selectionActive {
+			sl, sc, el, ec := e.GetSelectionRange()
+			content := e.buf.RangeText(sl, sc, el, ec)
+			
+			if e.clipboard != nil {
+				if err := e.clipboard.Set(content); err != nil {
+					return Result{Message: "Cut failed: " + err.Error()}
+				}
+			}
+			
+			action := &DeleteSelectionAction{
+				StartLine:   sl,
+				StartCol:    sc,
+				EndLine:     el,
+				EndCol:      ec,
+				DeletedText: content,
+			}
+			e.undo.Push(action)
+			action.Apply(e)
+			e.ClearSelection()
+			return Result{Message: "Selection cut"}
+		}
+
 		line, col := e.buf.Cursor()
 		content := e.buf.Lines()[line]
 		if e.clipboard != nil {
@@ -177,6 +255,14 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "Clipboard empty"}
 		}
 
+		// Handle selection replacement
+		var delAction Action
+		if e.selectionActive {
+			delAction = e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+		}
+
 		// For now, simpler multi-line paste:
 		// We use ReplaceLinesAction to make it one undo block
 		line, col := e.buf.Cursor()
@@ -197,44 +283,84 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 		newLines = append(newLines, current)
 
+		var pasteAction Action
+
 		if len(newLines) == 1 {
 			// Single line paste at cursor
-			for _, r := range newLines[0] {
-				e.Apply(CmdInsertRune{Rune: r}, viewHeight)
-			}
-		} else {
-			// Multi-line paste. 
-			// We'll replace the current line with (prefix + first line) ... (last line + suffix)
-			prefix := append([]rune{}, lines[line][:col]...)
-			suffix := append([]rune{}, lines[line][col:]...)
+			// We'll reuse the ReplaceLines logic below for single line too
+		} 
+		
+		// General logic using ReplaceLinesAction (works for single line too)
+		prefix := append([]rune{}, lines[line][:col]...)
+		suffix := append([]rune{}, lines[line][col:]...)
 
-			var inserted [][]rune
-			inserted = append(inserted, append(prefix, newLines[0]...))
-			for i := 1; i < len(newLines)-1; i++ {
-				inserted = append(inserted, newLines[i])
-			}
-			lastIdx := len(newLines) - 1
-			finalLine := append(newLines[lastIdx], suffix...)
-			inserted = append(inserted, finalLine)
-
-			action := &ReplaceLinesAction{
-				StartLine:  line,
-				OldLines:   [][]rune{lines[line]},
-				NewLines:   inserted,
-				BeforeLine: line,
-				BeforeCol:  col,
-				AfterLine:  line + len(newLines) - 1,
-				AfterCol:   len(newLines[lastIdx]),
-			}
-			e.undo.Push(action)
-			action.Apply(e)
+		var inserted [][]rune
+		inserted = append(inserted, append(prefix, newLines[0]...))
+		for i := 1; i < len(newLines)-1; i++ {
+			inserted = append(inserted, newLines[i])
 		}
+		lastIdx := len(newLines) - 1
+		finalLine := append(newLines[lastIdx], suffix...)
+		inserted = append(inserted, finalLine)
+
+		pasteAction = &ReplaceLinesAction{
+			StartLine:  line,
+			OldLines:   [][]rune{lines[line]},
+			NewLines:   inserted,
+			BeforeLine: line,
+			BeforeCol:  col,
+			AfterLine:  line + len(newLines) - 1,
+			AfterCol:   len(newLines[lastIdx]), // Start of pasted last line + len
+		}
+		// Wait, AfterCol calculation:
+		// If single line paste: col + len(newLines[0])
+		// If multi line: len(newLines[last]) + suffix len? No, cursor should be at end of pasted text.
+		// Pasted text end is:
+		// Line: line + len(newLines) - 1
+		// Col: if single line: col + len(text)
+		//      if multi line: len(newLines[last])
+		
+		if len(newLines) == 1 {
+			pasteAction.(*ReplaceLinesAction).AfterCol = col + len(newLines[0])
+		} else {
+			pasteAction.(*ReplaceLinesAction).AfterCol = len(newLines[lastIdx])
+		}
+
+		pasteAction.Apply(e)
+		
+		if delAction != nil {
+			e.undo.Push(&CompositeAction{Actions: []Action{delAction, pasteAction}})
+		} else {
+			e.undo.Push(pasteAction)
+		}
+		
 		return Result{Message: "Pasted"}
 
 	case CmdClick:
 		e.buf.SetCursor(c.Line, c.Col)
 
 	case CmdInsertRune:
+		if e.selectionActive {
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			
+			// We need to Apply delete first to update cursor for insert
+			// But we want atomic Undo.
+			// So we apply delete, get new cursor, create insert action.
+			delAction.Apply(e)
+			
+			line, col := e.buf.Cursor()
+			insAction := &InsertRuneAction{
+				Rune: c.Rune,
+				Line: line,
+				Col:  col,
+			}
+			insAction.Apply(e)
+			
+			e.undo.Push(&CompositeAction{Actions: []Action{delAction, insAction}})
+			return Result{}
+		}
+		
 		line, col := e.buf.Cursor()
 		action := &InsertRuneAction{
 			Rune: c.Rune,
@@ -245,6 +371,22 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		action.Apply(e)
 
 	case CmdInsertNewline:
+		if e.selectionActive {
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+			
+			line, col := e.buf.Cursor()
+			insAction := &InsertNewlineAction{
+				Line: line,
+				Col:  col,
+			}
+			insAction.Apply(e)
+			
+			e.undo.Push(&CompositeAction{Actions: []Action{delAction, insAction}})
+			return Result{}
+		}
+		
 		line, col := e.buf.Cursor()
 		action := &InsertNewlineAction{
 			Line: line,
@@ -254,6 +396,14 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		action.Apply(e)
 
 	case CmdBackspace:
+		if e.selectionActive {
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+			e.undo.Push(delAction)
+			return Result{}
+		}
+		
 		line, col := e.buf.Cursor()
 		
 		var action *BackspaceAction
@@ -282,51 +432,71 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		action.Apply(e)
 
 	case CmdMoveLeft:
-		e.buf.MoveLeft()
+		e.handleMove(c.Select, func() { e.buf.MoveLeft() })
 	case CmdMoveRight:
-		e.buf.MoveRight()
+		e.handleMove(c.Select, func() { e.buf.MoveRight() })
 	case CmdMoveUp:
-		e.buf.MoveUp()
+		e.handleMove(c.Select, func() { e.buf.MoveUp() })
 	case CmdMoveDown:
-		e.buf.MoveDown()
+		e.handleMove(c.Select, func() { e.buf.MoveDown() })
 	case CmdMoveHome:
-		e.buf.MoveHome()
+		e.handleMove(c.Select, func() { e.buf.MoveHome() })
 	case CmdMoveEnd:
-		e.buf.MoveEnd()
+		e.handleMove(c.Select, func() { e.buf.MoveEnd() })
 
 	case CmdPageUp:
-		for i := 0; i < viewHeight; i++ {
-			e.buf.MoveUp()
-		}
+		e.handleMove(c.Select, func() {
+			for i := 0; i < viewHeight; i++ {
+				e.buf.MoveUp()
+			}
+		})
 	case CmdPageDown:
-		for i := 0; i < viewHeight; i++ {
-			e.buf.MoveDown()
-		}
+		e.handleMove(c.Select, func() {
+			for i := 0; i < viewHeight; i++ {
+				e.buf.MoveDown()
+			}
+		})
 
 	case CmdFileStart:
-		for {
-			prev, _ := e.buf.Cursor()
-			e.buf.MoveUp()
-			cur, _ := e.buf.Cursor()
-			if cur == prev {
-				break
+		e.handleMove(c.Select, func() {
+			for {
+				prev, _ := e.buf.Cursor()
+				e.buf.MoveUp()
+				cur, _ := e.buf.Cursor()
+				if cur == prev {
+					break
+				}
 			}
-		}
-		e.buf.MoveHome()
+			e.buf.MoveHome()
+		})
 
 	case CmdFileEnd:
-		for {
-			prev, _ := e.buf.Cursor()
-			e.buf.MoveDown()
-			cur, _ := e.buf.Cursor()
-			if cur == prev {
-				break
+		e.handleMove(c.Select, func() {
+			for {
+				prev, _ := e.buf.Cursor()
+				e.buf.MoveDown()
+				cur, _ := e.buf.Cursor()
+				if cur == prev {
+					break
+				}
 			}
-		}
-		e.buf.MoveEnd()
+			e.buf.MoveEnd()
+		})
 	}
 
 	return Result{}
+}
+
+func (e *Editor) handleMove(selectMode bool, moveFunc func()) {
+	if selectMode {
+		if !e.selectionActive {
+			e.selectionActive = true
+			e.selectionAnchor.Line, e.selectionAnchor.Col = e.buf.Cursor()
+		}
+	} else {
+		e.selectionActive = false
+	}
+	moveFunc()
 }
 
 func (e *Editor) Lines() [][]rune    { return e.buf.Lines() }

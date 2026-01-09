@@ -163,6 +163,9 @@ func (u *UI) drawViewport() {
 	vp := u.editor.Viewport()
 	lines := u.editor.Lines()
 
+	sl, sc, el, ec := u.editor.GetSelectionRange()
+	hasSelection := u.editor.HasSelection()
+
 	for sy := 0; sy < vpRect.H; sy++ {
 		docY := vp.TopLine + sy
 		if docY < 0 || docY >= len(lines) {
@@ -177,10 +180,71 @@ func (u *UI) drawViewport() {
 
 		for sx := 0; sx < vpRect.W; sx++ {
 			docX := start + sx
+			// We check if docX is in selection range [sl:sc, el:ec)
+			// But wait, GetSelectionRange returns normalized range? Yes.
+			// Is it inclusive of end?
+			// RangeText logic: [start, end) usually?
+			// Let's re-read RangeText: "for l := sl; l <= el".
+			// "if l == el { end = ec }".
+			// So it includes up to ec-1.
+			// e.g. "abc", select "a". Range 0,0 -> 0,1.
+			
+			isSelected := false
+			if hasSelection {
+				if docY > sl && docY < el {
+					isSelected = true
+				} else if docY == sl && docY == el {
+					if docX >= sc && docX < ec {
+						isSelected = true
+					}
+				} else if docY == sl {
+					if docX >= sc {
+						isSelected = true
+					}
+				} else if docY == el {
+					if docX < ec {
+						isSelected = true
+					}
+				}
+			}
+
+			style := term.Style{}
+			if isSelected {
+				style.Inverse = true
+			}
+
 			if docX >= len(line) {
+				// Past end of line, maybe show selection if it spans newline?
+				// If selection goes to next line, we should highlight the "newline char" (space)
+				// RangeText logic: includes newline if l < el.
+				if hasSelection && docY >= sl && docY < el {
+					// We are on a selected line, but not the last one.
+					// The "newline" at the end should be selected.
+					// Draw a space with inverse style.
+					u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+				}
 				break
 			}
-			u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, line[docX], term.Style{})
+			u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, line[docX], style)
+		}
+		
+		// Edge case: Empty line selection or selection extending past end of line logic above
+		// The loop above breaks if docX >= len(line).
+		// If line is empty, len(line) is 0. start is 0. Loop runs once for sx=0?
+		// No, if vpRect.W > 0, sx=0. docX=0. if 0 >= 0 -> break.
+		// So it breaks immediately. We need to handle the "newline" highlighting outside the loop or ensure loop runs.
+		// Actually, simpler to check if we need to draw the newline highlight after the loop.
+		// But we need the correct sx.
+		
+		lineLen := len(line)
+		if lineLen < start { lineLen = start } // Should not happen if start clamped
+		
+		// If the line end is visible
+		if lineLen >= start && lineLen < start + vpRect.W {
+			sx := lineLen - start
+			if hasSelection && docY >= sl && docY < el {
+				u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+			}
 		}
 	}
 

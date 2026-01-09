@@ -16,34 +16,34 @@ func (CmdInsertNewline) isCommand() {}
 type CmdBackspace struct{}
 func (CmdBackspace) isCommand() {}
 
-type CmdMoveLeft struct{}
+type CmdMoveLeft struct{ Select bool }
 func (CmdMoveLeft) isCommand() {}
 
-type CmdMoveRight struct{}
+type CmdMoveRight struct{ Select bool }
 func (CmdMoveRight) isCommand() {}
 
-type CmdMoveUp struct{}
+type CmdMoveUp struct{ Select bool }
 func (CmdMoveUp) isCommand() {}
 
-type CmdMoveDown struct{}
+type CmdMoveDown struct{ Select bool }
 func (CmdMoveDown) isCommand() {}
 
-type CmdMoveHome struct{}
+type CmdMoveHome struct{ Select bool }
 func (CmdMoveHome) isCommand() {}
 
-type CmdMoveEnd struct{}
+type CmdMoveEnd struct{ Select bool }
 func (CmdMoveEnd) isCommand() {}
 
-type CmdPageUp struct{}
+type CmdPageUp struct{ Select bool }
 func (CmdPageUp) isCommand() {}
 
-type CmdPageDown struct{}
+type CmdPageDown struct{ Select bool }
 func (CmdPageDown) isCommand() {}
 
-type CmdFileStart struct{}
+type CmdFileStart struct{ Select bool }
 func (CmdFileStart) isCommand() {}
 
-type CmdFileEnd struct{}
+type CmdFileEnd struct{ Select bool }
 func (CmdFileEnd) isCommand() {}
 
 type CmdSave struct{}
