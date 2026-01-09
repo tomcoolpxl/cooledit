@@ -52,6 +52,7 @@ func (m *Menubar) initDefaults() {
 				{Label: "Cut", Accelerator: "Ctrl+X", Command: core.CmdCut{}},
 				{Label: "Copy", Accelerator: "Ctrl+C", Command: core.CmdCopy{}},
 				{Label: "Paste", Accelerator: "Ctrl+V", Command: core.CmdPaste{}},
+				{Label: "Go to Line", Accelerator: "Ctrl+G", Action: func(u *UI) { u.enterGoToLine() }},
 			},
 		},
 		{
@@ -60,6 +61,13 @@ func (m *Menubar) initDefaults() {
 				{Label: "Find", Accelerator: "Ctrl+F", Action: func(u *UI) { u.enterFind() }},
 				{Label: "Find Next", Accelerator: "F3", Command: core.CmdFindNext{}},
 				{Label: "Find Previous", Accelerator: "Shift+F3", Command: core.CmdFindPrev{}},
+			},
+		},
+		{
+			Title: "View",
+			Items: []MenuItem{
+				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", Action: func(u *UI) { u.showLineNumbers = !u.showLineNumbers }},
+				{Label: "Toggle Word Wrap", Accelerator: "Ctrl+W", Action: func(u *UI) { u.softWrap = !u.softWrap }},
 			},
 		},
 		{

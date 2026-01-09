@@ -312,13 +312,6 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			AfterLine:  line + len(newLines) - 1,
 			AfterCol:   len(newLines[lastIdx]), // Start of pasted last line + len
 		}
-		// Wait, AfterCol calculation:
-		// If single line paste: col + len(newLines[0])
-		// If multi line: len(newLines[last]) + suffix len? No, cursor should be at end of pasted text.
-		// Pasted text end is:
-		// Line: line + len(newLines) - 1
-		// Col: if single line: col + len(text)
-		//      if multi line: len(newLines[last])
 		
 		if len(newLines) == 1 {
 			pasteAction.(*ReplaceLinesAction).AfterCol = col + len(newLines[0])
@@ -335,6 +328,12 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 		
 		return Result{Message: "Pasted"}
+
+	case CmdGoToLine:
+		target := c.Line - 1 // convert 1-based to 0-based
+		e.ClearSelection()
+		e.buf.SetCursor(target, 0)
+		return Result{}
 
 	case CmdClick:
 		e.buf.SetCursor(c.Line, c.Col)
@@ -430,6 +429,41 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 		e.undo.Push(action)
 		action.Apply(e)
+
+	case CmdDelete:
+		if e.selectionActive {
+			delAction := e.deleteSelection()
+			e.ClearSelection()
+			delAction.Apply(e)
+			e.undo.Push(delAction)
+			return Result{}
+		}
+		
+		line, col := e.buf.Cursor()
+		
+		// Delete character at cursor (forward delete)
+		if col < e.buf.LineLen(line) {
+			// Delete char at current position
+			r := e.buf.RuneAt(line, col)
+			action := &BackspaceAction{
+				DeletedRune: r,
+				Line:        line,
+				Col:         col + 1, // Pretend cursor was after the char
+				IsMerge:     false,
+			}
+			e.undo.Push(action)
+			action.Apply(e)
+		} else if line < len(e.buf.Lines())-1 {
+			// At end of line, merge with next line (like delete newline)
+			action := &BackspaceAction{
+				Line:     line + 1,
+				Col:      0,
+				IsMerge:  true,
+				MergeCol: col,
+			}
+			e.undo.Push(action)
+			action.Apply(e)
+		}
 
 	case CmdMoveLeft:
 		e.handleMove(c.Select, func() { e.buf.MoveLeft() })

@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"time"
 
 	"cooledit/internal/term"
 )
@@ -166,8 +165,39 @@ func (u *UI) drawViewport() {
 	sl, sc, el, ec := u.editor.GetSelectionRange()
 	hasSelection := u.editor.HasSelection()
 
+	gutterWidth := 0
+	if u.showLineNumbers {
+		totalLines := len(lines)
+		if totalLines == 0 {
+			totalLines = 1
+		}
+		gutterWidth = len(fmt.Sprintf("%d", totalLines)) + 1 // +1 for padding
+	}
+
 	for sy := 0; sy < vpRect.H; sy++ {
 		docY := vp.TopLine + sy
+		
+		// Draw Gutter
+		if u.showLineNumbers {
+			if docY < len(lines) {
+				numStr := fmt.Sprintf("%d", docY+1) // 1-based
+				// Right align
+				padding := gutterWidth - len(numStr) - 1
+				for i := 0; i < padding; i++ {
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+				}
+				for i, r := range numStr {
+					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, term.Style{}) // Maybe diff style?
+				}
+				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', term.Style{})
+			} else {
+				// Empty gutter
+				for i := 0; i < gutterWidth; i++ {
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', term.Style{})
+				}
+			}
+		}
+
 		if docY < 0 || docY >= len(lines) {
 			continue
 		}
@@ -178,7 +208,11 @@ func (u *UI) drawViewport() {
 			start = len(line)
 		}
 
-		for sx := 0; sx < vpRect.W; sx++ {
+		drawX := vpRect.X + gutterWidth
+		availW := vpRect.W - gutterWidth
+		if availW < 0 { availW = 0 }
+
+		for sx := 0; sx < availW; sx++ {
 			docX := start + sx
 			// We check if docX is in selection range [sl:sc, el:ec)
 			// But wait, GetSelectionRange returns normalized range? Yes.
@@ -221,11 +255,11 @@ func (u *UI) drawViewport() {
 					// We are on a selected line, but not the last one.
 					// The "newline" at the end should be selected.
 					// Draw a space with inverse style.
-					u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+					u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
 				}
 				break
 			}
-			u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, line[docX], style)
+			u.screen.SetCell(drawX+sx, vpRect.Y+sy, line[docX], style)
 		}
 		
 		// Edge case: Empty line selection or selection extending past end of line logic above
@@ -240,10 +274,10 @@ func (u *UI) drawViewport() {
 		if lineLen < start { lineLen = start } // Should not happen if start clamped
 		
 		// If the line end is visible
-		if lineLen >= start && lineLen < start + vpRect.W {
+		if lineLen >= start && lineLen < start + availW {
 			sx := lineLen - start
 			if hasSelection && docY >= sl && docY < el {
-				u.screen.SetCell(vpRect.X+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
+				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', term.Style{Inverse: true})
 			}
 		}
 	}
@@ -252,8 +286,12 @@ func (u *UI) drawViewport() {
 		cy, cx := u.editor.Cursor()
 		sx := cx - vp.LeftCol
 		sy := cy - vp.TopLine
-		if sx >= 0 && sx < vpRect.W && sy >= 0 && sy < vpRect.H {
-			u.screen.ShowCursor(vpRect.X+sx, vpRect.Y+sy)
+		
+		drawX := vpRect.X + gutterWidth
+		availW := vpRect.W - gutterWidth
+		
+		if sx >= 0 && sx < availW && sy >= 0 && sy < vpRect.H {
+			u.screen.ShowCursor(drawX+sx, vpRect.Y+sy)
 		}
 	}
 }
@@ -325,11 +363,6 @@ func (u *UI) drawPrompt() {
 	}
 
 	if u.mode == ModeMessage {
-		if time.Now().After(u.messageUntil) {
-			u.mode = ModeNormal
-			// Next frame will correct layout
-			return
-		}
 		for i, r := range u.message {
 			if i >= rect.W {
 				break

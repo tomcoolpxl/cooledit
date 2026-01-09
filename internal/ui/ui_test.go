@@ -24,6 +24,12 @@ func updateTestLayout(ui *UI, w, h int) {
 
 func draw(ui *UI) {
 	w, h := ui.screen.Size()
+	
+	// Check message timeout (same as in Run())
+	if ui.mode == ModeMessage && time.Now().After(ui.messageUntil) {
+		ui.mode = ModeNormal
+	}
+	
 	updateTestLayout(ui, w, h)
 	ui.draw()
 }
@@ -131,6 +137,50 @@ func TestMessageExpiresToNormalStatus(t *testing.T) {
 	
 	if ui.mode != ModeNormal {
 		t.Fatalf("expected mode to revert to normal")
+	}
+}
+
+func TestMessageBarClearsAfterExpiry(t *testing.T) {
+	ui, screen := newTestUI(40, 5)
+
+	// Type some text to have content
+	typeString(ui, "test")
+	draw(ui)
+
+	// Show a message
+	ui.enterMessage("Undo")
+	draw(ui)
+
+	// Message should be visible on row 3 (h-2)
+	messageRow := 3
+	if screen.Cell(0, messageRow) != 'U' {
+		t.Fatalf("expected 'U' from message at row %d", messageRow)
+	}
+	if screen.Cell(1, messageRow) != 'n' {
+		t.Fatalf("expected 'n' from message at row %d", messageRow)
+	}
+
+	// Expire the message
+	ui.messageUntil = time.Now().Add(-1 * time.Second)
+	draw(ui)
+	
+	// Message bar should be cleared (no lingering characters)
+	// The row that was the message bar should now show spaces or content from viewport
+	// Since the viewport will expand, that row should be part of viewport or empty
+	for x := 0; x < 10; x++ {
+		ch := screen.Cell(x, messageRow)
+		// Should not contain message text anymore
+		if x == 0 && ch == 'U' {
+			t.Fatalf("message 'U' still visible after expiry at row %d", messageRow)
+		}
+		if x == 1 && ch == 'n' {
+			t.Fatalf("message 'n' still visible after expiry at row %d", messageRow)
+		}
+	}
+	
+	// Mode should be back to normal
+	if ui.mode != ModeNormal {
+		t.Fatalf("expected mode to be ModeNormal after message expiry")
 	}
 }
 
@@ -631,3 +681,134 @@ func TestPromptOverwrite(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteKey(t *testing.T) {
+	ui, screen := newTestUI(20, 5)
+	
+	// Type "hello"
+	typeString(ui, "hello")
+	draw(ui)
+	
+	// Move home
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome})
+	
+	// Delete first character ('h')
+	dispatch(ui, term.KeyEvent{Key: term.KeyDelete})
+	draw(ui)
+	
+	// Should show "ello"
+	if screen.Cell(0, 0) != 'e' {
+		t.Fatalf("expected 'e' at (0,0) after delete, got %q", screen.Cell(0, 0))
+	}
+	if screen.Cell(1, 0) != 'l' {
+		t.Fatalf("expected 'l' at (1,0) after delete, got %q", screen.Cell(1, 0))
+	}
+	
+	// Cursor should stay at column 0
+	if screen.cursorX != 0 || screen.cursorY != 0 {
+		t.Fatalf("expected cursor at (0,0), got (%d,%d)", screen.cursorX, screen.cursorY)
+	}
+}
+
+func TestDeleteKeyMergesLines(t *testing.T) {
+	ui, screen := newTestUI(20, 5)
+	
+	// Type "abc" + newline + "def"
+	typeString(ui, "abc")
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+	typeString(ui, "def")
+	draw(ui)
+	
+	// Move up to end of first line
+	dispatch(ui, term.KeyEvent{Key: term.KeyUp})
+	
+	// Delete at end of line (should merge with next)
+	dispatch(ui, term.KeyEvent{Key: term.KeyDelete})
+	draw(ui)
+	
+	// Should show "abcdef" on single line
+	if screen.Cell(0, 0) != 'a' || screen.Cell(1, 0) != 'b' || screen.Cell(2, 0) != 'c' {
+		t.Fatalf("expected 'abc' at start of line")
+	}
+	if screen.Cell(3, 0) != 'd' || screen.Cell(4, 0) != 'e' || screen.Cell(5, 0) != 'f' {
+		t.Fatalf("expected 'def' after 'abc'")
+	}
+}
+
+func TestDeleteKeyOnEmptyLine(t *testing.T) {
+	ui, _ := newTestUI(20, 5)
+	
+	// Create empty line + "test"
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+	typeString(ui, "test")
+	
+	// Move up to empty line
+	dispatch(ui, term.KeyEvent{Key: term.KeyUp})
+	
+	// Delete on empty line should merge with next
+	dispatch(ui, term.KeyEvent{Key: term.KeyDelete})
+	
+	// Should have single line with "test"
+	lines := ui.editor.Lines()
+	if len(lines) != 1 {
+		t.Fatalf("expected 1 line after delete on empty line, got %d", len(lines))
+	}
+	if string(lines[0]) != "test" {
+		t.Fatalf("expected 'test', got %q", string(lines[0]))
+	}
+}
+
+func TestDeleteWithSelection(t *testing.T) {
+	ui, screen := newTestUI(20, 5)
+	
+	// Type "hello"
+	typeString(ui, "hello")
+	
+	// Move home and select first 3 chars
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRight, Modifiers: term.ModShift})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRight, Modifiers: term.ModShift})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRight, Modifiers: term.ModShift})
+	
+	// Delete selection
+	dispatch(ui, term.KeyEvent{Key: term.KeyDelete})
+	draw(ui)
+	
+	// Should show "lo"
+	if screen.Cell(0, 0) != 'l' {
+		t.Fatalf("expected 'l' at (0,0) after delete selection, got %q", screen.Cell(0, 0))
+	}
+	if screen.Cell(1, 0) != 'o' {
+		t.Fatalf("expected 'o' at (1,0) after delete selection, got %q", screen.Cell(1, 0))
+	}
+}
+
+func TestDeleteKeyUndo(t *testing.T) {
+	ui, screen := newTestUI(20, 5)
+	
+	// Type "test"
+	typeString(ui, "test")
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome})
+	
+	// Delete 't'
+	dispatch(ui, term.KeyEvent{Key: term.KeyDelete})
+	draw(ui)
+	
+	// Should show "est"
+	if screen.Cell(0, 0) != 'e' {
+		t.Fatalf("expected 'e' after delete")
+	}
+	
+	// Undo
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'z', Modifiers: term.ModCtrl})
+	draw(ui)
+	
+	// Should show "test" again
+	if screen.Cell(0, 0) != 't' {
+		t.Fatalf("expected 't' after undo, got %q", screen.Cell(0, 0))
+	}
+	if screen.Cell(1, 0) != 'e' {
+		t.Fatalf("expected 'e' at position 1 after undo")
+	}
+}
+

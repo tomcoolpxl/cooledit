@@ -336,3 +336,120 @@ e.LoadFile(fd)
 		t.Errorf("loaded file should not be modified")
 	}
 }
+
+func TestDeleteCharacter(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
+	// "abc" cursor at (0,3)
+	
+	e.Apply(CmdMoveHome{}, 10) // cursor at (0,0)
+	e.Apply(CmdDelete{}, 10)    // delete 'a'
+	
+	lines := e.Lines()
+	if string(lines[0]) != "bc" {
+		t.Fatalf("expected 'bc' after delete, got %q", string(lines[0]))
+	}
+	
+	row, col := e.Cursor()
+	if row != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0,0) after delete, got (%d,%d)", row, col)
+	}
+}
+
+func TestDeleteMiddleCharacter(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
+	// "abc" cursor at (0,3)
+	
+	e.Apply(CmdMoveLeft{}, 10)   // cursor at (0,2)
+	e.Apply(CmdMoveLeft{}, 10)   // cursor at (0,1)
+	e.Apply(CmdDelete{}, 10)      // delete 'b'
+	
+	lines := e.Lines()
+	if string(lines[0]) != "ac" {
+		t.Fatalf("expected 'ac' after delete, got %q", string(lines[0]))
+	}
+	
+	row, col := e.Cursor()
+	if row != 0 || col != 1 {
+		t.Fatalf("expected cursor at (0,1) after delete, got (%d,%d)", row, col)
+	}
+}
+
+func TestDeleteMergesLines(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	e.Apply(CmdInsertNewline{}, 10)
+	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
+	// a
+	// b
+	
+	e.Apply(CmdMoveUp{}, 10)   // cursor at (0,1)
+	e.Apply(CmdDelete{}, 10)   // delete newline, merge lines
+	
+	lines := e.Lines()
+	if len(lines) != 1 || string(lines[0]) != "ab" {
+		t.Fatalf("expected merge to 'ab', got %v", lines)
+	}
+	
+	row, col := e.Cursor()
+	if row != 0 || col != 1 {
+		t.Fatalf("expected cursor at (0,1) after merge, got (%d,%d)", row, col)
+	}
+}
+
+func TestDeleteOnEmptyLine(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertNewline{}, 10)
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	// (empty line)
+	// a
+	
+	e.Apply(CmdMoveUp{}, 10)   // cursor at (0,0) on empty line
+	e.Apply(CmdDelete{}, 10)   // should merge empty line with next
+	
+	lines := e.Lines()
+	if len(lines) != 1 || string(lines[0]) != "a" {
+		t.Fatalf("expected 'a' on single line, got %v", lines)
+	}
+}
+
+func TestDeleteAtEndOfLastLine(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	// "a" cursor at (0,1)
+	
+	e.Apply(CmdDelete{}, 10) // at end of last line, should be no-op
+	
+	lines := e.Lines()
+	if string(lines[0]) != "a" {
+		t.Fatalf("expected 'a' unchanged, got %q", string(lines[0]))
+	}
+}
+
+func TestDeleteWithSelection(t *testing.T) {
+	e := newTestEditor()
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
+	// "abc"
+	
+	e.Apply(CmdMoveHome{}, 10)
+	e.Apply(CmdMoveRight{Select: true}, 10)  // select 'a'
+	e.Apply(CmdMoveRight{Select: true}, 10)  // select 'ab'
+	
+	e.Apply(CmdDelete{}, 10) // should delete selection
+	
+	lines := e.Lines()
+	if string(lines[0]) != "c" {
+		t.Fatalf("expected 'c' after delete selection, got %q", string(lines[0]))
+	}
+	
+	if e.HasSelection() {
+		t.Fatalf("selection should be cleared after delete")
+	}
+}

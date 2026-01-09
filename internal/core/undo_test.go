@@ -276,4 +276,90 @@ func TestUndoToSavedState(t *testing.T) {
 
 }
 
+func TestUndoDeleteChar(t *testing.T) {
+	e := NewEditor(nil)
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'c'}, 10)
+	// "abc"
+	
+	e.Apply(CmdMoveHome{}, 10)
+	e.Apply(CmdDelete{}, 10) // Delete 'a'
+	
+	// State: "bc"
+	if string(e.Lines()[0]) != "bc" {
+		t.Fatalf("delete failed: expected 'bc', got %q", string(e.Lines()[0]))
+	}
+	
+	e.Apply(CmdUndo{}, 10)
+	
+	// State: "abc"
+	if string(e.Lines()[0]) != "abc" {
+		t.Fatalf("undo delete failed: expected 'abc', got %q", string(e.Lines()[0]))
+	}
+	
+	row, col := e.Cursor()
+	if row != 0 || col != 1 {
+		t.Fatalf("undo delete cursor: expected (0,1), got (%d,%d)", row, col)
+	}
+}
+
+func TestUndoDeleteMerge(t *testing.T) {
+	e := NewEditor(nil)
+	e.Apply(CmdInsertRune{Rune: 'a'}, 10)
+	e.Apply(CmdInsertNewline{}, 10)
+	e.Apply(CmdInsertRune{Rune: 'b'}, 10)
+	// a
+	// b
+	
+	e.Apply(CmdMoveUp{}, 10)  // Cursor at 'a' end (0,1)
+	e.Apply(CmdDelete{}, 10)  // Delete newline, merge lines
+	
+	// State: "ab"
+	lines := e.Lines()
+	if len(lines) != 1 {
+		t.Fatalf("merge failed: expected 1 line")
+	}
+	if string(lines[0]) != "ab" {
+		t.Fatalf("merge content mismatch: expected 'ab', got %q", string(lines[0]))
+	}
+	
+	e.Apply(CmdUndo{}, 10)
+	
+	// State: "a", "b"
+	lines = e.Lines()
+	if len(lines) != 2 {
+		t.Fatalf("undo merge failed: expected 2 lines")
+	}
+	if string(lines[0]) != "a" || string(lines[1]) != "b" {
+		t.Fatalf("undo merge content mismatch")
+	}
+	
+	row, col := e.Cursor()
+	if row != 1 || col != 0 {
+		t.Fatalf("undo merge cursor: expected (1,0), got (%d,%d)", row, col)
+	}
+}
+
+func TestRedoDelete(t *testing.T) {
+	e := NewEditor(nil)
+	e.Apply(CmdInsertRune{Rune: 'x'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'y'}, 10)
+	e.Apply(CmdInsertRune{Rune: 'z'}, 10)
+	// "xyz"
+	
+	e.Apply(CmdMoveHome{}, 10)
+	e.Apply(CmdDelete{}, 10) // Delete 'x'
+	// "yz"
+	
+	e.Apply(CmdUndo{}, 10)
+	// "xyz"
+	
+	e.Apply(CmdRedo{}, 10)
+	// "yz"
+	
+	if string(e.Lines()[0]) != "yz" {
+		t.Fatalf("redo delete failed: expected 'yz', got %q", string(e.Lines()[0]))
+	}
+}
 

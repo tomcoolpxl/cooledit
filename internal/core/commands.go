@@ -16,6 +16,9 @@ func (CmdInsertNewline) isCommand() {}
 type CmdBackspace struct{}
 func (CmdBackspace) isCommand() {}
 
+type CmdDelete struct{}
+func (CmdDelete) isCommand() {}
+
 type CmdMoveLeft struct{ Select bool }
 func (CmdMoveLeft) isCommand() {}
 
@@ -79,6 +82,17 @@ type CmdPaste struct {
 	Text string
 }
 func (CmdPaste) isCommand() {}
+
+type CmdGoToLine struct {
+	Line int
+}
+func (CmdGoToLine) isCommand() {}
+
+type CmdToggleLineNumbers struct{}
+func (CmdToggleLineNumbers) isCommand() {}
+
+type CmdToggleSoftWrap struct{}
+func (CmdToggleSoftWrap) isCommand() {}
 
 type CmdClick struct {
 	Line, Col int

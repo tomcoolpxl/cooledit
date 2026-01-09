@@ -24,7 +24,7 @@ func NewFakeScreen(w, h int) *FakeScreen {
 }
 
 func (s *FakeScreen) Init(enableMouse bool) error { return nil }
-func (s *FakeScreen) Fini()       {}
+func (s *FakeScreen) Fini()                       {}
 
 func (s *FakeScreen) Size() (int, int) {
 	return s.w, s.h

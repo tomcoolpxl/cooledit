@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 
 	"cooledit/internal/core"
@@ -14,6 +15,7 @@ const (
 	PromptOverwrite
 	PromptQuitConfirm
 	PromptFind
+	PromptGoToLine
 )
 
 func (u *UI) startQuitFlow() {
@@ -42,6 +44,13 @@ func (u *UI) enterFind() {
 	u.mode = ModePrompt
 	u.promptKind = PromptFind
 	u.promptLabel = "Find: "
+	u.promptText = nil
+}
+
+func (u *UI) enterGoToLine() {
+	u.mode = ModePrompt
+	u.promptKind = PromptGoToLine
+	u.promptLabel = "Go to line: "
 	u.promptText = nil
 }
 
@@ -182,6 +191,43 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 			
 		case term.KeyRune:
 			u.promptText = append(u.promptText, e.Rune)
+			return true
+		}
+		return true
+
+	case PromptGoToLine:
+		switch e.Key {
+		case term.KeyEnter:
+			lineStr := string(u.promptText)
+			u.exitPrompt()
+			if lineStr != "" {
+				var line int
+				_, err := fmt.Sscanf(lineStr, "%d", &line)
+				if err == nil {
+					res := u.editor.Apply(core.CmdGoToLine{Line: line}, u.layout.Viewport.H)
+					if res.Message != "" {
+						u.enterMessage(res.Message)
+					}
+				} else {
+					u.enterMessage("Invalid line number")
+				}
+			}
+			return true
+
+		case term.KeyEscape:
+			u.exitPrompt()
+			return true
+
+		case term.KeyBackspace:
+			if len(u.promptText) > 0 {
+				u.promptText = u.promptText[:len(u.promptText)-1]
+			}
+			return true
+
+		case term.KeyRune:
+			if e.Rune >= '0' && e.Rune <= '9' {
+				u.promptText = append(u.promptText, e.Rune)
+			}
 			return true
 		}
 		return true

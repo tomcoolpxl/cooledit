@@ -77,6 +77,16 @@ func (s *Screen) PollEvent() term.Event {
 	return nil
 }
 
+func (s *Screen) PushEvent(ev term.Event) {
+	switch ev.(type) {
+	case term.RedrawEvent:
+		// Post a custom event to wake up PollEvent
+		s.screen.PostEventWait(tcell.NewEventInterrupt(nil))
+	default:
+		// Could handle other custom events here
+	}
+}
+
 func (s *Screen) SetCell(x, y int, ch rune, st term.Style) {
 	style := tcell.StyleDefault
 	if st.Inverse {

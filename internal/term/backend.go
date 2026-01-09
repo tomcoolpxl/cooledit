@@ -87,12 +87,17 @@ type MouseEvent struct {
 
 func (MouseEvent) isEvent() {}
 
+type RedrawEvent struct{}
+
+func (RedrawEvent) isEvent() {}
+
 type Screen interface {
 	Init(enableMouse bool) error
 	Fini()
 
 	Size() (width, height int)
 	PollEvent() Event
+	PushEvent(Event)
 
 	SetCell(x, y int, ch rune, style Style)
 	Show()

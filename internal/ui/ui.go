@@ -29,6 +29,7 @@ type UI struct {
 	// message mode
 	message      string
 	messageUntil time.Time
+	messageTimer *time.Timer
 
 	// prompt mode
 	promptKind  PromptKind
@@ -41,6 +42,11 @@ type UI struct {
 	// used by quit flow
 	quitAfterSave bool
 	quitNow       bool
+
+	// Features
+	showLineNumbers bool
+	enableGoToLine  bool
+	softWrap        bool
 }
 
 func New(screen term.Screen, editor *core.Editor) *UI {
@@ -53,13 +59,31 @@ func New(screen term.Screen, editor *core.Editor) *UI {
 	}
 }
 
+func (u *UI) SetOptions(lineNumbers, goToLine, softWrap bool) {
+	u.showLineNumbers = lineNumbers
+	u.enableGoToLine = goToLine
+	u.softWrap = softWrap
+}
+
 func (u *UI) Run() error {
+	defer func() {
+		// Clean up timer on exit
+		if u.messageTimer != nil {
+			u.messageTimer.Stop()
+		}
+	}()
+	
 	for {
 		if u.quitNow {
 			return nil
 		}
 
 		w, h := u.screen.Size()
+		
+		// Check if message has expired before computing layout
+		if u.mode == ModeMessage && time.Now().After(u.messageUntil) {
+			u.mode = ModeNormal
+		}
 		
 		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar)
 		
@@ -71,6 +95,10 @@ func (u *UI) Run() error {
 		}
 
 		switch e := ev.(type) {
+		case term.RedrawEvent:
+			// Just continue to redraw
+			continue
+			
 		case term.KeyEvent:
 			if u.mode == ModeHelp {
 				u.mode = ModeNormal
@@ -270,6 +298,14 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.mode = ModeHelp
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == 'l' && (e.Modifiers&term.ModCtrl) != 0:
+		u.showLineNumbers = !u.showLineNumbers
+		return nil
+
+	case e.Key == term.KeyRune && e.Rune == 'w' && (e.Modifiers&term.ModCtrl) != 0:
+		u.softWrap = !u.softWrap
+		return nil
+
 	case e.Key == term.KeyRune && e.Rune == 'q' && (e.Modifiers&term.ModCtrl) != 0:
 		u.startQuitFlow()
 		return nil
@@ -314,6 +350,13 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.enterFind()
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == 'g' && (e.Modifiers&term.ModCtrl) != 0:
+		if u.enableGoToLine {
+			u.enterGoToLine()
+			return nil
+		}
+		return core.CmdGoToLine{Line: -1} // Invalid, effectively no-op or specific command
+
 	case e.Key == term.KeyF3:
 		if e.Modifiers == term.ModShift {
 			return core.CmdFindPrev{}
@@ -328,6 +371,9 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyBackspace:
 		return core.CmdBackspace{}
+
+	case e.Key == term.KeyDelete && e.Modifiers == 0:
+		return core.CmdDelete{}
 
 	case e.Key == term.KeyLeft:
 		return core.CmdMoveLeft{Select: e.Modifiers&term.ModShift != 0}
@@ -361,4 +407,15 @@ func (u *UI) enterMessage(msg string) {
 	u.mode = ModeMessage
 	u.message = msg
 	u.messageUntil = time.Now().Add(2 * time.Second)
+	
+	// Cancel any existing timer
+	if u.messageTimer != nil {
+		u.messageTimer.Stop()
+	}
+	
+	// Start a new timer to inject a redraw event when message expires
+	u.messageTimer = time.AfterFunc(2*time.Second, func() {
+		// Push a redraw event to trigger screen update
+		u.screen.PushEvent(term.RedrawEvent{})
+	})
 }

@@ -78,8 +78,9 @@ Toggled via `F10` or `Esc` (in Normal mode).
 Menus to include:
 
 * `File`: Save, Save As…, Quit.
-* `Edit`: Undo, Redo, Cut, Copy, Paste.
+* `Edit`: Undo, Redo, Cut, Copy, Paste, Go to Line.
 * `Search`: Find, Find Next/Prev.
+* `View`: Toggle Line Numbers, Toggle Word Wrap.
 * `Help`: About.
 
 ---
@@ -96,6 +97,7 @@ Menus to include:
 
 * `Arrow keys` Move cursor
 * `Shift+Arrow keys` Select text
+* `Ctrl+G` Go to Line
 * `Ctrl+Home` / `Ctrl+End` Beginning / End of file
 * `PageUp` / `PageDown` Scroll pages
 
