@@ -106,7 +106,7 @@ func (m *Menubar) initDefaults() {
 		{
 			Title: "Help",
 			Items: []MenuItem{
-				{Label: "About", Accelerator: "F1", Action: func(u *UI) { u.mode = ModeHelp }},
+				{Label: "Keyboard Shortcuts", Accelerator: "F1", Action: func(u *UI) { u.mode = ModeHelp }},
 			},
 		},
 	}
@@ -195,10 +195,10 @@ func (m *Menubar) NextItem() {
 	// Move to next item
 	m.SelectedItemIndex = (m.SelectedItemIndex + 1) % len(items)
 
-	// Skip separators
-	for items[m.SelectedItemIndex].IsSeparator {
+	// Skip separators and readonly items
+	for items[m.SelectedItemIndex].IsSeparator || items[m.SelectedItemIndex].IsReadOnly {
 		m.SelectedItemIndex = (m.SelectedItemIndex + 1) % len(items)
-		// Prevent infinite loop if all items are separators
+		// Prevent infinite loop if all items are separators/readonly
 		if m.SelectedItemIndex == startIndex {
 			break
 		}
@@ -215,13 +215,13 @@ func (m *Menubar) PrevItem() {
 		m.SelectedItemIndex = len(items) - 1
 	}
 
-	// Skip separators
-	for items[m.SelectedItemIndex].IsSeparator {
+	// Skip separators and readonly items
+	for items[m.SelectedItemIndex].IsSeparator || items[m.SelectedItemIndex].IsReadOnly {
 		m.SelectedItemIndex--
 		if m.SelectedItemIndex < 0 {
 			m.SelectedItemIndex = len(items) - 1
 		}
-		// Prevent infinite loop if all items are separators
+		// Prevent infinite loop if all items are separators/readonly
 		if m.SelectedItemIndex == startIndex {
 			break
 		}
