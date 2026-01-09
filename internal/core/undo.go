@@ -15,9 +15,9 @@ func NewUndoStack() *UndoStack {
 	return &UndoStack{
 		actions:  make([]Action, 0),
 		ptr:      0,
-		savedPtr: 0, // initially saved (empty buffer matches empty file)?? 
-		             // Actually new buffers are usually empty.
-		             // If loaded from file, savedPtr should be 0 (if no edits yet).
+		savedPtr: 0, // initially saved (empty buffer matches empty file)??
+		// Actually new buffers are usually empty.
+		// If loaded from file, savedPtr should be 0 (if no edits yet).
 	}
 }
 
@@ -147,10 +147,10 @@ func (a *BackspaceAction) Undo(e *Editor) {
 }
 
 type CutLineAction struct {
-	Line        int
-	Runes       []rune
-	CursorLine  int
-	CursorCol   int
+	Line       int
+	Runes      []rune
+	CursorLine int
+	CursorCol  int
 }
 
 func (a *CutLineAction) Apply(e *Editor) {
@@ -163,13 +163,13 @@ func (a *CutLineAction) Undo(e *Editor) {
 }
 
 type ReplaceLinesAction struct {
-	StartLine     int
-	OldLines      [][]rune
-	NewLines      [][]rune
-	BeforeLine    int
-	BeforeCol     int
-	AfterLine     int
-	AfterCol      int
+	StartLine  int
+	OldLines   [][]rune
+	NewLines   [][]rune
+	BeforeLine int
+	BeforeCol  int
+	AfterLine  int
+	AfterCol   int
 }
 
 func (a *ReplaceLinesAction) Apply(e *Editor) {
@@ -212,7 +212,7 @@ func (a *DeleteSelectionAction) Undo(e *Editor) {
 	// Actually, DeleteRange behaves like ReplaceLines where NewLines is empty/merged.
 	// Let's reuse Paste/Insert logic but localized?
 	// Or we can assume we just insert the DeletedText at Start.
-	
+
 	// We need to parse DeletedText back into lines.
 	var lines [][]rune
 	var current []rune
@@ -225,27 +225,27 @@ func (a *DeleteSelectionAction) Undo(e *Editor) {
 		}
 	}
 	lines = append(lines, current)
-	
+
 	// Now insert 'lines' at StartLine, StartCol.
 	// This mirrors the Paste logic but as an Undo step.
 	// But Buffer interface doesn't have InsertRange.
 	// We can use ReplaceLinesAction logic here manually or add InsertRange to Buffer.
 	// Or we can abuse InsertLine / DeleteLine.
-	
+
 	// Simplest: We know where we are. We can simulate insertion.
 	// But we need to update e.buf directly.
-	
+
 	// Let's implement a manual "InsertText" here for Undo.
 	// 1. Split line at StartCol
 	prefix := e.buf.Lines()[a.StartLine][:a.StartCol]
 	suffix := e.buf.Lines()[a.StartLine][a.StartCol:]
-	
+
 	var newBlock [][]rune
 	newBlock = append(newBlock, append(append([]rune{}, prefix...), lines[0]...))
 	for i := 1; i < len(lines)-1; i++ {
 		newBlock = append(newBlock, lines[i])
 	}
-	lastIdx := len(lines)-1
+	lastIdx := len(lines) - 1
 	if lastIdx > 0 {
 		finalLine := append(lines[lastIdx], suffix...)
 		newBlock = append(newBlock, finalLine)
@@ -253,13 +253,13 @@ func (a *DeleteSelectionAction) Undo(e *Editor) {
 		// Single line restoration
 		newBlock[0] = append(newBlock[0], suffix...)
 	}
-	
+
 	// Replace StartLine with newBlock
 	e.buf.DeleteLine(a.StartLine)
-	for i := len(newBlock)-1; i >= 0; i-- {
+	for i := len(newBlock) - 1; i >= 0; i-- {
 		e.buf.InsertLine(a.StartLine, newBlock[i])
 	}
-	
+
 	// Restore cursor selection if we want? Usually Undo restores cursor but not selection state unless tracked.
 	e.buf.SetCursor(a.EndLine, a.EndCol) // Or Start? Usually Start.
 }
