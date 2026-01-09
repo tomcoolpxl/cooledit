@@ -59,6 +59,9 @@ internal/
 ### Planned (Milestone 4)
 - ⏳ Keybinding customization (config-file-only, no UI)
 
+### Planned (Milestone 5)
+- ⏳ Theme/Color system with multiple built-in themes
+
 ## Important Keyboard Shortcuts
 
 - `Ctrl+S` - Save
@@ -173,6 +176,38 @@ internal/
 - Display in status bar
 - Preserve original format on save
 
+## Theme System (Planned - Milestone 5)
+
+**Color Elements:**
+Each element has `fg` (foreground) and `bg` (background) properties.
+
+- **editor**: `fg`, `bg`, `selection_fg`, `selection_bg`, `line_numbers_fg`, `line_numbers_bg`
+- **search**: `match_fg`, `match_bg`, `current_match_fg`, `current_match_bg`
+- **statusbar**: `fg`, `bg`, `filename_fg`, `modified_fg`, `position_fg`, `mode_fg`, `help_fg`
+- **menubar**: `fg`, `bg`, `selected_fg`, `selected_bg`, `dropdown_fg`, `dropdown_bg`, `dropdown_selected_fg`, `dropdown_selected_bg`, `accelerator_fg`
+- **prompt**: `fg`, `bg`, `label_fg`, `input_fg`
+- **help**: `fg`, `bg`, `title_fg`, `title_bg`, `footer_fg`
+- **message**: `info_fg`, `info_bg`, `warning_fg`, `warning_bg`, `error_fg`, `error_bg`
+
+**Color Format:**
+- Named colors: `"black"`, `"red"`, `"green"`, `"blue"`, `"white"`, etc.
+- Hex colors: `"#RRGGBB"` (e.g., `"#282828"`, `"#EBDBB2"`)
+- Terminal default: `"default"` (uses terminal's default colors)
+
+**Built-in Themes (Planned):**
+- `default` - Uses terminal defaults with inverse video (current behavior)
+- `dark` - Dark background with light text
+- `light` - Light background with dark text
+- `monokai` - Popular dark theme
+- `solarized-dark` / `solarized-light` - Solarized color schemes
+- `gruvbox-dark` / `gruvbox-light` - Gruvbox color schemes
+
+**Terminal Compatibility:**
+- tcell automatically detects terminal color capabilities
+- Gracefully degrades from true color → 256 colors → 16 colors → monochrome
+- Works correctly over SSH sessions
+- 2-color terminals use text attributes (inverse, bold) instead of colors
+
 ## Configuration System
 
 **Location:**
@@ -189,9 +224,39 @@ tab_width = 4         # Spaces per tab
 [ui]
 show_menubar = false  # Show menubar by default
 mouse_enabled = false # Enable mouse support
+theme = "default"     # Active theme name
 
 [search]
 case_sensitive = true # Case-sensitive search by default
+
+# Theme definitions (colors support: named, hex #RRGGBB, or "default")
+[themes.default.editor]
+fg = "default"       # Normal text foreground
+bg = "default"       # Normal text background
+selection_fg = "default"
+selection_bg = "default"
+line_numbers_fg = "default"
+line_numbers_bg = "default"
+
+[themes.default.statusbar]
+fg = "default"
+bg = "default"
+
+[themes.default.menubar]
+fg = "default"
+bg = "default"
+selected_fg = "default"
+selected_bg = "default"
+
+[themes.default.prompt]
+fg = "default"
+bg = "default"
+
+[themes.default.help]
+fg = "default"
+bg = "default"
+title_fg = "default"
+title_bg = "default"
 ```
 
 **Keybinding Customization (Planned):**
@@ -199,6 +264,14 @@ case_sensitive = true # Case-sensitive search by default
 - No UI for editing keybindings - config file only
 - Users edit config.toml manually to customize shortcuts
 - Invalid or conflicting bindings fall back to defaults with warning
+
+**Theme System (Planned):**
+- Multiple built-in themes (default, dark, light, monokai, solarized, etc.)
+- Custom themes defined in `[themes.custom_name]` sections
+- Each theme element has `fg` (foreground) and `bg` (background) colors
+- Color formats: named colors, hex `#RRGGBB`, or `"default"` for terminal default
+- Automatic graceful degradation for terminals with limited color support (tcell handles this)
+- Active theme selected via `ui.theme` config value
 
 **Behavior:**
 - Config file created automatically on first toggle action

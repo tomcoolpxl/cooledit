@@ -198,6 +198,14 @@ cooledit/
 ### Milestone 3 (Complete)
 * Menubar (Auto-hide).
 * Mouse support (Optional via flag/config).
+
+### Milestone 4 (Planned)
+* Keybinding customization (config-file-only).
+
+### Milestone 5 (Planned)
+* Theme/Color system with built-in and custom themes.
+* All UI elements have configurable foreground/background colors.
+* Automatic terminal capability detection and graceful degradation.
 * Text Selection.
 * Clipboard integration.
 * Configuration persistence with TOML.

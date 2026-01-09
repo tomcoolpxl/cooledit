@@ -164,12 +164,30 @@ Menus to include:
   * `editor.tab_width` - Spaces per tab
   * `ui.show_menubar` - Show menubar by default
   * `ui.mouse_enabled` - Enable mouse support
+  * `ui.theme` - Active theme name (default: "default")
   * `search.case_sensitive` - Case-sensitive search by default
+  * `themes.*` - Theme definitions (see Section 8)
 * Behavior:
   * Config file created automatically on first toggle action
   * CLI flags override config values
   * Toggle actions (Ctrl+L, Ctrl+W) automatically save config
   * Missing config file or fields use sensible defaults
+
+**5.7 Theme System (Planned)**
+
+* Multiple built-in themes provided
+* Users can define custom themes in config file
+* Each UI element has configurable foreground and background colors
+* Color formats supported:
+  * Named colors (e.g., "red", "blue")
+  * Hex colors (e.g., "#282828", "#EBDBB2")
+  * "default" for terminal's default colors
+* Automatic graceful degradation:
+  * True color (16M colors) on modern terminals
+  * 256-color fallback
+  * 16-color (ANSI) fallback
+  * Monochrome fallback using text attributes (inverse, bold)
+* Works correctly over SSH and in limited terminals
 
 ---
 
@@ -200,6 +218,56 @@ Menus to include:
 **7.2 Default Behavior**
 
 * Word wrap off by default.
+
+---
+
+## 8. Theme System (Planned - Milestone 5)
+
+**8.1 Theme Elements**
+
+Each element has `fg` (foreground) and `bg` (background) properties:
+
+* **editor**: Normal text, selection, line numbers
+* **search**: Search matches, current match highlight
+* **statusbar**: Background, text, filename, modified indicator, position, mode indicator, mini-help
+* **menubar**: Background, text, selected item, dropdown, accelerators
+* **prompt**: Background, text, label, input
+* **help**: Background, text, titles, footer
+* **message**: Info, warning, error messages
+
+**8.2 Built-in Themes**
+
+* `default` - Terminal defaults with inverse video
+* `dark` - Dark background theme
+* `light` - Light background theme
+* `monokai` - Monokai color scheme
+* `solarized-dark` / `solarized-light` - Solarized themes
+* `gruvbox-dark` / `gruvbox-light` - Gruvbox themes
+
+**8.3 Custom Themes**
+
+* Users can define themes in `[themes.name]` sections of config file
+* Each theme element requires `fg` and `bg` properties
+* Select active theme via `ui.theme` setting
+
+**8.4 Color Format**
+
+```toml
+[themes.custom.editor]
+fg = "#EBDBB2"      # Hex RGB
+bg = "#282828"      # Hex RGB
+selection_fg = "black"  # Named color
+selection_bg = "white"  # Named color
+line_numbers_fg = "default"  # Terminal default
+line_numbers_bg = "default"
+```
+
+**8.5 Terminal Compatibility**
+
+* Automatic detection of terminal color capabilities via tcell
+* Graceful degradation: true color → 256 color → 16 color → monochrome
+* Monochrome terminals use text attributes (inverse, bold, underline)
+* Works over SSH with proper TERM environment variable
 * Line numbers off by default.
 
 ---
