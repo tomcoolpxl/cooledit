@@ -6,12 +6,12 @@ type MenuItem struct {
 	Label       string
 	Accelerator string // e.g. "Ctrl+S"
 	Command     core.Command
-	Action      func(*UI)      // Special actions like "Quit" or "Toggle"
-	Submenu     []MenuItem     // Submenu items (e.g., for Themes)
-	IsCheckable bool           // If true, item can be checked
-	IsChecked   func(*UI) bool // Function to determine if checked
-	IsSeparator bool           // If true, renders as separator line
-	IsReadOnly  bool           // If true, item is not clickable (display only)
+	Action      func(*UI)        // Special actions like "Quit" or "Toggle"
+	Submenu     []MenuItem       // Submenu items (e.g., for Themes)
+	IsCheckable bool             // If true, item can be checked
+	IsChecked   func(*UI) bool   // Function to determine if checked
+	IsSeparator bool             // If true, renders as separator line
+	IsReadOnly  bool             // If true, item is not clickable (display only)
 	GetValue    func(*UI) string // For readonly items, returns current value
 }
 

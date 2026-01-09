@@ -77,15 +77,15 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 	editor.TabWidth = cfg.Editor.TabWidth
 
 	return &UI{
-		screen:          screen,
-		editor:          editor,
-		menubar:         NewMenubar(),
-		mode:            ModeNormal,
-		showMenubar:     false,
-		showStatusBar:   cfg.UI.ShowStatusBar,
-		insertMode:      true, // Always start in insert mode
-		config:          cfg,
-		theme:           cfg.GetCurrentTheme(),
+		screen:        screen,
+		editor:        editor,
+		menubar:       NewMenubar(),
+		mode:          ModeNormal,
+		showMenubar:   false,
+		showStatusBar: cfg.UI.ShowStatusBar,
+		insertMode:    true, // Always start in insert mode
+		config:        cfg,
+		theme:         cfg.GetCurrentTheme(),
 	}
 }
 
