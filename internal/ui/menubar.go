@@ -62,7 +62,7 @@ func (m *Menubar) initDefaults() {
 	themeItems := m.buildThemeItems()
 	cursorItems := m.buildCursorShapeItems()
 	cursorBlinkItem := m.buildCursorBlinkItem()
-	
+
 	m.Menus = []Menu{
 		{
 			Title:       "File",

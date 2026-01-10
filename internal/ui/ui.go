@@ -195,8 +195,8 @@ func (u *UI) Run() error {
 				if u.handleMenuKey(e) {
 					continue
 				}
-			// Don't pass unhandled keys to editor when menu is active
-			continue
+				// Don't pass unhandled keys to editor when menu is active
+				continue
 				continue
 			}
 
