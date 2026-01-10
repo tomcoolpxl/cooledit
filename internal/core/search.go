@@ -24,10 +24,13 @@ const (
 	SearchBackward
 )
 
+// SearchState maintains search preferences and the active search session.
+// Case sensitivity and whole word settings persist across multiple searches
+// within the editor session (they are session-level preferences, not per-search).
 type SearchState struct {
-	LastQuery     string
-	CaseSensitive bool           // Session-level case sensitivity preference
-	WholeWord     bool           // Session-level whole word preference
+	LastQuery     string         // Last search query used
+	CaseSensitive bool           // Session-level case sensitivity preference (persists across searches)
+	WholeWord     bool           // Session-level whole word preference (persists across searches)
 	Session       *SearchSession // Active search session (nil when not searching)
 }
 

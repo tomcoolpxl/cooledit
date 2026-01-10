@@ -778,16 +778,23 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 // Shows: search query, match count, current match index, case sensitivity, shortcuts
 // Format: Find: query | Match 3 of 15 | Match Case | Alt+C Alt+W | F3 R Esc | Ln 42, Col 8
 func (u *UI) drawSearchStatus(rect Rect, style term.Style) {
+	// Determine if we're in an error state (no matches found)
+	searchState := u.editor.SearchState()
+	session := searchState.Session
+	
+	query := string(u.searchQuery)
+	
+	// Error state: query is non-empty but no matches found (and not currently searching)
+	if query != "" && !u.searchIsSearching && session != nil && session.Query != "" && len(session.Matches) == 0 {
+		// Use error background color
+		style = term.Style{Foreground: style.Foreground, Background: u.theme.Search.ErrorBg}
+	}
+	
 	// Background
 	for x := 0; x < rect.W; x++ {
 		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
 	}
 
-	// Get search session info
-	searchState := u.editor.SearchState()
-	session := searchState.Session
-
-	query := string(u.searchQuery)
 	if query == "" {
 		query = "..."
 	}

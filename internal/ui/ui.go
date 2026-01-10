@@ -109,6 +109,50 @@ func (h *SearchHistory) Reset() {
 
 type UIMode int
 
+// UI MODE STATE MACHINE
+//
+// The UI operates in different modes, each handling keys differently:
+//
+// ┌──────────────┐
+// │  ModeNormal  │◄─────────────────────────────────┐
+// └──────┬───────┘                                   │
+//        │                                           │
+//        ├── Ctrl+F ──────────────────────────►┌────┴─────────┐
+//        │                                      │  ModeSearch  │
+//        │            Esc, Q, Enter (on empty)  └──────────────┘
+//        │                                           │
+//        ├── : (vim mode) ─────────────────►┌───────┴──────────┐
+//        │                                   │ ModeVimCommand   │
+//        │                         Esc/Enter └──────────────────┘
+//        │                                           │
+//        ├── Ctrl+Q, Ctrl+S, etc. ──────►┌──────────┴────────┐
+//        │                                │   ModePrompt      │
+//        │                       Esc/Enter└───────────────────┘
+//        │                                           │
+//        ├── F1 ──────────────────────────►┌────────┴───────┐
+//        │                                  │   ModeHelp     │
+//        │                             Esc  └────────────────┘
+//        │                                           │
+//        ├── Alt+A ────────────────────────►┌───────┴────────┐
+//        │                                  │  ModeAbout     │
+//        │                             Esc  └────────────────┘
+//        │                                           │
+//        └── (various) ────────────────────►┌───────┴────────┐
+//                                           │  ModeMessage   │
+//                                  (timeout)└────────────────┘
+//
+// KEY HANDLING RULES:
+// 1. Each mode MUST handle ALL keys (return true) to prevent leakage to editor
+// 2. Mode-specific handlers take precedence over global handlers
+// 3. Escape should always provide a way to return to ModeNormal
+// 4. State cleanup MUST happen on mode exit
+//
+// INVARIANTS:
+// - Only one mode is active at a time
+// - Mode transitions are atomic
+// - Each mode is responsible for its own cleanup
+// - No state should leak between modes
+//
 const (
 	ModeNormal UIMode = iota
 	ModeMessage
@@ -151,9 +195,10 @@ type UI struct {
 	replaceFindTerm string
 	replaceWithTerm string
 
-	// remember last search/replace terms
-	lastFindTerm    string
-	lastReplaceTerm string
+	// Session state persistence: These persist across searches within the editor session
+	// They are not saved to disk (session-only memory)
+	lastFindTerm    string // Last search term used (persists across mode switches)
+	lastReplaceTerm string // Last replace term used (persists across mode switches)
 
 	// find/replace mode state
 	replacingAll bool
@@ -165,11 +210,12 @@ type UI struct {
 	vimCommand []rune
 
 	// Unified search mode (ModeSearch)
+	// Session state: These persist for the duration of the editor session
 	searchQuery         []rune         // Current search query being typed
-	searchHistory       *SearchHistory // Search history for up/down navigation
+	searchHistory       *SearchHistory // Search history for up/down navigation (persists in session)
 	searchDebounceTimer *time.Timer    // Timer for search debouncing
 	searchIsSearching   bool           // True when search is executing (debouncing)
-	lastSearchQuery     string         // Last executed search query
+	lastSearchQuery     string         // Last executed search query (persists in session)
 
 	// Features
 	showLineNumbers bool
@@ -821,7 +867,21 @@ func (u *UI) handleFindReplaceKey(e term.KeyEvent) bool {
 // enterSearch enters the unified search mode (ModeSearch).
 // If text is currently selected, it will be used as the initial search query.
 // Otherwise, the last search query will be used if available.
+//
+// STATE MACHINE TRANSITION:
+// - FROM: ModeNormal (typical), ModePrompt (after canceling a prompt), ModeHelp, ModeAbout, ModeMessage
+// - TO: ModeSearch
+// - Guards: None (can always enter search from any mode)
+// - Side effects: Stops any pending debounce timers, pre-fills query, starts search session
+//
+// EDGE CASES HANDLED:
+// - Already in search mode: Re-enters search (resets state)
+// - Empty query: Allowed, shows "..." placeholder
+// - Selection pre-fill: Only for single-line selections
 func (u *UI) enterSearch() {
+	// Guard: If already in search mode, this is a no-op (already handled by calling code)
+	// But we proceed anyway to reset the search state if needed
+
 	// Stop any existing debounce timer
 	if u.searchDebounceTimer != nil {
 		u.searchDebounceTimer.Stop()
@@ -863,6 +923,20 @@ func (u *UI) enterSearch() {
 
 // exitSearch exits the search mode and returns to normal mode.
 // Cleans up the search session and resets state.
+//
+// STATE MACHINE TRANSITION:
+// - FROM: ModeSearch
+// - TO: ModeNormal
+// - Guards: None (always safe to exit)
+// - Side effects: Stops debounce timers, saves query to history, ends editor search session,
+//   clears selection, resets all search state
+//
+// CLEANUP PERFORMED:
+// - Stops any pending debounce timer
+// - Saves non-empty queries to search history
+// - Ends the editor's search session (clears highlights, match data)
+// - Clears any active selection
+// - Resets all UI search state variables
 func (u *UI) exitSearch() {
 	// Stop any debounce timer
 	if u.searchDebounceTimer != nil {
@@ -894,6 +968,20 @@ func (u *UI) exitSearch() {
 
 // performSearch executes the search with debouncing.
 // This is called whenever the search query changes.
+//
+// DEBOUNCING STRATEGY:
+// - Waits 150ms after last keystroke before executing search
+// - Shows "Searching..." indicator for queries longer than 20 characters
+// - Prevents excessive search operations during typing
+//
+// THREAD SAFETY:
+// - Uses time.AfterFunc which runs in a separate goroutine
+// - Screen events are thread-safe via PushEvent
+//
+// EDGE CASES HANDLED:
+// - Multiple rapid calls: Previous timer is stopped, new timer started
+// - Long queries: Shows searching indicator immediately
+// - Empty queries: Handled by doSearch (clears session)
 func (u *UI) performSearch() {
 	// Stop any existing timer
 	if u.searchDebounceTimer != nil {
@@ -913,6 +1001,19 @@ func (u *UI) performSearch() {
 }
 
 // doSearch performs the actual search without debouncing.
+//
+// SEARCH EXECUTION:
+// - Clears search session if query is empty
+// - Starts/updates search session with current query
+// - Moves cursor to first match and selects it
+// - Ensures match is visible in viewport
+// - Triggers screen redraw
+//
+// EDGE CASES HANDLED:
+// - Empty query: Clears session, no error
+// - No matches: Session remains active (error state shown in status bar)
+// - First search vs. subsequent: StartSearchSession handles both
+// - Match visibility: Uses EnsureVisible to scroll to match
 func (u *UI) doSearch() {
 	u.searchIsSearching = false
 
@@ -1000,6 +1101,34 @@ func (u *UI) searchHistoryNext() {
 // handleSearchKey handles key events in unified search mode (ModeSearch).
 // This function must handle ALL keys to prevent key leakage to the editor.
 // Returns true for all keys to indicate they were handled.
+//
+// KEY BINDINGS:
+// - Escape: Exit search mode
+// - Enter: Move to next match (same as 'n')
+// - Backspace: Delete character from query (or exit if query is empty)
+// - Up/Down: Navigate search history
+// - F3 / Shift+F3: Next/previous match
+// - F1: Show help
+// - Alt+C: Toggle case sensitivity
+// - Alt+W: Toggle whole word matching
+// - Ctrl+V: Paste into search query
+// - n/p: Navigate to next/previous match
+// - N/P (Shift): Add character to search (capital letter)
+// - r: Enter replace prompt (if matches exist)
+// - R (Shift): Add character to search
+// - a: Enter replace-all confirmation (if matches exist)
+// - A (Shift): Add character to search
+// - q: Exit search mode
+// - Q (Shift): Add character to search
+// - Any other character: Add to search query
+//
+// EDGE CASES HANDLED:
+// - Empty query + backspace: Exits search mode (intuitive)
+// - r/a with no matches: Treats as regular character (adds to query)
+// - Capital letters (with Shift): Adds to query instead of command
+// - All other keys: Consumed to prevent leakage
+//
+// CRITICAL: This function MUST return true for ALL keys to prevent leakage to editor buffer.
 func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 	switch e.Key {
 	case term.KeyEscape:
