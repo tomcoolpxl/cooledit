@@ -412,12 +412,14 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			runeIdx := 0
 			col := 0
 			isFirstColOfTab := false
+			tabOffsetInExpansion := -1 // Position within tab expansion (0=first, 1=second, etc.)
 			for runeIdx < len(line) {
 				if line[runeIdx] == '\t' {
 					nextStop := ((col / tabWidth) + 1) * tabWidth
 					if displayCol < nextStop {
 						// We're inside this tab expansion
 						isFirstColOfTab = (displayCol == col)
+						tabOffsetInExpansion = displayCol - col
 						break
 					}
 					col = nextStop
@@ -470,10 +472,16 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			ch := expanded[displayCol]
 			if u.showWhitespace {
 				// Show visible representations of whitespace
-				if runeIdx < len(line) && line[runeIdx] == '\t' && isFirstColOfTab {
-					ch = '→' // Tab: show arrow only on first column
+				if runeIdx < len(line) && line[runeIdx] == '\t' {
+					if isFirstColOfTab {
+						ch = '→' // Tab: show arrow on first column
+					} else if tabOffsetInExpansion == 1 {
+						ch = ' ' // Second column: render as space (no dot)
+					} else {
+						ch = '·' // Remaining columns: show dots
+					}
 				} else if ch == ' ' {
-					ch = '·' // Space character
+					ch = '·' // Regular space character
 				}
 			}
 			u.screen.SetCell(drawX+sx, vpRect.Y+sy, ch, style)
@@ -488,9 +496,9 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			} else if u.showWhitespace {
 				// Show line ending marker
 				eol := u.editor.File().EOL
-				marker := '↵' // LF (Unix)
+				marker := '↵' // LF (Unix/Linux/Mac)
 				if eol == "\r\n" {
-					marker = '¶' // CRLF (Windows)
+					marker = '⏎' // CRLF (Windows) - Return symbol
 				}
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, marker, editorStyle)
 			}
