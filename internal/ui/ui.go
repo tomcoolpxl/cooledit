@@ -125,15 +125,15 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		showStatusBar:      cfg.UI.ShowStatusBar,
 		insertMode:         true, // Always start in insert mode
 		syntaxHighlighting: cfg.Editor.SyntaxHighlighting,
-		currentLanguage:    func() string {
+		currentLanguage: func() string {
 			if cfg.UI.Language == "" {
 				return "auto"
 			}
 			return cfg.UI.Language
 		}(),
-		config:             cfg,
-		theme:              cfg.GetCurrentTheme(),
-		bracketMatcher:     core.NewBracketMatcher(),
+		config:         cfg,
+		theme:          cfg.GetCurrentTheme(),
+		bracketMatcher: core.NewBracketMatcher(),
 	}
 
 	// Initialize syntax highlighting

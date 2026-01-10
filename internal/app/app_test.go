@@ -131,7 +131,7 @@ func TestNewFileSetup(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			editor := core.NewEditor(nil)
-			
+
 			var path string
 			if tt.shouldExist {
 				// Create a temp file
