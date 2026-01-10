@@ -553,28 +553,54 @@ func (u *UI) performSearch() {
 - [ ] Show "1000+ matches (stopped)" when limit hit
 - [ ] Add timeout for very slow searches (2 seconds)
 
-### Phase 5: Error Handling & Polish (Week 3)
+### Phase 5: Error Handling & Polish (Week 3) ✅ **COMPLETED**
 
-#### Task 5.1: Error State Management
-- [ ] "No matches" shows error message but keeps search mode active
-- [ ] Use different status bar color for error state
-- [ ] Allow user to continue editing search term
-- [ ] Clear error when search becomes valid
+#### Task 5.1: Error State Management ✅
+- [x] "No matches" shows error message but keeps search mode active
+- [x] Use different status bar color for error state (`theme.Search.ErrorBg`)
+- [x] Allow user to continue editing search term
+- [x] Clear error when search becomes valid
 
-#### Task 5.2: Mode Transition Guardrails
-- [ ] Document state machine in comments
-- [ ] Add assertions/guards for invalid transitions
-- [ ] Ensure clean state on mode exit
-- [ ] Handle edge cases:
+**Implementation Details:**
+- Modified `drawSearchStatus()` in `render.go` to detect error state and apply error background color
+- Error state is active when: query is non-empty, not currently searching, and no matches found
+- Search mode remains active allowing query editing
+- Error clears automatically when matches are found
+
+#### Task 5.2: Mode Transition Guardrails ✅
+- [x] Document state machine in comments
+- [x] Add assertions/guards for invalid transitions
+- [x] Ensure clean state on mode exit
+- [x] Handle edge cases:
   - Empty search string
   - Search while already in search mode
   - File changes during search
 
-#### Task 5.3: Session State Persistence
-- [ ] Ensure search term persists correctly
-- [ ] Ensure replace term persists correctly
-- [ ] Ensure case sensitivity persists
-- [ ] Clear state on file switch (if multi-file support in future)
+**Implementation Details:**
+- Added comprehensive state machine diagram in `ui.go` showing all mode transitions
+- Enhanced documentation for `enterSearch()`, `exitSearch()`, `performSearch()`, and `doSearch()`
+- Added `EndSearchSession()` calls in `LoadFile()` and `SetNewFile()` to clear state on file changes
+- Documented key handling, edge cases, thread safety, and side effects
+
+#### Task 5.3: Session State Persistence ✅
+- [x] Ensure search term persists correctly
+- [x] Ensure replace term persists correctly
+- [x] Ensure case sensitivity persists
+- [x] Clear state on file switch
+
+**Implementation Details:**
+- `lastSearchQuery` persists and pre-fills search mode
+- `lastReplaceTerm` persists and pre-fills replacement prompts
+- `SearchState.CaseSensitive` and `SearchState.WholeWord` persist at editor level
+- Search history maintains up to 20 recent queries
+- Enhanced `SearchState` documentation explaining persistence behavior
+
+**Tests Added:**
+- `TestSearchTermPersistence` - Verifies search term persistence
+- `TestReplaceTermPersistence` - Verifies replace term persistence
+- `TestCaseSensitivityPersistence` - Verifies case sensitivity toggle persistence
+- `TestWholeWordPersistence` - Verifies whole word toggle persistence
+- `TestSearchHistoryPersistence` - Verifies search history navigation
 
 ### Phase 6: Testing (Week 3)
 
@@ -845,17 +871,20 @@ Full workflow tests:
 
 ## Timeline Summary
 
-| Phase | Duration | Tasks |
-|-------|----------|-------|
-| Phase 1: Infrastructure & Bug Fixes | Week 1 | Critical bugs, case-sensitive search, FindAllMatches |
-| Phase 2: Incremental Search Core | Week 1-2 | SearchSession, ModeIncrementalSearch, real-time search |
-| Phase 3: Visual Feedback | Week 2 | Theme support, match highlighting, status bar |
-| Phase 4: Case Sensitivity Toggle | Week 2 | Toggle implementation, visual indicator |
-| Phase 5: Error Handling & Polish | Week 3 | Error states, guardrails, state persistence |
-| Phase 6: Testing | Week 3 | Unit tests, UI tests, integration tests |
-| Phase 7: Documentation | Week 3 | Code docs, user docs, architecture docs |
+| Phase | Duration | Tasks | Status |
+|-------|----------|-------|--------|
+| Phase 1: Infrastructure & Bug Fixes | Week 1 | Critical bugs, case-sensitive search, FindAllMatches | ✅ COMPLETED |
+| Phase 2: Incremental Search Core | Week 1-2 | SearchSession, ModeSearch, real-time search | ✅ COMPLETED |
+| Phase 3: Visual Feedback | Week 2 | Theme support, match highlighting, status bar | ✅ COMPLETED |
+| Phase 4: Search Options Toggles | Week 2 | Case sensitivity, whole word, visual indicators | ✅ COMPLETED |
+| Phase 4.5: Safety Features | Week 2 | Replace-all confirmation, undo support, safeguards | ✅ COMPLETED |
+| Phase 5: Error Handling & Polish | Week 3 | Error states, guardrails, state persistence | ✅ COMPLETED |
+| Phase 6: Testing | Week 3 | Unit tests, UI tests, integration tests | 🔄 IN PROGRESS |
+| Phase 7: Documentation | Week 3 | Code docs, user docs, architecture docs | 🔄 IN PROGRESS |
 
-**Total Estimated Time:** 3 weeks
+**Status:** Phase 5 completed on January 10, 2026
+**Phases Completed:** 1, 2, 3, 4, 4.5, 5
+**Next Phase:** Phase 6 (Testing)
 
 ## Notes
 
