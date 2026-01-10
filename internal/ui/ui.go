@@ -790,16 +790,8 @@ func (u *UI) handleFindReplaceKey(e term.KeyEvent) bool {
 			return true
 
 		case 'a', 'A':
-			// Replace all - need to prompt for replacement text
-			u.replacingAll = true
-			u.mode = ModePrompt
-			u.promptKind = PromptReplaceWith
-			u.promptLabel = "Replace all with: "
-			if u.lastReplaceTerm != "" {
-				u.promptText = []rune(u.lastReplaceTerm)
-			} else {
-				u.promptText = nil
-			}
+			// Replace all - show confirmation dialog first
+			u.enterReplaceAllConfirm()
 			return true
 
 		case 'q', 'Q':
@@ -1114,17 +1106,35 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 				return true
 			case 'r', 'R':
 				// Replace current match - enter replace prompt
-				// TODO: Implement replace prompt integration
-				// For now, just treat as regular character
-				u.searchQuery = append(u.searchQuery, e.Rune)
-				u.performSearch()
+				// Check if we have matches
+				searchState := u.editor.SearchState()
+				if searchState != nil && searchState.Session != nil && len(searchState.Session.Matches) > 0 {
+					// Save the search query and enter replace prompt
+					u.lastFindTerm = string(u.searchQuery)
+					u.mode = ModePrompt
+					u.promptKind = PromptReplaceWith
+					u.promptLabel = "Replace with: "
+					u.promptText = []rune(u.lastReplaceTerm)
+					u.replacingAll = false
+				} else {
+					// No matches, treat as regular character
+					u.searchQuery = append(u.searchQuery, e.Rune)
+					u.performSearch()
+				}
 				return true
 			case 'a', 'A':
-				// Replace all - enter replace all prompt
-				// TODO: Implement replace all prompt integration
-				// For now, just treat as regular character
-				u.searchQuery = append(u.searchQuery, e.Rune)
-				u.performSearch()
+				// Replace all - show confirmation prompt
+				// Check if we have matches
+				searchState := u.editor.SearchState()
+				if searchState != nil && searchState.Session != nil && len(searchState.Session.Matches) > 0 {
+					// Save the search query and show confirmation
+					u.lastFindTerm = string(u.searchQuery)
+					u.enterReplaceAllConfirm()
+				} else {
+					// No matches, treat as regular character
+					u.searchQuery = append(u.searchQuery, e.Rune)
+					u.performSearch()
+				}
 				return true
 			case 'q', 'Q':
 				// Exit search (if Shift is held, treat as regular character)

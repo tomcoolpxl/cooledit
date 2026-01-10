@@ -533,8 +533,8 @@ func TestReplaceAll(t *testing.T) {
 	// Replace all "hello" with "hi"
 	res := e.Apply(CmdReplaceAll{Find: "hello", Replace: "hi"}, 10)
 
-	if res.Message != "Replaced 2 occurrences" {
-		t.Fatalf("expected 'Replaced 2 occurrences', got: %s", res.Message)
+	if res.Message != "Replaced 2 occurrences - Ctrl+Z to undo" {
+		t.Fatalf("expected 'Replaced 2 occurrences - Ctrl+Z to undo', got: %s", res.Message)
 	}
 
 	lines := e.Lines()
@@ -672,8 +672,8 @@ func TestReplaceAllFromBeginning(t *testing.T) {
 
 	// Replace all should start from beginning, not cursor position
 	res := e.Apply(CmdReplaceAll{Find: "foo", Replace: "XXX"}, 10)
-	if res.Message != "Replaced 3 occurrences" {
-		t.Fatalf("expected 'Replaced 3 occurrences', got: %s", res.Message)
+	if res.Message != "Replaced 3 occurrences - Ctrl+Z to undo" {
+		t.Fatalf("expected 'Replaced 3 occurrences - Ctrl+Z to undo', got: %s", res.Message)
 	}
 
 	lines := e.Lines()
@@ -681,5 +681,46 @@ func TestReplaceAllFromBeginning(t *testing.T) {
 	expected := "XXX bar XXX baz XXX"
 	if text != expected {
 		t.Fatalf("expected %q, got %q", expected, text)
+	}
+}
+
+func TestReplaceAllUndoable(t *testing.T) {
+	e := newTestEditor()
+	for _, r := range "hello world hello again hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// Save original text
+	originalText := string(e.Lines()[0])
+
+	// Replace all "hello" with "HELLO"
+	res := e.Apply(CmdReplaceAll{Find: "hello", Replace: "HELLO"}, 10)
+	if res.Message != "Replaced 3 occurrences - Ctrl+Z to undo" {
+		t.Fatalf("expected 'Replaced 3 occurrences - Ctrl+Z to undo', got: %s", res.Message)
+	}
+
+	// Verify replacements happened
+	lines := e.Lines()
+	text := string(lines[0])
+	expected := "HELLO world HELLO again HELLO"
+	if text != expected {
+		t.Fatalf("expected %q after replace all, got %q", expected, text)
+	}
+
+	// Undo should revert ALL replacements in a single undo
+	e.Apply(CmdUndo{}, 10)
+	lines = e.Lines()
+	text = string(lines[0])
+	if text != originalText {
+		t.Fatalf("expected %q after single undo, got %q", originalText, text)
+	}
+
+	// Redo should reapply ALL replacements
+	e.Apply(CmdRedo{}, 10)
+	lines = e.Lines()
+	text = string(lines[0])
+	if text != expected {
+		t.Fatalf("expected %q after redo, got %q", expected, text)
 	}
 }

@@ -32,6 +32,7 @@ const (
 	PromptFind
 	PromptGoToLine
 	PromptReplaceWith
+	PromptReplaceAllConfirm
 )
 
 func (u *UI) startQuitFlow() {
@@ -71,6 +72,31 @@ func (u *UI) enterGoToLine() {
 	u.mode = ModePrompt
 	u.promptKind = PromptGoToLine
 	u.promptLabel = "Go to line: "
+	u.promptText = nil
+}
+
+func (u *UI) enterReplaceAllConfirm() {
+	// Get match count from search session
+	matchCount := 0
+	searchState := u.editor.SearchState()
+	
+	// If no session exists, create one from lastFindTerm (for legacy ModeFindReplace)
+	if searchState != nil && searchState.Session == nil && u.lastFindTerm != "" {
+		u.editor.StartSearchSession(u.lastFindTerm)
+		searchState = u.editor.SearchState()
+	}
+	
+	if searchState != nil && searchState.Session != nil {
+		matchCount = len(searchState.Session.Matches)
+	}
+
+	u.mode = ModePrompt
+	u.promptKind = PromptReplaceAllConfirm
+	if matchCount > 0 {
+		u.promptLabel = fmt.Sprintf("Replace all %d matches? (y/n) ", matchCount)
+	} else {
+		u.promptLabel = "Replace all matches? (y/n) "
+	}
 	u.promptText = nil
 }
 
@@ -306,6 +332,42 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 
 		case term.KeyRune:
 			u.promptText = append(u.promptText, e.Rune)
+			return true
+		}
+		return true
+
+	case PromptReplaceAllConfirm:
+		switch e.Key {
+		case term.KeyRune:
+			switch e.Rune {
+			case 'y', 'Y':
+				// User confirmed - prompt for replacement text
+				u.exitPrompt()
+				u.replacingAll = true
+				u.mode = ModePrompt
+				u.promptKind = PromptReplaceWith
+				u.promptLabel = "Replace all with: "
+				u.promptText = []rune(u.lastReplaceTerm)
+				return true
+
+			case 'n', 'N':
+				// User cancelled - return to previous mode
+				u.exitPrompt()
+				if len(u.searchQuery) > 0 {
+					u.mode = ModeSearch
+				} else {
+					u.mode = ModeFindReplace
+				}
+				return true
+			}
+		case term.KeyEscape:
+			// Escape cancels - return to previous mode
+			u.exitPrompt()
+			if len(u.searchQuery) > 0 {
+				u.mode = ModeSearch
+			} else {
+				u.mode = ModeFindReplace
+			}
 			return true
 		}
 		return true

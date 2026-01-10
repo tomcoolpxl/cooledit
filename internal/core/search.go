@@ -39,6 +39,7 @@ type SearchSession struct {
 	Matches        []Match // All match positions in current buffer
 	CurrentIndex   int     // Index of currently selected match (-1 if none)
 	LastReplaceStr string  // Last replacement string used
+	LimitReached   bool    // True if search hit the maxMatches limit
 }
 
 func (s *SearchState) SetQuery(q string) {
@@ -293,6 +294,8 @@ func NewSearchSession(query string, caseSensitive bool, wholeWord bool) *SearchS
 // This should be called when the search query changes or when the buffer changes.
 func (s *SearchSession) UpdateMatches(lines [][]rune, maxMatches int) {
 	s.Matches = FindAllMatches(lines, s.Query, s.CaseSensitive, s.WholeWord, maxMatches)
+	// Check if we hit the limit
+	s.LimitReached = maxMatches > 0 && len(s.Matches) >= maxMatches
 	// Reset to first match if we have any matches
 	if len(s.Matches) > 0 {
 		s.CurrentIndex = 0

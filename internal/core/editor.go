@@ -461,19 +461,21 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		// Update search state to match find term
 		e.search.SetQuery(c.Find)
 
+		// Collect all replacement actions first
+		var actions []Action
 		count := 0
 		// Start from beginning of file
 		line, col := 0, 0
 
-		// Keep replacing until no more matches
+		// Keep finding matches and building actions (without applying yet)
+		lines := e.buf.Lines()
 		for {
-			lines := e.buf.Lines()
 			fl, fc, found := Search(lines, c.Find, line, col, SearchForward, e.search.CaseSensitive, e.search.WholeWord)
 			if !found {
 				break
 			}
 
-			// Replace this match
+			// Create action for this replacement
 			lineText := string(lines[fl])
 			before := lineText[:fc]
 			after := lineText[fc+len(c.Find):]
@@ -489,10 +491,11 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 				AfterCol:   fc + len(c.Replace),
 			}
 
-			e.undo.Push(action)
-			action.Apply(e)
-
+			actions = append(actions, action)
 			count++
+
+			// Update lines array with the replacement for next search
+			lines[fl] = newLine
 			line = fl
 			col = fc + len(c.Replace)
 		}
@@ -500,10 +503,23 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		if count == 0 {
 			return Result{Message: "No matches found"}
 		}
+
+		// Now apply all actions as a single composite operation
 		if count == 1 {
-			return Result{Message: "Replaced 1 occurrence"}
+			// Single replacement
+			e.undo.Push(actions[0])
+			actions[0].Apply(e)
+		} else {
+			// Multiple replacements - create and apply composite
+			composite := &CompositeAction{Actions: actions}
+			e.undo.Push(composite)
+			composite.Apply(e)
 		}
-		return Result{Message: fmt.Sprintf("Replaced %d occurrences", count)}
+
+		if count == 1 {
+			return Result{Message: "Replaced 1 occurrence - Ctrl+Z to undo"}
+		}
+		return Result{Message: fmt.Sprintf("Replaced %d occurrences - Ctrl+Z to undo", count)}
 
 	case CmdClick:
 		e.buf.SetCursor(c.Line, c.Col)

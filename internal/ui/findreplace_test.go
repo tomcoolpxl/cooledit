@@ -166,3 +166,95 @@ func TestFindReplaceModeComprehensiveKeyLeakage(t *testing.T) {
 		t.Fatalf("Final text changed!\nExpected: %q\nGot: %q", initialText, finalText)
 	}
 }
+
+// TestReplaceAllConfirmation tests the replace-all confirmation dialog workflow
+func TestReplaceAllConfirmation(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Insert text with multiple occurrences
+	for _, r := range "foo bar foo baz foo" {
+		ui.editor.Apply(core.CmdInsertRune{Rune: r}, 10)
+	}
+	ui.editor.Apply(core.CmdMoveHome{}, 10)
+
+	// Verify initial text
+	lines := ui.editor.Lines()
+	text := string(lines[0])
+	if text != "foo bar foo baz foo" {
+		t.Fatalf("initial text wrong: %q", text)
+	}
+
+	// Use CmdReplaceAll directly first to verify it works
+	res := ui.editor.Apply(core.CmdReplaceAll{Find: "foo", Replace: "XXX"}, 10)
+	t.Logf("Direct CmdReplaceAll result: %s", res.Message)
+
+	lines = ui.editor.Lines()
+	text = string(lines[0])
+	t.Logf("After direct CmdReplaceAll: %q", text)
+
+	expected := "XXX bar XXX baz XXX"
+	if text != expected {
+		t.Fatalf("direct replace-all failed: expected %q, got %q", expected, text)
+	}
+
+	// Undo it
+	ui.editor.Apply(core.CmdUndo{}, 10)
+	lines = ui.editor.Lines()
+	text = string(lines[0])
+	if text != "foo bar foo baz foo" {
+		t.Fatalf("undo failed: expected %q, got %q", "foo bar foo baz foo", text)
+	}
+
+	// Now test the full UI flow...
+	t.Log("Testing full UI flow with confirmation dialog")
+
+	// Enter find mode and search for "foo"
+	ui.enterFind()
+	for _, r := range "foo" {
+		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
+	}
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+
+	if ui.mode != ModeFindReplace {
+		t.Fatalf("should be in find/replace mode, got mode %d", ui.mode)
+	}
+
+	t.Logf("lastFindTerm: %q", ui.lastFindTerm)
+
+	// Press 'a' for replace all
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'a'})
+
+	if ui.mode != ModePrompt || ui.promptKind != PromptReplaceAllConfirm {
+		t.Fatalf("should show confirmation, got mode %d, promptKind %d", ui.mode, ui.promptKind)
+	}
+
+	t.Logf("Confirmation prompt: %q", ui.promptLabel)
+
+	// Confirm
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'y'})
+
+	if ui.mode != ModePrompt || ui.promptKind != PromptReplaceWith {
+		t.Fatalf("should prompt for replacement, got mode %d, promptKind %d", ui.mode, ui.promptKind)
+	}
+
+	t.Logf("replacingAll flag: %v", ui.replacingAll)
+
+	// Type "XXX"
+	for _, r := range "XXX" {
+		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
+	}
+
+	t.Logf("promptText before Enter: %q", string(ui.promptText))
+
+	// Execute
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+
+	// Check result
+	lines = ui.editor.Lines()
+	text = string(lines[0])
+	t.Logf("After UI replace-all: %q", text)
+
+	if text != expected {
+		t.Fatalf("UI replace-all failed: expected %q, got %q", expected, text)
+	}
+}

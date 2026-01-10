@@ -795,11 +795,18 @@ func (u *UI) drawSearchStatus(rect Rect, style term.Style) {
 	// Build left section: "Find: query | Match X of Y | Match Case"
 	left := fmt.Sprintf("Find: %s", query)
 
-	// Add match count if we have a session
-	if session != nil && len(session.Matches) > 0 {
+	// Show "Searching..." if a search is in progress
+	if u.searchIsSearching {
+		left += " | Searching..."
+	} else if session != nil && len(session.Matches) > 0 {
+		// Add match count if we have a session
 		currentIdx := session.CurrentIndex + 1 // 1-based for display
 		totalMatches := len(session.Matches)
-		left += fmt.Sprintf(" | Match %d of %d", currentIdx, totalMatches)
+		if session.LimitReached {
+			left += fmt.Sprintf(" | Match %d of %d+", currentIdx, totalMatches)
+		} else {
+			left += fmt.Sprintf(" | Match %d of %d", currentIdx, totalMatches)
+		}
 	} else if session != nil && session.Query != "" && len(session.Matches) == 0 {
 		left += " | No matches"
 	}
@@ -809,6 +816,11 @@ func (u *UI) drawSearchStatus(rect Rect, style term.Style) {
 		left += " | Match Case"
 	} else {
 		left += " | Ignore Case"
+	}
+
+	// Add whole word indicator if active
+	if searchState != nil && searchState.WholeWord {
+		left += " | Whole Word"
 	}
 
 	// Build right section: cursor position
@@ -894,13 +906,22 @@ func (u *UI) drawFindReplaceStatus(rect Rect, style term.Style) {
 	if session != nil && len(session.Matches) > 0 {
 		currentIdx := session.CurrentIndex + 1 // 1-based for display
 		totalMatches := len(session.Matches)
-		left = fmt.Sprintf("Match %d of %d", currentIdx, totalMatches)
+		if session.LimitReached {
+			left = fmt.Sprintf("Match %d of %d+", currentIdx, totalMatches)
+		} else {
+			left = fmt.Sprintf("Match %d of %d", currentIdx, totalMatches)
+		}
 
 		// Add case sensitivity indicator
 		if searchState.CaseSensitive {
 			left += " | Match Case"
 		} else {
 			left += " | Ignore Case"
+		}
+
+		// Add whole word indicator if active
+		if searchState.WholeWord {
+			left += " | Whole Word"
 		}
 	} else {
 		left = "No matches"
