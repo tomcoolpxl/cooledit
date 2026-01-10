@@ -79,13 +79,13 @@ func (u *UI) enterReplaceAllConfirm() {
 	// Get match count from search session
 	matchCount := 0
 	searchState := u.editor.SearchState()
-	
+
 	// If no session exists, create one from lastFindTerm (for legacy ModeFindReplace)
 	if searchState != nil && searchState.Session == nil && u.lastFindTerm != "" {
 		u.editor.StartSearchSession(u.lastFindTerm)
 		searchState = u.editor.SearchState()
 	}
-	
+
 	if searchState != nil && searchState.Session != nil {
 		matchCount = len(searchState.Session.Matches)
 	}
