@@ -69,7 +69,7 @@ func searchForward(lines [][]rune, query string, startLine, startCol int, caseSe
 		} else {
 			matchIdx = indexCaseInsensitive(lineStr[startIdx:], query)
 		}
-		
+
 		if matchIdx != -1 {
 			return i, startIdx + matchIdx, true
 		}
@@ -102,7 +102,7 @@ func searchBackward(lines [][]rune, query string, startLine, startCol int, caseS
 		} else {
 			matchIdx = lastIndexCaseInsensitive(searchSpace, query)
 		}
-		
+
 		if matchIdx != -1 {
 			return i, matchIdx, true
 		}
