@@ -41,9 +41,7 @@ func (s *Screen) Init() error {
 		return err
 	}
 
-	// Save the original cursor style to restore on exit
-	// Note: tcell doesn't provide a way to query current cursor style,
-	// so we save the default which will be restored on Fini
+	// Set default as fallback for SetCursorStyle restoration
 	s.originalCursorStyle = tcell.CursorStyleDefault
 
 	ts.Clear()
@@ -53,8 +51,9 @@ func (s *Screen) Init() error {
 
 func (s *Screen) Fini() {
 	if s.screen != nil {
-		// Restore the original cursor style before exiting
-		s.screen.SetCursorStyle(s.originalCursorStyle)
+		// Restore to the "default" theme's cursor settings
+		// Default theme uses green (#00FF00) block cursor
+		s.SetCursorShape(term.CursorBlock, term.Color("#00FF00"))
 		s.screen.Fini()
 	}
 }
