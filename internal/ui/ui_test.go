@@ -391,8 +391,8 @@ func TestSearchUIIntegration(t *testing.T) {
 		t.Fatalf("expected cursor at (0,0), got (%d,%d)", line, col)
 	}
 
-	// N (Next) - test navigation in unified search mode
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'n'})
+	// F3 (Next) - test navigation in unified search mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyF3})
 	draw(ui)
 	// Should find second "foo" at 0, 8
 	line, col = ui.editor.Cursor()
@@ -400,8 +400,8 @@ func TestSearchUIIntegration(t *testing.T) {
 		t.Fatalf("expected cursor at (0,8) after next, got (%d,%d)", line, col)
 	}
 
-	// P (Prev) in find/replace mode
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'p'})
+	// Shift+F3 (Prev) in search mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyF3, Modifiers: term.ModShift})
 	draw(ui)
 
 	// Should find first "foo" at 0, 0
@@ -410,8 +410,8 @@ func TestSearchUIIntegration(t *testing.T) {
 		t.Fatalf("expected cursor at (0,0) after prev, got (%d,%d)", line, col)
 	}
 
-	// Q to quit find mode
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'q'})
+	// Escape to quit search mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyEscape})
 
 	if ui.mode != ModeNormal {
 		t.Fatalf("expected ModeNormal after quit, got mode %d", ui.mode)

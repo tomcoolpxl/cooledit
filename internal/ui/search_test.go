@@ -257,20 +257,20 @@ func TestSearchNavigationWhileTyping(t *testing.T) {
 		t.Errorf("expected 3 matches, got %d", len(ui.editor.SearchState().Session.Matches))
 	}
 
-	// Navigate to next match with 'n'
+	// Navigate to next match with F3 (not 'n' - that types a letter now!)
 	initialIndex := ui.editor.SearchState().Session.CurrentIndex
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'n'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyF3})
 
 	newIndex := ui.editor.SearchState().Session.CurrentIndex
 	if newIndex == initialIndex {
-		t.Error("expected current index to change after 'n'")
+		t.Error("expected current index to change after F3")
 	}
 
-	// Navigate to previous match with 'p'
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'p'})
+	// Navigate to previous match with Shift+F3
+	dispatch(ui, term.KeyEvent{Key: term.KeyF3, Modifiers: term.ModShift})
 
 	if ui.editor.SearchState().Session.CurrentIndex != initialIndex {
-		t.Error("expected to return to initial index after 'p'")
+		t.Error("expected to return to initial index after Shift+F3")
 	}
 }
 

@@ -2,7 +2,14 @@
 
 **Created:** January 10, 2026  
 **Author:** Tom Cool  
-**Status:** Planning Phase
+**Status:** ✅ **IMPLEMENTED** (January 10, 2026)
+
+> **Implementation Note:** This plan has been fully implemented with the unified search mode (ModeSearch).
+> Key changes from this plan:
+> - Single unified search mode implemented (no separate incremental/find-replace modes)
+> - Keyboard shortcuts changed: F3/Shift+F3 for navigation, Ctrl+R for replace, Ctrl+H for replace-all
+> - All letters now type into search box (no single-letter commands)
+> - See SEARCH_UX_FIX.md for final implementation details
 
 ## Executive Summary
 

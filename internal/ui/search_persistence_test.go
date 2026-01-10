@@ -90,8 +90,8 @@ func TestReplaceTermPersistence(t *testing.T) {
 	// Wait for debounced search to complete
 	waitForSearch(ui)
 
-	// Press 'r' to enter replace prompt
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r'})
+	// Press Ctrl+R to enter replace prompt
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r', Modifiers: term.ModCtrl})
 	if ui.mode != ModePrompt || ui.promptKind != PromptReplaceWith {
 		t.Fatal("should be in replace prompt")
 	}
@@ -124,8 +124,8 @@ func TestReplaceTermPersistence(t *testing.T) {
 	// Wait for debounced search
 	waitForSearch(ui)
 
-	// Press 'r' to enter replace prompt
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r'})
+	// Press Ctrl+R to enter replace prompt
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r', Modifiers: term.ModCtrl})
 	if ui.mode != ModePrompt {
 		t.Fatalf("should be in prompt mode, got mode %d", ui.mode)
 	}

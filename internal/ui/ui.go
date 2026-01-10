@@ -231,11 +231,12 @@ type UI struct {
 
 	// Unified search mode (ModeSearch)
 	// Session state: These persist for the duration of the editor session
-	searchQuery         []rune         // Current search query being typed
-	searchHistory       *SearchHistory // Search history for up/down navigation (persists in session)
-	searchDebounceTimer *time.Timer    // Timer for search debouncing
-	searchIsSearching   bool           // True when search is executing (debouncing)
-	lastSearchQuery     string         // Last executed search query (persists in session)
+	searchQuery           []rune         // Current search query being typed
+	searchQueryPreFilled  bool           // True if query was pre-filled from selection (cleared on first keystroke)
+	searchHistory         *SearchHistory // Search history for up/down navigation (persists in session)
+	searchDebounceTimer   *time.Timer    // Timer for search debouncing
+	searchIsSearching     bool           // True when search is executing (debouncing)
+	lastSearchQuery       string         // Last executed search query (persists in session)
 
 	// Features
 	showLineNumbers bool
@@ -912,6 +913,7 @@ func (u *UI) enterSearch() {
 	}
 
 	// Pre-fill from selection if available
+	u.searchQueryPreFilled = false
 	if u.editor.HasSelection() {
 		sl, sc, el, ec := u.editor.GetSelectionRange()
 		// Only pre-fill if selection is on a single line
@@ -921,14 +923,17 @@ func (u *UI) enterSearch() {
 				selectedText := lines[sl][sc:ec]
 				u.searchQuery = make([]rune, len(selectedText))
 				copy(u.searchQuery, selectedText)
+				u.searchQueryPreFilled = true // Mark as pre-filled so first keystroke replaces
 			}
 		}
 	} else if u.lastSearchQuery != "" {
 		// Use last search query
 		u.searchQuery = []rune(u.lastSearchQuery)
+		u.searchQueryPreFilled = false // Last query is not "pre-filled" in the UX sense
 	} else {
 		// Start with empty query
 		u.searchQuery = nil
+		u.searchQueryPreFilled = false
 	}
 
 	// Reset search history navigation
@@ -1136,7 +1141,7 @@ func (u *UI) searchHistoryNext() {
 //
 // KEY BINDINGS:
 // - Escape: Exit search mode
-// - Enter: Move to next match (same as 'n')
+// - Enter: Move to next match
 // - Backspace: Delete character from query (or exit if query is empty)
 // - Up/Down: Navigate search history
 // - F3 / Shift+F3: Next/previous match
@@ -1144,23 +1149,18 @@ func (u *UI) searchHistoryNext() {
 // - Alt+C: Toggle case sensitivity
 // - Alt+W: Toggle whole word matching
 // - Ctrl+V: Paste into search query
-// - n/p: Navigate to next/previous match
-// - N/P (Shift): Add character to search (capital letter)
-// - r: Enter replace prompt (if matches exist)
-// - R (Shift): Add character to search
-// - a: Enter replace-all confirmation (if matches exist)
-// - A (Shift): Add character to search
-// - q: Exit search mode
-// - Q (Shift): Add character to search
-// - Any other character: Add to search query
+// - Ctrl+R: Replace current match (if matches exist)
+// - Ctrl+H: Replace all matches (if matches exist)
+// - Any printable character: Add to search query
 //
 // EDGE CASES HANDLED:
 // - Empty query + backspace: Exits search mode (intuitive)
-// - r/a with no matches: Treats as regular character (adds to query)
-// - Capital letters (with Shift): Adds to query instead of command
-// - All other keys: Consumed to prevent leakage
+// - Ctrl+R/H with no matches: Does nothing (no error)
+// - All navigation/command keys: Consumed to prevent leakage
 //
 // CRITICAL: This function MUST return true for ALL keys to prevent leakage to editor buffer.
+// UX PRINCIPLE: Search is a TEXT INPUT FIELD first. All letters/numbers/symbols are typed.
+// Commands require modifier keys (Ctrl/Alt) or function keys (F3, Escape, Enter).
 func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 	switch e.Key {
 	case term.KeyEscape:
@@ -1177,6 +1177,7 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 		// Remove character from search query
 		if len(u.searchQuery) > 0 {
 			u.searchQuery = u.searchQuery[:len(u.searchQuery)-1]
+			u.searchQueryPreFilled = false // Clear pre-filled flag
 			u.performSearch()
 		} else {
 			// Backspace on empty search = exit (intuitive)
@@ -1237,83 +1238,43 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 			case 'f', 'F':
 				// Ctrl+F in search mode - do nothing (already in search)
 				return true
-			}
-			// Consume all other Ctrl combinations
-			return true
-		} else {
-			// Handle regular runes
-			switch e.Rune {
-			case 'n', 'N':
-				// Next match (if Shift is held, treat as regular character)
-				if e.Modifiers == term.ModShift {
-					// 'N' - add to search
-					u.searchQuery = append(u.searchQuery, e.Rune)
-					u.performSearch()
-				} else {
-					// 'n' - next match
-					u.nextSearchMatch()
-				}
-				return true
-			case 'p', 'P':
-				// Previous match (if Shift is held, treat as regular character)
-				if e.Modifiers == term.ModShift {
-					// 'P' - add to search
-					u.searchQuery = append(u.searchQuery, e.Rune)
-					u.performSearch()
-				} else {
-					// 'p' - previous match
-					u.prevSearchMatch()
-				}
-				return true
 			case 'r', 'R':
-				// Replace current match - enter replace prompt
-				// Check if we have matches
+				// Ctrl+R: Replace current match
 				searchState := u.editor.SearchState()
 				if searchState != nil && searchState.Session != nil && len(searchState.Session.Matches) > 0 {
-					// Save the search query and enter replace prompt
 					u.lastFindTerm = string(u.searchQuery)
 					u.mode = ModePrompt
 					u.promptKind = PromptReplaceWith
 					u.promptLabel = "Replace with: "
 					u.promptText = []rune(u.lastReplaceTerm)
 					u.replacingAll = false
-				} else {
-					// No matches, treat as regular character
-					u.searchQuery = append(u.searchQuery, e.Rune)
-					u.performSearch()
 				}
 				return true
-			case 'a', 'A':
-				// Replace all - show confirmation prompt
-				// Check if we have matches
+			case 'h', 'H':
+				// Ctrl+H: Replace all (matches VS Code and other editors)
 				searchState := u.editor.SearchState()
 				if searchState != nil && searchState.Session != nil && len(searchState.Session.Matches) > 0 {
-					// Save the search query and show confirmation
 					u.lastFindTerm = string(u.searchQuery)
 					u.enterReplaceAllConfirm()
-				} else {
-					// No matches, treat as regular character
-					u.searchQuery = append(u.searchQuery, e.Rune)
-					u.performSearch()
 				}
-				return true
-			case 'q', 'Q':
-				// Exit search (if Shift is held, treat as regular character)
-				if e.Modifiers == term.ModShift {
-					// 'Q' - add to search
-					u.searchQuery = append(u.searchQuery, e.Rune)
-					u.performSearch()
-				} else {
-					// 'q' - exit search
-					u.exitSearch()
-				}
-				return true
-			default:
-				// Add character to search query
-				u.searchQuery = append(u.searchQuery, e.Rune)
-				u.performSearch()
 				return true
 			}
+			// Consume all other Ctrl combinations
+			return true
+		} else {
+			// Handle regular runes - ALL characters should be added to search query
+			// This is the correct UX: a search field is primarily for TEXT INPUT
+			// Commands (next, prev, replace) are accessed via function keys or Ctrl shortcuts
+			
+			// If query was pre-filled from selection, replace it on first keystroke
+			if u.searchQueryPreFilled {
+				u.searchQuery = []rune{e.Rune}
+				u.searchQueryPreFilled = false
+			} else {
+				u.searchQuery = append(u.searchQuery, e.Rune)
+			}
+			u.performSearch()
+			return true
 		}
 
 	case term.KeyDelete:

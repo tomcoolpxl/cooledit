@@ -40,12 +40,12 @@ func TestReplaceCurrent(t *testing.T) {
 	}
 	ui.doSearch()
 
-	// Press 'r' to replace current match
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r'})
+	// Press Ctrl+R to replace current match
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'r', Modifiers: term.ModCtrl})
 
 	// Should enter prompt mode for replacement
 	if ui.mode != ModePrompt {
-		t.Errorf("expected ModePrompt after 'r', got %v", ui.mode)
+		t.Errorf("expected ModePrompt after Ctrl+R, got %v", ui.mode)
 	}
 
 	// Type replacement text
@@ -87,8 +87,8 @@ func TestReplaceAllConfirmationDialog(t *testing.T) {
 	}
 	ui.doSearch()
 
-	// Press 'a' to replace all
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'a'})
+	// Press Ctrl+H to replace all
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'h', Modifiers: term.ModCtrl})
 
 	// Should show confirmation prompt
 	if ui.mode != ModePrompt {
@@ -193,8 +193,8 @@ func TestReplaceAllCancel(t *testing.T) {
 	}
 	ui.doSearch()
 
-	// Press 'a' for replace all
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'a'})
+	// Press Ctrl+H for replace all
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'h', Modifiers: term.ModCtrl})
 
 	// Should be in prompt
 	if ui.mode != ModePrompt {

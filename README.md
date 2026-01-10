@@ -91,12 +91,12 @@ cooledit --help
 - `Ctrl+F` - Enter unified search mode (incremental search with real-time results)
 - `Alt+C` - Toggle case sensitivity (in search mode)
 - `Alt+W` - Toggle whole word matching (in search mode)
-- `N` / `P` - Navigate to next/previous match (in search mode)
-- `F3` / `Shift+F3` - Find next/previous (works in and out of search mode)
+- `F3` / `Shift+F3` - Find next/previous match
+- `Enter` - Navigate to next match (in search mode)
 - `Up` / `Down` - Navigate search history (in search mode)
-- `R` - Replace current match (in search mode)
-- `A` - Replace all matches (in search mode, with confirmation)
-- `Esc` / `Q` - Exit search mode
+- `Ctrl+R` - Replace current match (in search mode)
+- `Ctrl+H` - Replace all matches (in search mode, with confirmation)
+- `Escape` - Exit search mode
 - `Ctrl+G` - Go to line
 
 ### Navigation
@@ -174,12 +174,11 @@ Custom themes can be defined in config file using `[themes.custom_name]` section
 Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 
 ### Searching
-- Type to search - matches appear immediately as you type
+- Type to search - matches appear immediately as you type (all letters and characters are typed)
 - Search highlights all matches in the viewport
 - Status bar shows match count (e.g., "Match 3 of 15")
-- `Enter` or `N` - Navigate to next match
-- `P` - Navigate to previous match
-- `F3` / `Shift+F3` - Also navigate next/previous
+- `Enter` - Navigate to next match
+- `F3` / `Shift+F3` - Navigate next/previous match
 - `Up` / `Down` - Navigate search history
 - `Backspace` - Delete character from query (or exit if query is empty)
 
@@ -189,12 +188,12 @@ Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 - Search preferences persist across searches within the session
 
 ### Replacing
-- `R` - Replace current match (prompts for replacement text)
-- `A` - Replace all matches (shows confirmation dialog with match count)
+- `Ctrl+R` - Replace current match (prompts for replacement text)
+- `Ctrl+H` - Replace all matches (shows confirmation dialog with match count)
 - Replace-all is undoable as a single operation
 
 ### Exiting
-- `Q` or `Esc` - Exit search mode and return to normal editing
+- `Escape` - Exit search mode and return to normal editing
 - Query is saved to history for next search
 
 ### Features
