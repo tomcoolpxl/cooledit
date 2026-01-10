@@ -496,22 +496,22 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	case CmdJumpToMatchingBracket:
 		line, col := e.buf.Cursor()
 		lines := e.buf.Lines()
-		
+
 		if line < 0 || line >= len(lines) || col < 0 || col >= len(lines[line]) {
 			return Result{Message: "Not on a bracket"}
 		}
-		
+
 		ch := lines[line][col]
 		if !e.bracketMatcher.IsBracket(ch) {
 			return Result{Message: "Not on a bracket"}
 		}
-		
+
 		// Find matching bracket (using nil skipFunc for simplicity)
 		matchLine, matchCol, found := e.bracketMatcher.FindMatch(lines, line, col, nil)
 		if !found {
 			return Result{Message: "No matching bracket found"}
 		}
-		
+
 		e.ClearSelection()
 		e.buf.SetCursor(matchLine, matchCol)
 		return Result{}
