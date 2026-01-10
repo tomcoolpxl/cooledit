@@ -20,6 +20,7 @@ import (
 
 	"cooledit/internal/config"
 	"cooledit/internal/core"
+	"cooledit/internal/syntax"
 	"cooledit/internal/term"
 	"cooledit/internal/theme"
 )
@@ -88,6 +89,11 @@ type UI struct {
 	// Theme
 	theme *theme.Theme
 
+	// Syntax highlighting
+	syntaxHighlighting bool
+	currentLanguage    string            // Current detected/selected language ("" = auto)
+	syntaxCache        *syntax.LineCache // Token cache for current file
+
 	// Configuration
 	config *config.Config
 }
@@ -96,17 +102,24 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 	// Set editor tab width from config
 	editor.TabWidth = cfg.Editor.TabWidth
 
-	return &UI{
-		screen:        screen,
-		editor:        editor,
-		menubar:       NewMenubar(),
-		mode:          ModeNormal,
-		showMenubar:   false,
-		showStatusBar: cfg.UI.ShowStatusBar,
-		insertMode:    true, // Always start in insert mode
-		config:        cfg,
-		theme:         cfg.GetCurrentTheme(),
+	u := &UI{
+		screen:             screen,
+		editor:             editor,
+		menubar:            NewMenubar(),
+		mode:               ModeNormal,
+		showMenubar:        false,
+		showStatusBar:      cfg.UI.ShowStatusBar,
+		insertMode:         true, // Always start in insert mode
+		syntaxHighlighting: cfg.Editor.SyntaxHighlighting,
+		currentLanguage:    cfg.UI.Language,
+		config:             cfg,
+		theme:              cfg.GetCurrentTheme(),
 	}
+
+	// Initialize syntax highlighting
+	u.initSyntaxHighlighter()
+
+	return u
 }
 
 func (u *UI) SetOptions(lineNumbers, softWrap bool) {
@@ -128,10 +141,104 @@ func (u *UI) saveConfig() {
 	// Update config with current values
 	u.config.Editor.LineNumbers = u.showLineNumbers
 	u.config.Editor.SoftWrap = u.softWrap
+	u.config.Editor.SyntaxHighlighting = u.syntaxHighlighting
 	u.config.UI.ShowStatusBar = u.showStatusBar
+	u.config.UI.Language = u.currentLanguage
 
 	// Save to file (ignore errors - don't interrupt user)
 	_ = config.Save(u.config)
+}
+
+// initSyntaxHighlighter initializes or reinitializes the syntax highlighter
+func (u *UI) initSyntaxHighlighter() {
+	if !u.syntaxHighlighting {
+		u.syntaxCache = nil
+		return
+	}
+
+	// Determine language (auto-detect or use manual override)
+	lang := u.currentLanguage
+	if lang == "" || lang == "Auto" {
+		// Auto-detect from file
+		path := u.editor.File().Path
+		var firstLine []rune
+		if lines := u.editor.Lines(); len(lines) > 0 {
+			firstLine = lines[0]
+		}
+		lang = syntax.DetectLanguage(path, firstLine)
+	}
+
+	if lang == "" {
+		u.syntaxCache = nil
+		return
+	}
+
+	u.syntaxCache = syntax.NewLineCache(lang)
+}
+
+// ToggleSyntaxHighlighting toggles syntax highlighting on/off
+func (u *UI) ToggleSyntaxHighlighting() {
+	u.syntaxHighlighting = !u.syntaxHighlighting
+	u.initSyntaxHighlighter()
+	u.saveConfig()
+
+	if u.syntaxHighlighting {
+		u.enterMessage("Syntax highlighting enabled")
+	} else {
+		u.enterMessage("Syntax highlighting disabled")
+	}
+}
+
+// SwitchLanguage changes the syntax highlighting language
+func (u *UI) SwitchLanguage(lang string) {
+	if lang == "Auto" {
+		lang = ""
+	}
+	u.currentLanguage = lang
+	u.initSyntaxHighlighter()
+	u.saveConfig()
+
+	if lang == "" {
+		u.enterMessage("Language: Auto")
+	} else {
+		u.enterMessage("Language: " + lang)
+	}
+}
+
+// GetCurrentLanguage returns the current language for display
+func (u *UI) GetCurrentLanguage() string {
+	if u.currentLanguage != "" && u.currentLanguage != "Auto" {
+		return u.currentLanguage
+	}
+
+	// If syntax cache is active, return its detected language
+	if u.syntaxCache != nil {
+		lang := u.syntaxCache.Language()
+		if lang != "" {
+			return lang
+		}
+	}
+
+	return "Plain"
+}
+
+// IsSyntaxHighlightingEnabled returns whether syntax highlighting is enabled
+func (u *UI) IsSyntaxHighlightingEnabled() bool {
+	return u.syntaxHighlighting
+}
+
+// InvalidateSyntaxLine marks a line's syntax cache as stale
+func (u *UI) InvalidateSyntaxLine(lineNum int) {
+	if u.syntaxCache != nil {
+		u.syntaxCache.InvalidateLine(lineNum)
+	}
+}
+
+// InvalidateSyntaxFromLine invalidates all cached lines from the given line onwards
+func (u *UI) InvalidateSyntaxFromLine(lineNum int) {
+	if u.syntaxCache != nil {
+		u.syntaxCache.InvalidateFromLine(lineNum)
+	}
 }
 
 func (u *UI) Run() error {
@@ -367,6 +474,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyRune && e.Rune == 'w' && (e.Modifiers&term.ModCtrl) != 0:
 		u.softWrap = !u.softWrap
 		u.saveConfig()
+		return nil
+
+	case e.Key == term.KeyRune && e.Rune == 'h' && (e.Modifiers&term.ModCtrl) != 0:
+		u.ToggleSyntaxHighlighting()
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == 'q' && (e.Modifiers&term.ModCtrl) != 0:

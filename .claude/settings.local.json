@@ -9,7 +9,8 @@
       "Bash(go vet:*)",
       "Bash(go tool cover:*)",
       "Bash(ls:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(go get:*)"
     ]
   }
 }

@@ -6,7 +6,9 @@ require github.com/gdamore/tcell/v2 v2.13.5
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
+	github.com/alecthomas/chroma/v2 v2.22.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

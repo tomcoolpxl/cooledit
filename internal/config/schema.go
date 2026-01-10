@@ -28,9 +28,10 @@ type Config struct {
 
 // Editor contains editor-specific settings
 type Editor struct {
-	LineNumbers bool `toml:"line_numbers"`
-	SoftWrap    bool `toml:"soft_wrap"`
-	TabWidth    int  `toml:"tab_width"`
+	LineNumbers        bool `toml:"line_numbers"`
+	SoftWrap           bool `toml:"soft_wrap"`
+	TabWidth           int  `toml:"tab_width"`
+	SyntaxHighlighting bool `toml:"syntax_highlighting"`
 }
 
 // UI contains user interface settings
@@ -41,6 +42,7 @@ type UI struct {
 	Theme       string `toml:"theme"`
 	CursorShape string `toml:"cursor_shape"`
 	CursorBlink bool   `toml:"cursor_blink"`
+	Language    string `toml:"language"` // Manual language override, empty = auto-detect
 }
 
 // Search contains search-related settings
@@ -57,6 +59,7 @@ type ThemeSpec struct {
 	Prompt PromptThemeSpec `toml:"prompt"`
 	Help   HelpThemeSpec   `toml:"help"`
 	Msg    MsgThemeSpec    `toml:"message"`
+	Syntax SyntaxThemeSpec `toml:"syntax"`
 }
 
 type EditorThemeSpec struct {
@@ -122,13 +125,42 @@ type MsgThemeSpec struct {
 	ErrorBg   string `toml:"error_bg"`
 }
 
+// SyntaxThemeSpec defines syntax highlighting colors in a custom theme
+type SyntaxThemeSpec struct {
+	KeywordFg     string `toml:"keyword_fg"`
+	KeywordBg     string `toml:"keyword_bg"`
+	StringFg      string `toml:"string_fg"`
+	StringBg      string `toml:"string_bg"`
+	CommentFg     string `toml:"comment_fg"`
+	CommentBg     string `toml:"comment_bg"`
+	NumberFg      string `toml:"number_fg"`
+	NumberBg      string `toml:"number_bg"`
+	OperatorFg    string `toml:"operator_fg"`
+	OperatorBg    string `toml:"operator_bg"`
+	FunctionFg    string `toml:"function_fg"`
+	FunctionBg    string `toml:"function_bg"`
+	TypeFg        string `toml:"type_fg"`
+	TypeBg        string `toml:"type_bg"`
+	VariableFg    string `toml:"variable_fg"`
+	VariableBg    string `toml:"variable_bg"`
+	ConstantFg    string `toml:"constant_fg"`
+	ConstantBg    string `toml:"constant_bg"`
+	PreprocFg     string `toml:"preproc_fg"`
+	PreprocBg     string `toml:"preproc_bg"`
+	BuiltinFg     string `toml:"builtin_fg"`
+	BuiltinBg     string `toml:"builtin_bg"`
+	PunctuationFg string `toml:"punctuation_fg"`
+	PunctuationBg string `toml:"punctuation_bg"`
+}
+
 // Default returns a Config with default values
 func Default() *Config {
 	return &Config{
 		Editor: Editor{
-			LineNumbers: false,
-			SoftWrap:    false,
-			TabWidth:    DefaultTabWidth,
+			LineNumbers:        false,
+			SoftWrap:           false,
+			TabWidth:           DefaultTabWidth,
+			SyntaxHighlighting: true,
 		},
 		UI: UI{
 			ShowMenubar:   false,

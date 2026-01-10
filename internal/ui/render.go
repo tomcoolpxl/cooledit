@@ -20,6 +20,7 @@ import (
 
 	"cooledit/internal/config"
 	"cooledit/internal/core"
+	"cooledit/internal/syntax"
 	"cooledit/internal/term"
 )
 
@@ -446,6 +447,13 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			}
 
 			style := editorStyle
+
+			// Apply syntax highlighting
+			if syntaxStyle := u.getSyntaxStyle(docY, runeIdx, line); syntaxStyle != nil {
+				style = *syntaxStyle
+			}
+
+			// Selection overrides syntax highlighting
 			if isSelected {
 				style = selectionStyle
 			}
@@ -644,6 +652,15 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 			}
 
 			style := editorStyle
+
+			// Apply syntax highlighting
+			if docY >= 0 && docY < len(lines) {
+				if syntaxStyle := u.getSyntaxStyle(docY, runeIdx, lines[docY]); syntaxStyle != nil {
+					style = *syntaxStyle
+				}
+			}
+
+			// Selection overrides syntax highlighting
 			if isSelected {
 				style = selectionStyle
 			}
@@ -762,9 +779,13 @@ func (u *UI) drawStatusBar() {
 	// Add replace mode indicator to right section
 	modeIndicator := ""
 	if !u.insertMode {
-		modeIndicator = "REPLACE  "
+		modeIndicator = "  REPLACE"
 	}
-	right := fmt.Sprintf("%sLn %d, Col %d  %s %s", modeIndicator, cy+1, cx+1, fs.Encoding, eol)
+
+	// Add language indicator
+	lang := u.GetCurrentLanguage()
+
+	right := fmt.Sprintf("%s%s  Ln %d, Col %d  %s %s", lang, modeIndicator, cy+1, cx+1, fs.Encoding, eol)
 
 	// Priority 1: Draw Right (position and status)
 	startRight := rect.W - len(right)
@@ -1145,6 +1166,69 @@ func (u *UI) getLineNumberStyle() term.Style {
 		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
 	}
 	return term.Style{Foreground: u.theme.Editor.LineNumbersFg, Background: u.theme.Editor.LineNumbersBg}
+}
+
+// getSyntaxStyle returns the style for a character at the given position.
+// Returns nil if syntax highlighting is disabled or no token applies.
+func (u *UI) getSyntaxStyle(docY, runeIdx int, line []rune) *term.Style {
+	if !u.syntaxHighlighting || u.syntaxCache == nil {
+		return nil
+	}
+
+	// Skip for default theme (uses terminal colors)
+	if u.isDefaultTheme() {
+		return nil
+	}
+
+	tokens := u.syntaxCache.GetTokens(docY, line)
+	tokenType := syntax.GetTokenAt(tokens, runeIdx)
+
+	if tokenType == syntax.TokenNone {
+		return nil
+	}
+
+	return u.getStyleForToken(tokenType)
+}
+
+// getStyleForToken returns the style for a specific token type
+func (u *UI) getStyleForToken(t syntax.TokenType) *term.Style {
+	var fg, bg term.Color
+
+	switch t {
+	case syntax.TokenKeyword:
+		fg, bg = u.theme.Syntax.KeywordFg, u.theme.Syntax.KeywordBg
+	case syntax.TokenString:
+		fg, bg = u.theme.Syntax.StringFg, u.theme.Syntax.StringBg
+	case syntax.TokenComment:
+		fg, bg = u.theme.Syntax.CommentFg, u.theme.Syntax.CommentBg
+	case syntax.TokenNumber:
+		fg, bg = u.theme.Syntax.NumberFg, u.theme.Syntax.NumberBg
+	case syntax.TokenOperator:
+		fg, bg = u.theme.Syntax.OperatorFg, u.theme.Syntax.OperatorBg
+	case syntax.TokenFunction:
+		fg, bg = u.theme.Syntax.FunctionFg, u.theme.Syntax.FunctionBg
+	case syntax.TokenType_:
+		fg, bg = u.theme.Syntax.TypeFg, u.theme.Syntax.TypeBg
+	case syntax.TokenVariable:
+		fg, bg = u.theme.Syntax.VariableFg, u.theme.Syntax.VariableBg
+	case syntax.TokenConstant:
+		fg, bg = u.theme.Syntax.ConstantFg, u.theme.Syntax.ConstantBg
+	case syntax.TokenPreproc:
+		fg, bg = u.theme.Syntax.PreprocFg, u.theme.Syntax.PreprocBg
+	case syntax.TokenBuiltin:
+		fg, bg = u.theme.Syntax.BuiltinFg, u.theme.Syntax.BuiltinBg
+	case syntax.TokenPunctuation:
+		fg, bg = u.theme.Syntax.PunctuationFg, u.theme.Syntax.PunctuationBg
+	default:
+		return nil
+	}
+
+	// Use editor background if syntax background is empty
+	if bg == "" || bg == term.ColorDefault {
+		bg = u.theme.Editor.Bg
+	}
+
+	return &term.Style{Foreground: fg, Background: bg}
 }
 
 func (u *UI) getStatusStyle() term.Style {

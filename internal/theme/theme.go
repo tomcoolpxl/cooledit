@@ -19,7 +19,7 @@ import "cooledit/internal/term"
 
 // Theme defines all color elements for the editor UI.
 // Each theme contains color definitions for the editor viewport, search highlights,
-// status bar, menus, prompts, help screens, and messages.
+// status bar, menus, prompts, help screens, messages, and syntax highlighting.
 type Theme struct {
 	Name   string
 	Editor EditorColors
@@ -29,6 +29,7 @@ type Theme struct {
 	Prompt PromptColors
 	Help   HelpColors
 	Msg    MessageColors
+	Syntax SyntaxColors
 }
 
 // EditorColors defines colors for the text editing area
@@ -99,6 +100,34 @@ type MessageColors struct {
 	WarningBg term.Color // Warning message background
 	ErrorFg   term.Color // Error message text
 	ErrorBg   term.Color // Error message background
+}
+
+// SyntaxColors defines colors for syntax highlighting tokens
+type SyntaxColors struct {
+	KeywordFg     term.Color // Keywords (if, for, func, etc.)
+	KeywordBg     term.Color
+	StringFg      term.Color // String literals
+	StringBg      term.Color
+	CommentFg     term.Color // Comments
+	CommentBg     term.Color
+	NumberFg      term.Color // Numeric literals
+	NumberBg      term.Color
+	OperatorFg    term.Color // Operators (+, -, *, etc.)
+	OperatorBg    term.Color
+	FunctionFg    term.Color // Function names
+	FunctionBg    term.Color
+	TypeFg        term.Color // Type names
+	TypeBg        term.Color
+	VariableFg    term.Color // Variable names
+	VariableBg    term.Color
+	ConstantFg    term.Color // Constants
+	ConstantBg    term.Color
+	PreprocFg     term.Color // Preprocessor directives
+	PreprocBg     term.Color
+	BuiltinFg     term.Color // Built-in functions
+	BuiltinBg     term.Color
+	PunctuationFg term.Color // Punctuation (brackets, braces)
+	PunctuationBg term.Color
 }
 
 // GetStyle returns a term.Style with the given foreground and background colors

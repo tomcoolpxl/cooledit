@@ -15,7 +15,10 @@
 
 package ui
 
-import "cooledit/internal/core"
+import (
+	"cooledit/internal/core"
+	"cooledit/internal/syntax"
+)
 
 type MenuItem struct {
 	Label       string
@@ -62,6 +65,7 @@ func (m *Menubar) initDefaults() {
 	themeItems := m.buildThemeItems()
 	cursorItems := m.buildCursorShapeItems()
 	cursorBlinkItem := m.buildCursorBlinkItem()
+	languageItems := m.buildLanguageItems()
 
 	m.Menus = []Menu{
 		{
@@ -116,6 +120,13 @@ func (m *Menubar) initDefaults() {
 					u.showStatusBar = !u.showStatusBar
 					u.saveConfig()
 				}},
+				{Label: "Syntax Highlighting", Accelerator: "Ctrl+H", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.IsSyntaxHighlightingEnabled()
+				}, Action: func(u *UI) {
+					u.ToggleSyntaxHighlighting()
+				}},
+				{IsSeparator: true},
+			}, append(languageItems, append([]MenuItem{
 				{IsSeparator: true},
 				cursorBlinkItem,
 			}, append(cursorItems, []MenuItem{
@@ -134,7 +145,7 @@ func (m *Menubar) initDefaults() {
 					}
 					return enc
 				}},
-			}...)...),
+			}...)...)...)...),
 		},
 		{
 			Title:       "Themes",
@@ -210,6 +221,40 @@ func (m *Menubar) buildCursorShapeItems() []MenuItem {
 				u.saveConfig()
 			},
 		}
+	}
+	return items
+}
+
+// buildLanguageItems creates menu items for language selection
+func (m *Menubar) buildLanguageItems() []MenuItem {
+	languages := syntax.GetLanguageList()
+	items := make([]MenuItem, 0, len(languages)+1)
+
+	// Auto-detect option
+	items = append(items, MenuItem{
+		Label:       "Auto",
+		IsCheckable: true,
+		IsChecked: func(u *UI) bool {
+			return u.currentLanguage == "" || u.currentLanguage == "Auto"
+		},
+		Action: func(u *UI) {
+			u.SwitchLanguage("")
+		},
+	})
+
+	// All supported languages
+	for _, lang := range languages {
+		name := lang // Capture
+		items = append(items, MenuItem{
+			Label:       name,
+			IsCheckable: true,
+			IsChecked: func(u *UI) bool {
+				return u.GetCurrentLanguage() == name
+			},
+			Action: func(u *UI) {
+				u.SwitchLanguage(name)
+			},
+		})
 	}
 	return items
 }

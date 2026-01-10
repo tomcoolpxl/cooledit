@@ -125,6 +125,20 @@ func defaultTheme() *Theme {
 			ErrorFg:   term.ColorDefault,
 			ErrorBg:   term.ColorDefault,
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     term.ColorBlue,
+			StringFg:      term.ColorGreen,
+			CommentFg:     term.ColorCyan,
+			NumberFg:      term.ColorMagenta,
+			OperatorFg:    term.ColorDefault,
+			FunctionFg:    term.ColorYellow,
+			TypeFg:        term.ColorCyan,
+			VariableFg:    term.ColorDefault,
+			ConstantFg:    term.ColorMagenta,
+			PreprocFg:     term.ColorRed,
+			BuiltinFg:     term.ColorCyan,
+			PunctuationFg: term.ColorDefault,
+		},
 	}
 }
 
@@ -187,6 +201,20 @@ func darkTheme() *Theme {
 			WarningBg: "#FFD700",
 			ErrorFg:   "#FFFFFF",
 			ErrorBg:   "#FF0000",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#569CD6", // Blue
+			StringFg:      "#CE9178", // Orange/brown
+			CommentFg:     "#6A9955", // Green
+			NumberFg:      "#B5CEA8", // Light green
+			OperatorFg:    "#D4D4D4", // Light gray
+			FunctionFg:    "#DCDCAA", // Yellow
+			TypeFg:        "#4EC9B0", // Teal
+			VariableFg:    "#9CDCFE", // Light blue
+			ConstantFg:    "#4FC1FF", // Bright blue
+			PreprocFg:     "#C586C0", // Purple
+			BuiltinFg:     "#4EC9B0", // Teal
+			PunctuationFg: "#D4D4D4", // Light gray
 		},
 	}
 }
@@ -251,6 +279,20 @@ func lightTheme() *Theme {
 			ErrorFg:   "#FFFFFF",
 			ErrorBg:   "#E51400",
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#0000FF", // Blue
+			StringFg:      "#A31515", // Red/brown
+			CommentFg:     "#008000", // Green
+			NumberFg:      "#098658", // Dark green
+			OperatorFg:    "#000000", // Black
+			FunctionFg:    "#795E26", // Brown
+			TypeFg:        "#267F99", // Teal
+			VariableFg:    "#001080", // Dark blue
+			ConstantFg:    "#0070C1", // Blue
+			PreprocFg:     "#AF00DB", // Purple
+			BuiltinFg:     "#267F99", // Teal
+			PunctuationFg: "#000000", // Black
+		},
 	}
 }
 
@@ -313,6 +355,20 @@ func monokaiTheme() *Theme {
 			WarningBg: "#E6DB74",
 			ErrorFg:   "#F8F8F2",
 			ErrorBg:   "#F92672",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#F92672", // Pink
+			StringFg:      "#E6DB74", // Yellow
+			CommentFg:     "#75715E", // Gray
+			NumberFg:      "#AE81FF", // Purple
+			OperatorFg:    "#F92672", // Pink
+			FunctionFg:    "#A6E22E", // Green
+			TypeFg:        "#66D9EF", // Cyan
+			VariableFg:    "#F8F8F2", // White
+			ConstantFg:    "#AE81FF", // Purple
+			PreprocFg:     "#F92672", // Pink
+			BuiltinFg:     "#66D9EF", // Cyan
+			PunctuationFg: "#F8F8F2", // White
 		},
 	}
 }
@@ -377,6 +433,20 @@ func solarizedDarkTheme() *Theme {
 			ErrorFg:   "#FDF6E3",
 			ErrorBg:   "#DC322F",
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#859900", // Green
+			StringFg:      "#2AA198", // Cyan
+			CommentFg:     "#586E75", // Base01
+			NumberFg:      "#D33682", // Magenta
+			OperatorFg:    "#839496", // Base0
+			FunctionFg:    "#268BD2", // Blue
+			TypeFg:        "#B58900", // Yellow
+			VariableFg:    "#839496", // Base0
+			ConstantFg:    "#CB4B16", // Orange
+			PreprocFg:     "#CB4B16", // Orange
+			BuiltinFg:     "#268BD2", // Blue
+			PunctuationFg: "#839496", // Base0
+		},
 	}
 }
 
@@ -439,6 +509,20 @@ func solarizedLightTheme() *Theme {
 			WarningBg: "#B58900",
 			ErrorFg:   "#FDF6E3",
 			ErrorBg:   "#DC322F",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#859900", // Green
+			StringFg:      "#2AA198", // Cyan
+			CommentFg:     "#93A1A1", // Base1
+			NumberFg:      "#D33682", // Magenta
+			OperatorFg:    "#657B83", // Base00
+			FunctionFg:    "#268BD2", // Blue
+			TypeFg:        "#B58900", // Yellow
+			VariableFg:    "#657B83", // Base00
+			ConstantFg:    "#CB4B16", // Orange
+			PreprocFg:     "#CB4B16", // Orange
+			BuiltinFg:     "#268BD2", // Blue
+			PunctuationFg: "#657B83", // Base00
 		},
 	}
 }
@@ -503,6 +587,20 @@ func gruvboxDarkTheme() *Theme {
 			ErrorFg:   "#EBDBB2",
 			ErrorBg:   "#FB4934",
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#FB4934", // Red
+			StringFg:      "#B8BB26", // Green
+			CommentFg:     "#928374", // Gray
+			NumberFg:      "#D3869B", // Purple
+			OperatorFg:    "#EBDBB2", // Cream
+			FunctionFg:    "#FABD2F", // Yellow
+			TypeFg:        "#83A598", // Aqua
+			VariableFg:    "#EBDBB2", // Cream
+			ConstantFg:    "#D3869B", // Purple
+			PreprocFg:     "#FE8019", // Orange
+			BuiltinFg:     "#83A598", // Aqua
+			PunctuationFg: "#EBDBB2", // Cream
+		},
 	}
 }
 
@@ -565,6 +663,20 @@ func gruvboxLightTheme() *Theme {
 			WarningBg: "#D79921",
 			ErrorFg:   "#FBF1C7",
 			ErrorBg:   "#CC241D",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#9D0006", // Red
+			StringFg:      "#79740E", // Green
+			CommentFg:     "#928374", // Gray
+			NumberFg:      "#8F3F71", // Purple
+			OperatorFg:    "#3C3836", // Dark
+			FunctionFg:    "#B57614", // Yellow
+			TypeFg:        "#076678", // Aqua
+			VariableFg:    "#3C3836", // Dark
+			ConstantFg:    "#8F3F71", // Purple
+			PreprocFg:     "#AF3A03", // Orange
+			BuiltinFg:     "#076678", // Aqua
+			PunctuationFg: "#3C3836", // Dark
 		},
 	}
 }
@@ -629,6 +741,20 @@ func draculaTheme() *Theme {
 			ErrorFg:   "#F8F8F2",
 			ErrorBg:   "#FF5555",
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#FF79C6", // Pink
+			StringFg:      "#F1FA8C", // Yellow
+			CommentFg:     "#6272A4", // Purple/gray
+			NumberFg:      "#BD93F9", // Purple
+			OperatorFg:    "#FF79C6", // Pink
+			FunctionFg:    "#50FA7B", // Green
+			TypeFg:        "#8BE9FD", // Cyan
+			VariableFg:    "#F8F8F2", // White
+			ConstantFg:    "#BD93F9", // Purple
+			PreprocFg:     "#FFB86C", // Orange
+			BuiltinFg:     "#8BE9FD", // Cyan
+			PunctuationFg: "#F8F8F2", // White
+		},
 	}
 }
 
@@ -691,6 +817,20 @@ func nordTheme() *Theme {
 			WarningBg: "#EBCB8B",
 			ErrorFg:   "#ECEFF4",
 			ErrorBg:   "#BF616A",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#81A1C1", // Blue
+			StringFg:      "#A3BE8C", // Green
+			CommentFg:     "#616E88", // Gray
+			NumberFg:      "#B48EAD", // Purple
+			OperatorFg:    "#81A1C1", // Blue
+			FunctionFg:    "#88C0D0", // Cyan
+			TypeFg:        "#8FBCBB", // Teal
+			VariableFg:    "#D8DEE9", // White
+			ConstantFg:    "#B48EAD", // Purple
+			PreprocFg:     "#D08770", // Orange
+			BuiltinFg:     "#8FBCBB", // Teal
+			PunctuationFg: "#ECEFF4", // White
 		},
 	}
 }
@@ -755,6 +895,20 @@ func dosTheme() *Theme {
 			ErrorFg:   "#FFFFFF",
 			ErrorBg:   "#AA0000",
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#00AAAA", // Cyan
+			StringFg:      "#FFFF00", // Yellow
+			CommentFg:     "#AAAAAA", // Gray
+			NumberFg:      "#AA00AA", // Magenta
+			OperatorFg:    "#FFFFFF", // White
+			FunctionFg:    "#00AA00", // Green
+			TypeFg:        "#00AAAA", // Cyan
+			VariableFg:    "#FFFFFF", // White
+			ConstantFg:    "#AA00AA", // Magenta
+			PreprocFg:     "#AA5500", // Brown/Orange
+			BuiltinFg:     "#00AAAA", // Cyan
+			PunctuationFg: "#FFFFFF", // White
+		},
 	}
 }
 
@@ -817,6 +971,20 @@ func ibmGreenTheme() *Theme {
 			WarningBg: "#005500",
 			ErrorFg:   "#00FF00",
 			ErrorBg:   "#006600",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#00FF00", // Bright green
+			StringFg:      "#00DD00", // Medium green
+			CommentFg:     "#008800", // Dark green
+			NumberFg:      "#00EE00", // Light green
+			OperatorFg:    "#00FF00", // Bright green
+			FunctionFg:    "#00CC00", // Medium-bright green
+			TypeFg:        "#00BB00", // Medium green
+			VariableFg:    "#00FF00", // Bright green
+			ConstantFg:    "#00EE00", // Light green
+			PreprocFg:     "#00AA00", // Darker green
+			BuiltinFg:     "#00BB00", // Medium green
+			PunctuationFg: "#00FF00", // Bright green
 		},
 	}
 }
@@ -881,6 +1049,20 @@ func ibmAmberTheme() *Theme {
 			ErrorFg:   "#FFAA00",
 			ErrorBg:   "#554400",
 		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#FFAA00", // Bright amber
+			StringFg:      "#DD9900", // Medium amber
+			CommentFg:     "#AA7700", // Dark amber
+			NumberFg:      "#FFCC00", // Light amber
+			OperatorFg:    "#FFAA00", // Bright amber
+			FunctionFg:    "#FFBB00", // Bright amber
+			TypeFg:        "#CC8800", // Medium amber
+			VariableFg:    "#FFAA00", // Bright amber
+			ConstantFg:    "#FFCC00", // Light amber
+			PreprocFg:     "#BB7700", // Darker amber
+			BuiltinFg:     "#CC8800", // Medium amber
+			PunctuationFg: "#FFAA00", // Bright amber
+		},
 	}
 }
 
@@ -944,6 +1126,20 @@ func cyberpunkTheme() *Theme {
 			WarningBg: "#332200",
 			ErrorFg:   "#FF2A6D",
 			ErrorBg:   "#330011",
+		},
+		Syntax: SyntaxColors{
+			KeywordFg:     "#FF2A6D", // Hot pink
+			StringFg:      "#00FF41", // Matrix green
+			CommentFg:     "#666699", // Muted purple
+			NumberFg:      "#8B5CF6", // Purple
+			OperatorFg:    "#FF2A6D", // Hot pink
+			FunctionFg:    "#FFD700", // Gold
+			TypeFg:        "#00FFFF", // Cyan
+			VariableFg:    "#00FFFF", // Cyan
+			ConstantFg:    "#8B5CF6", // Purple
+			PreprocFg:     "#FFD700", // Gold
+			BuiltinFg:     "#00FFFF", // Cyan
+			PunctuationFg: "#00FFFF", // Cyan
 		},
 	}
 }

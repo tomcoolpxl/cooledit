@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-**cooledit** is a terminal-based text editor written in vanilla Go, inspired by nano but with better UI and keyboard shortcuts. The goal is to create a simple, beginner-friendly editor without syntax highlighting.
+**cooledit** is a terminal-based text editor written in vanilla Go, inspired by nano but with better UI and keyboard shortcuts. The goal is to create a simple, beginner-friendly editor with optional syntax highlighting.
 
 ## Core Design Principles
 
-- **No Syntax Highlighting** - Intentional design decision
+- **Syntax Highlighting** - Optional, enabled by default, uses Chroma library
 - **No Modal Editing** - Direct text editing, no vim-like modes
 - **Familiar Shortcuts** - Modern keyboard shortcuts (Ctrl+S, Ctrl+C, etc.)
 - **Clean UI** - Status bar always visible, menubar auto-hidden by default
