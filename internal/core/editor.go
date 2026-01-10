@@ -115,7 +115,7 @@ func (e *Editor) LoadFile(fd *fileio.FileData) {
 	}
 	e.undo = NewUndoStack()
 	e.undo.MarkSaved()
-	
+
 	// Clear search session when loading a new file
 	// This prevents stale search results from the previous file
 	e.EndSearchSession()
@@ -134,7 +134,7 @@ func (e *Editor) SetNewFile(path string) {
 	}
 	e.undo = NewUndoStack()
 	// Don't mark as saved since the file doesn't exist yet
-	
+
 	// Clear search session when creating a new file
 	// This prevents stale search results from any previous file
 	e.EndSearchSession()

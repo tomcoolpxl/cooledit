@@ -86,7 +86,7 @@ func TestReplaceTermPersistence(t *testing.T) {
 	for _, r := range "foo" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
-	
+
 	// Wait for debounced search to complete
 	waitForSearch(ui)
 
@@ -120,7 +120,7 @@ func TestReplaceTermPersistence(t *testing.T) {
 	for _, r := range "foo" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
-	
+
 	// Wait for debounced search
 	waitForSearch(ui)
 
@@ -154,7 +154,7 @@ func TestCaseSensitivityPersistence(t *testing.T) {
 	for _, r := range "hello" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
-	
+
 	// Wait for debounced search
 	waitForSearch(ui)
 
@@ -169,7 +169,7 @@ func TestCaseSensitivityPersistence(t *testing.T) {
 
 	// Toggle case sensitivity with Alt+C
 	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'c', Modifiers: term.ModAlt})
-	
+
 	// Wait for search to re-execute
 	waitForSearch(ui)
 
@@ -200,7 +200,7 @@ func TestCaseSensitivityPersistence(t *testing.T) {
 	for _, r := range "hello" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
-	
+
 	// Wait for search
 	waitForSearch(ui)
 
@@ -230,7 +230,7 @@ func TestWholeWordPersistence(t *testing.T) {
 	for _, r := range "cat" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
-	
+
 	// Wait for search
 	waitForSearch(ui)
 
@@ -245,7 +245,7 @@ func TestWholeWordPersistence(t *testing.T) {
 
 	// Toggle whole word with Alt+W
 	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'w', Modifiers: term.ModAlt})
-	
+
 	// Wait for search to re-execute
 	waitForSearch(ui)
 
@@ -276,7 +276,7 @@ func TestWholeWordPersistence(t *testing.T) {
 	for _, r := range "cat" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
-	
+
 	// Wait for search
 	waitForSearch(ui)
 
