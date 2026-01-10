@@ -51,6 +51,7 @@ type SearchColors struct {
 	MatchBg        term.Color // Search match background
 	CurrentMatchFg term.Color // Current match foreground
 	CurrentMatchBg term.Color // Current match background
+	ErrorBg        term.Color // Status bar background when no matches found
 }
 
 // StatusColors defines colors for the status bar

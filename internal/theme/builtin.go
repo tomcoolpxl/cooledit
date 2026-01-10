@@ -85,6 +85,7 @@ func defaultTheme() *Theme {
 			MatchBg:        term.ColorDefault,
 			CurrentMatchFg: term.ColorDefault,
 			CurrentMatchBg: term.ColorDefault,
+			ErrorBg:        term.ColorRed,
 		},
 		Status: StatusColors{
 			Fg:         term.ColorDefault,
@@ -164,6 +165,7 @@ func darkTheme() *Theme {
 			MatchBg:        "#A8FF60",
 			CurrentMatchFg: "#000000",
 			CurrentMatchBg: "#FFD700",
+			ErrorBg:        "#5C2020",
 		},
 		Status: StatusColors{
 			Fg:         "#FFFFFF",
@@ -243,6 +245,7 @@ func lightTheme() *Theme {
 			MatchBg:        "#FFFF00",
 			CurrentMatchFg: "#000000",
 			CurrentMatchBg: "#FFA500",
+			ErrorBg:        "#E51400",
 		},
 		Status: StatusColors{
 			Fg:         "#FFFFFF",
@@ -322,6 +325,7 @@ func monokaiTheme() *Theme {
 			MatchBg:        "#E6DB74",
 			CurrentMatchFg: "#272822",
 			CurrentMatchBg: "#FD971F",
+			ErrorBg:        "#6E2020",
 		},
 		Status: StatusColors{
 			Fg:         "#F8F8F2",
@@ -401,6 +405,7 @@ func solarizedDarkTheme() *Theme {
 			MatchBg:        "#B58900",
 			CurrentMatchFg: "#002B36",
 			CurrentMatchBg: "#CB4B16",
+			ErrorBg:        "#6E2020",
 		},
 		Status: StatusColors{
 			Fg:         "#93A1A1",
@@ -480,6 +485,7 @@ func solarizedLightTheme() *Theme {
 			MatchBg:        "#B58900",
 			CurrentMatchFg: "#FDF6E3",
 			CurrentMatchBg: "#CB4B16",
+			ErrorBg:        "#DC322F",
 		},
 		Status: StatusColors{
 			Fg:         "#586E75",
@@ -559,6 +565,7 @@ func gruvboxDarkTheme() *Theme {
 			MatchBg:        "#FABD2F",
 			CurrentMatchFg: "#282828",
 			CurrentMatchBg: "#FE8019",
+			ErrorBg:        "#9D0006",
 		},
 		Status: StatusColors{
 			Fg:         "#EBDBB2",
@@ -638,6 +645,7 @@ func gruvboxLightTheme() *Theme {
 			MatchBg:        "#D79921",
 			CurrentMatchFg: "#FBF1C7",
 			CurrentMatchBg: "#D65D0E",
+			ErrorBg:        "#9D0006",
 		},
 		Status: StatusColors{
 			Fg:         "#3C3836",
@@ -717,6 +725,7 @@ func draculaTheme() *Theme {
 			MatchBg:        "#F1FA8C",
 			CurrentMatchFg: "#282A36",
 			CurrentMatchBg: "#FFB86C",
+			ErrorBg:        "#FF5555",
 		},
 		Status: StatusColors{
 			Fg:         "#F8F8F2",
@@ -796,6 +805,7 @@ func nordTheme() *Theme {
 			MatchBg:        "#EBCB8B",
 			CurrentMatchFg: "#2E3440",
 			CurrentMatchBg: "#D08770",
+			ErrorBg:        "#BF616A",
 		},
 		Status: StatusColors{
 			Fg:         "#ECEFF4",
@@ -875,6 +885,7 @@ func dosTheme() *Theme {
 			MatchBg:        "#FFFF00",
 			CurrentMatchFg: "#FFFFFF",
 			CurrentMatchBg: "#00AA00",
+			ErrorBg:        "#AA0000",
 		},
 		Status: StatusColors{
 			Fg:         "#000000",
@@ -954,6 +965,7 @@ func ibmGreenTheme() *Theme {
 			MatchBg:        "#00FF00",
 			CurrentMatchFg: "#000000",
 			CurrentMatchBg: "#00DD00",
+			ErrorBg:        "#330000",
 		},
 		Status: StatusColors{
 			Fg:         "#00FF00",
@@ -1033,6 +1045,7 @@ func ibmAmberTheme() *Theme {
 			MatchBg:        "#FFAA00",
 			CurrentMatchFg: "#000000",
 			CurrentMatchBg: "#DD9900",
+			ErrorBg:        "#330000",
 		},
 		Status: StatusColors{
 			Fg:         "#FFAA00",

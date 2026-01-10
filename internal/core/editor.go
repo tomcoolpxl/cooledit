@@ -864,6 +864,11 @@ func (e *Editor) Modified() bool {
 	return !e.undo.IsSaved()
 }
 
+// SearchState returns a pointer to the editor's search state
+func (e *Editor) SearchState() *SearchState {
+	return &e.search
+}
+
 func (e *Editor) EnsureVisible(w, h int) {
 	if w < 1 {
 		w = 1

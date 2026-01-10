@@ -458,7 +458,12 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 				style = *syntaxStyle
 			}
 
-			// Apply bracket matching highlight (overrides syntax)
+			// Apply search match highlighting (overrides syntax)
+			if searchStyle := u.getSearchMatchStyle(docY, runeIdx); searchStyle != nil {
+				style = *searchStyle
+			}
+
+			// Apply bracket matching highlight (overrides search)
 			if bracketStyle := u.getBracketStyle(docY, runeIdx); bracketStyle != nil {
 				style = *bracketStyle
 			}
@@ -693,7 +698,12 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				}
 			}
 
-			// Apply bracket matching highlight (overrides syntax)
+			// Apply search match highlighting (overrides syntax)
+			if searchStyle := u.getSearchMatchStyle(docY, runeIdx); searchStyle != nil {
+				style = *searchStyle
+			}
+
+			// Apply bracket matching highlight (overrides search)
 			if bracketStyle := u.getBracketStyle(docY, runeIdx); bracketStyle != nil {
 				style = *bracketStyle
 			}
@@ -764,6 +774,203 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	}
 }
 
+// drawSearchStatus renders an enhanced status bar for ModeSearch (unified incremental search mode).
+// Shows: search query, match count, current match index, case sensitivity, shortcuts
+// Format: Find: query | Match 3 of 15 | Match Case | Alt+C Alt+W | F3 R Esc | Ln 42, Col 8
+func (u *UI) drawSearchStatus(rect Rect, style term.Style) {
+	// Background
+	for x := 0; x < rect.W; x++ {
+		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
+	}
+
+	// Get search session info
+	searchState := u.editor.SearchState()
+	session := searchState.Session
+
+	query := string(u.searchQuery)
+	if query == "" {
+		query = "..."
+	}
+
+	// Build left section: "Find: query | Match X of Y | Match Case"
+	left := fmt.Sprintf("Find: %s", query)
+
+	// Add match count if we have a session
+	if session != nil && len(session.Matches) > 0 {
+		currentIdx := session.CurrentIndex + 1 // 1-based for display
+		totalMatches := len(session.Matches)
+		left += fmt.Sprintf(" | Match %d of %d", currentIdx, totalMatches)
+	} else if session != nil && session.Query != "" && len(session.Matches) == 0 {
+		left += " | No matches"
+	}
+
+	// Add case sensitivity indicator
+	if searchState != nil && searchState.CaseSensitive {
+		left += " | Match Case"
+	} else {
+		left += " | Ignore Case"
+	}
+
+	// Build right section: cursor position
+	cy, cx := u.editor.Cursor()
+	fs := u.editor.File()
+	eol := "LF"
+	if fs.EOL == "\r\n" {
+		eol = "CRLF"
+	}
+	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
+
+	// Priority 1: Draw right section
+	startRight := rect.W - len(right)
+	if startRight < 0 {
+		startRight = 0
+	}
+	for i, r := range right {
+		x := startRight + i
+		if x >= 0 && x < rect.W {
+			u.screen.SetCell(rect.X+x, rect.Y, r, style)
+		}
+	}
+
+	// Priority 2: Draw left section (truncate if needed)
+	maxLeft := startRight - 1
+	if maxLeft < 0 {
+		maxLeft = 0
+	}
+	leftEnd := len(left)
+	if leftEnd > maxLeft {
+		leftEnd = maxLeft
+	}
+	for i, r := range left {
+		if i >= leftEnd {
+			break
+		}
+		u.screen.SetCell(rect.X+i, rect.Y, r, style)
+	}
+
+	// Priority 3: Draw shortcuts in center if space allows
+	shortcuts := "Alt+C:Case  Alt+W:Word  F3:Next  R:Replace  Esc:Exit"
+	availStart := leftEnd + 2
+	availEnd := startRight - 2
+	availWidth := availEnd - availStart
+
+	if availWidth > len(shortcuts) {
+		// Center the shortcuts
+		centerX := availStart + (availWidth-len(shortcuts))/2
+		for i, r := range shortcuts {
+			x := centerX + i
+			if x >= availStart && x < availEnd {
+				u.screen.SetCell(rect.X+x, rect.Y, r, style)
+			}
+		}
+	} else if availWidth > 20 {
+		// Abbreviated shortcuts for medium screens
+		shortcutsAbbr := "Alt+C  Alt+W  F3  R  Esc"
+		centerX := availStart + (availWidth-len(shortcutsAbbr))/2
+		for i, r := range shortcutsAbbr {
+			x := centerX + i
+			if x >= availStart && x < availEnd {
+				u.screen.SetCell(rect.X+x, rect.Y, r, style)
+			}
+		}
+	}
+}
+
+// drawFindReplaceStatus renders an enhanced status bar for ModeFindReplace mode.
+// Shows: match info, current match position, available actions
+// Format: Match 3 of 15 | Match Case | R:Replace N:Next P:Prev A:All Q:Quit | Ln 42, Col 8
+func (u *UI) drawFindReplaceStatus(rect Rect, style term.Style) {
+	// Background
+	for x := 0; x < rect.W; x++ {
+		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
+	}
+
+	// Get search session info
+	searchState := u.editor.SearchState()
+	session := searchState.Session
+
+	// Build left section: match info
+	left := ""
+	if session != nil && len(session.Matches) > 0 {
+		currentIdx := session.CurrentIndex + 1 // 1-based for display
+		totalMatches := len(session.Matches)
+		left = fmt.Sprintf("Match %d of %d", currentIdx, totalMatches)
+
+		// Add case sensitivity indicator
+		if searchState.CaseSensitive {
+			left += " | Match Case"
+		} else {
+			left += " | Ignore Case"
+		}
+	} else {
+		left = "No matches"
+	}
+
+	// Build right section: cursor position
+	cy, cx := u.editor.Cursor()
+	fs := u.editor.File()
+	eol := "LF"
+	if fs.EOL == "\r\n" {
+		eol = "CRLF"
+	}
+	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
+
+	// Priority 1: Draw right section
+	startRight := rect.W - len(right)
+	if startRight < 0 {
+		startRight = 0
+	}
+	for i, r := range right {
+		x := startRight + i
+		if x >= 0 && x < rect.W {
+			u.screen.SetCell(rect.X+x, rect.Y, r, style)
+		}
+	}
+
+	// Priority 2: Draw left section (truncate if needed)
+	maxLeft := startRight - 1
+	if maxLeft < 0 {
+		maxLeft = 0
+	}
+	leftEnd := len(left)
+	if leftEnd > maxLeft {
+		leftEnd = maxLeft
+	}
+	for i, r := range left {
+		if i >= leftEnd {
+			break
+		}
+		u.screen.SetCell(rect.X+i, rect.Y, r, style)
+	}
+
+	// Priority 3: Draw action shortcuts in center if space allows
+	shortcuts := "R:Replace  N:Next  P:Prev  A:All  Q:Quit"
+	availStart := leftEnd + 2
+	availEnd := startRight - 2
+	availWidth := availEnd - availStart
+
+	if availWidth > len(shortcuts) {
+		// Center the shortcuts
+		centerX := availStart + (availWidth-len(shortcuts))/2
+		for i, r := range shortcuts {
+			x := centerX + i
+			if x >= availStart && x < availEnd {
+				u.screen.SetCell(rect.X+x, rect.Y, r, style)
+			}
+		}
+	} else if availWidth > 15 {
+		// Abbreviated shortcuts for medium screens
+		shortcutsAbbr := "R N P A Q"
+		centerX := availStart + (availWidth-len(shortcutsAbbr))/2
+		for i, r := range shortcutsAbbr {
+			x := centerX + i
+			if x >= availStart && x < availEnd {
+				u.screen.SetCell(rect.X+x, rect.Y, r, style)
+			}
+		}
+	}
+}
+
 func (u *UI) drawStatusBar() {
 	rect := u.layout.StatusBar
 	if rect.H < 1 {
@@ -793,22 +1000,28 @@ func (u *UI) drawStatusBar() {
 		return
 	}
 
-	var left string
-
-	// Special status bar for find/replace mode
-	if u.mode == ModeFindReplace {
-		left = "[R]eplace  [N]ext  [P]rev  [A]ll  [Q]uit"
-	} else {
-		fs := u.editor.File()
-		mod := ""
-		if u.editor.Modified() {
-			mod = "*"
-		}
-		left = fmt.Sprintf("%s%s", fs.BaseName, mod)
+	// Enhanced status bar for search mode (unified incremental search)
+	if u.mode == ModeSearch {
+		u.drawSearchStatus(rect, style)
+		return
 	}
 
-	cy, cx := u.editor.Cursor()
+	// Enhanced status bar for find/replace mode
+	if u.mode == ModeFindReplace {
+		u.drawFindReplaceStatus(rect, style)
+		return
+	}
+
+	// Normal mode status bar
+	var left string
 	fs := u.editor.File()
+	mod := ""
+	if u.editor.Modified() {
+		mod = "*"
+	}
+	left = fmt.Sprintf("%s%s", fs.BaseName, mod)
+
+	cy, cx := u.editor.Cursor()
 	eol := "LF"
 	if fs.EOL == "\r\n" {
 		eol = "CRLF"
@@ -1356,4 +1569,54 @@ func (u *UI) getBracketStyle(docY, runeIdx int) *term.Style {
 		Foreground: fg,
 		Background: bg,
 	}
+}
+
+// getSearchMatchStyle returns the style for search match highlighting at the given position.
+// Returns nil if the position is not in a search match.
+// Distinguishes between current match and other matches.
+func (u *UI) getSearchMatchStyle(docY, runeIdx int) *term.Style {
+	// Only apply search highlighting in search or find/replace modes
+	if u.mode != ModeSearch && u.mode != ModeFindReplace {
+		return nil
+	}
+
+	// Get active search session from editor
+	searchState := u.editor.SearchState()
+	if searchState == nil || searchState.Session == nil {
+		return nil
+	}
+
+	session := searchState.Session
+	if len(session.Matches) == 0 {
+		return nil
+	}
+
+	// Check if this position is in any search match
+	for i, match := range session.Matches {
+		if match.Line != docY {
+			continue
+		}
+
+		// Check if runeIdx is within this match [Col, Col+Length)
+		if runeIdx >= match.Col && runeIdx < match.Col+match.Length {
+			// Determine if this is the current match
+			isCurrentMatch := (session.CurrentIndex == i)
+
+			var fg, bg term.Color
+			if isCurrentMatch {
+				fg = u.theme.Search.CurrentMatchFg
+				bg = u.theme.Search.CurrentMatchBg
+			} else {
+				fg = u.theme.Search.MatchFg
+				bg = u.theme.Search.MatchBg
+			}
+
+			return &term.Style{
+				Foreground: fg,
+				Background: bg,
+			}
+		}
+	}
+
+	return nil
 }
