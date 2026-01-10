@@ -60,10 +60,10 @@ type SearchState struct {
 //  4. Destroyed via EndSearchSession()
 //
 // The session supports:
-//  - Real-time match finding (all matches are pre-computed)
-//  - Current match tracking (CurrentIndex points to active match)
-//  - Performance limits (LimitReached indicates if maxMatches was hit)
-//  - Replace operations (LastReplaceStr tracks replacement text)
+//   - Real-time match finding (all matches are pre-computed)
+//   - Current match tracking (CurrentIndex points to active match)
+//   - Performance limits (LimitReached indicates if maxMatches was hit)
+//   - Replace operations (LastReplaceStr tracks replacement text)
 type SearchSession struct {
 	Query          string  // Current search term
 	CaseSensitive  bool    // Case sensitivity for this search

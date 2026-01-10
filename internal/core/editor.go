@@ -1108,9 +1108,9 @@ func (e *Editor) StartSearchSession(query string) {
 // session-level preferences (CaseSensitive, WholeWord) which will be used for the next search.
 //
 // This method is called when:
-//  - User exits search mode (Esc, Q)
-//  - User loads a new file
-//  - User creates a new file
+//   - User exits search mode (Esc, Q)
+//   - User loads a new file
+//   - User creates a new file
 //
 // After calling this method, HasSearchSession() will return false and search highlights
 // will no longer be displayed in the UI.

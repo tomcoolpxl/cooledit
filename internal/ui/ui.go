@@ -30,10 +30,10 @@ import (
 // similar to command-line history navigation.
 //
 // Features:
-//  - Stores up to maxSize queries (typically 20)
-//  - Automatically deduplicates consecutive identical queries
-//  - Supports bidirectional navigation (up/down)
-//  - Preserves current query when navigating (tempQuery)
+//   - Stores up to maxSize queries (typically 20)
+//   - Automatically deduplicates consecutive identical queries
+//   - Supports bidirectional navigation (up/down)
+//   - Preserves current query when navigating (tempQuery)
 //
 // Usage pattern:
 //  1. User types query and presses Enter
