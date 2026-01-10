@@ -16,6 +16,8 @@
 package tcell
 
 import (
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -51,9 +53,10 @@ func (s *Screen) Init() error {
 
 func (s *Screen) Fini() {
 	if s.screen != nil {
-		// Restore to the "default" theme's cursor settings
-		// Default theme uses green (#00FF00) block cursor
-		s.SetCursorShape(term.CursorBlock, term.Color("#00FF00"))
+		// Restore cursor to terminal defaults using escape sequences
+		// DECSCUSR 0 = default cursor shape, OSC 112 = default cursor color
+		fmt.Fprint(os.Stdout, "\x1b[0 q")   // Reset cursor shape
+		fmt.Fprint(os.Stdout, "\x1b]112\007") // Reset cursor color
 		s.screen.Fini()
 	}
 }
