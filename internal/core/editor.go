@@ -52,7 +52,8 @@ type Editor struct {
 	selectionActive bool
 	selectionAnchor struct{ Line, Col int }
 
-	TabWidth int // Number of spaces per tab (default: 4)
+	TabWidth       int // Number of spaces per tab (default: 4)
+	bracketMatcher *BracketMatcher
 }
 
 type Result struct {
@@ -97,8 +98,9 @@ func NewEditor(cb Clipboard) *Editor {
 			EOL:      "\n",
 			Encoding: "UTF-8",
 		},
-		undo:      NewUndoStack(),
-		clipboard: cb,
+		undo:           NewUndoStack(),
+		clipboard:      cb,
+		bracketMatcher: NewBracketMatcher(),
 	}
 }
 
@@ -491,6 +493,29 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	case CmdClick:
 		e.buf.SetCursor(c.Line, c.Col)
 
+	case CmdJumpToMatchingBracket:
+		line, col := e.buf.Cursor()
+		lines := e.buf.Lines()
+		
+		if line < 0 || line >= len(lines) || col < 0 || col >= len(lines[line]) {
+			return Result{Message: "Not on a bracket"}
+		}
+		
+		ch := lines[line][col]
+		if !e.bracketMatcher.IsBracket(ch) {
+			return Result{Message: "Not on a bracket"}
+		}
+		
+		// Find matching bracket (using nil skipFunc for simplicity)
+		matchLine, matchCol, found := e.bracketMatcher.FindMatch(lines, line, col, nil)
+		if !found {
+			return Result{Message: "No matching bracket found"}
+		}
+		
+		e.ClearSelection()
+		e.buf.SetCursor(matchLine, matchCol)
+		return Result{}
+
 	case CmdInsertRune:
 		if e.selectionActive {
 			delAction := e.deleteSelection()
@@ -853,11 +878,11 @@ func isWordChar(r rune) bool {
 func (e *Editor) moveWordLeft() {
 	lines := e.buf.Lines()
 	line, col := e.buf.Cursor()
-	
+
 	if len(lines) == 0 {
 		return
 	}
-	
+
 	// Move left one position first
 	if col > 0 {
 		col--
@@ -869,7 +894,7 @@ func (e *Editor) moveWordLeft() {
 		// Already at start of file
 		return
 	}
-	
+
 	// Skip whitespace
 	for line >= 0 && col >= 0 {
 		if col >= len(lines[line]) {
@@ -897,7 +922,7 @@ func (e *Editor) moveWordLeft() {
 		}
 		col--
 	}
-	
+
 	// Move to start of word
 	for line >= 0 && col > 0 {
 		if col-1 < 0 {
@@ -908,14 +933,14 @@ func (e *Editor) moveWordLeft() {
 		}
 		col--
 	}
-	
+
 	if line < 0 {
 		line = 0
 	}
 	if col < 0 {
 		col = 0
 	}
-	
+
 	e.buf.SetCursor(line, col)
 }
 
@@ -923,11 +948,11 @@ func (e *Editor) moveWordLeft() {
 func (e *Editor) moveWordRight() {
 	lines := e.buf.Lines()
 	line, col := e.buf.Cursor()
-	
+
 	if len(lines) == 0 {
 		return
 	}
-	
+
 	// Skip current word
 	for line < len(lines) && col < len(lines[line]) {
 		if !isWordChar(lines[line][col]) {
@@ -935,7 +960,7 @@ func (e *Editor) moveWordRight() {
 		}
 		col++
 	}
-	
+
 	// Skip whitespace and punctuation
 	for line < len(lines) {
 		for col < len(lines[line]) {
@@ -952,7 +977,7 @@ func (e *Editor) moveWordRight() {
 		}
 		col = 0
 	}
-	
+
 	// Reached end of file
 	if line >= len(lines) {
 		line = len(lines) - 1

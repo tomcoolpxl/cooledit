@@ -966,6 +966,7 @@ func (u *UI) drawHelp(w, h int) {
 		"  NAVIGATION",
 		"    Arrows        Move cursor",
 		"    Ctrl+Arrows   Jump word",
+		"    Ctrl+B        Jump bracket",
 		"    Home/End      Line start/end",
 		"    Ctrl+Home     File start",
 		"    Ctrl+End      File end",

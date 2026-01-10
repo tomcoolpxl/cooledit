@@ -176,3 +176,7 @@ type CmdReplaceAll struct {
 }
 
 func (CmdReplaceAll) isCommand() {}
+
+type CmdJumpToMatchingBracket struct{}
+
+func (CmdJumpToMatchingBracket) isCommand() {}

@@ -546,6 +546,9 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.enterGoToLine()
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == 'b' && (e.Modifiers&term.ModCtrl) != 0:
+		return core.CmdJumpToMatchingBracket{}
+
 	case e.Key == term.KeyF3:
 		if e.Modifiers == term.ModShift {
 			return core.CmdFindPrev{}
