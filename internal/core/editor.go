@@ -1013,10 +1013,10 @@ func (e *Editor) StartSearchSession(query string) {
 		e.search.Session.CaseSensitive = e.search.CaseSensitive
 		e.search.Session.WholeWord = e.search.WholeWord
 	}
-	
+
 	// Update matches (limit to 1000 for performance)
 	e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
-	
+
 	// Store the last query
 	e.search.LastQuery = query
 }

@@ -27,10 +27,10 @@ import (
 
 // SearchHistory maintains a history of search queries for navigation.
 type SearchHistory struct {
-	queries  []string // Recent search queries (most recent last)
-	index    int      // Current position in history (-1 if not navigating)
-	maxSize  int      // Maximum number of queries to remember
-	tempQuery string  // Temporary storage for current query when navigating
+	queries   []string // Recent search queries (most recent last)
+	index     int      // Current position in history (-1 if not navigating)
+	maxSize   int      // Maximum number of queries to remember
+	tempQuery string   // Temporary storage for current query when navigating
 }
 
 // NewSearchHistory creates a new search history with the given max size.
@@ -66,20 +66,20 @@ func (h *SearchHistory) Prev(currentQuery string) string {
 	if len(h.queries) == 0 {
 		return currentQuery
 	}
-	
+
 	// First time navigating up? Store current query and start from end
 	if h.index == -1 {
 		h.tempQuery = currentQuery
 		h.index = len(h.queries) - 1
 		return h.queries[h.index]
 	}
-	
+
 	// Already navigating - move backwards if possible
 	if h.index > 0 {
 		h.index--
 		return h.queries[h.index]
 	}
-	
+
 	// Already at the beginning
 	return h.queries[h.index]
 }
@@ -90,14 +90,14 @@ func (h *SearchHistory) Next(currentQuery string) string {
 		// Not currently navigating
 		return currentQuery
 	}
-	
+
 	h.index++
 	if h.index >= len(h.queries) {
 		// Past the end - return to temp query and stop navigating
 		h.index = -1
 		return h.tempQuery
 	}
-	
+
 	return h.queries[h.index]
 }
 
@@ -165,11 +165,11 @@ type UI struct {
 	vimCommand []rune
 
 	// Unified search mode (ModeSearch)
-	searchQuery           []rune     // Current search query being typed
-	searchHistory         *SearchHistory // Search history for up/down navigation
-	searchDebounceTimer   *time.Timer    // Timer for search debouncing
-	searchIsSearching     bool           // True when search is executing (debouncing)
-	lastSearchQuery       string         // Last executed search query
+	searchQuery         []rune         // Current search query being typed
+	searchHistory       *SearchHistory // Search history for up/down navigation
+	searchDebounceTimer *time.Timer    // Timer for search debouncing
+	searchIsSearching   bool           // True when search is executing (debouncing)
+	lastSearchQuery     string         // Last executed search query
 
 	// Features
 	showLineNumbers bool
@@ -835,7 +835,7 @@ func (u *UI) enterSearch() {
 		u.searchDebounceTimer.Stop()
 		u.searchDebounceTimer = nil
 	}
-	
+
 	// Pre-fill from selection if available
 	if u.editor.HasSelection() {
 		sl, sc, el, ec := u.editor.GetSelectionRange()
@@ -855,14 +855,14 @@ func (u *UI) enterSearch() {
 		// Start with empty query
 		u.searchQuery = nil
 	}
-	
+
 	// Reset search history navigation
 	u.searchHistory.Reset()
-	
+
 	// Enter search mode
 	u.mode = ModeSearch
 	u.searchIsSearching = false
-	
+
 	// Perform initial search if we have a query
 	if len(u.searchQuery) > 0 {
 		u.performSearch()
@@ -877,25 +877,25 @@ func (u *UI) exitSearch() {
 		u.searchDebounceTimer.Stop()
 		u.searchDebounceTimer = nil
 	}
-	
+
 	// Save the search query to history
 	if len(u.searchQuery) > 0 {
 		queryStr := string(u.searchQuery)
 		u.searchHistory.Add(queryStr)
 		u.lastSearchQuery = queryStr
 	}
-	
+
 	// End the search session in the editor
 	u.editor.EndSearchSession()
-	
+
 	// Clear selection if any
 	u.editor.ClearSelection()
-	
+
 	// Reset state
 	u.searchQuery = nil
 	u.searchIsSearching = false
 	u.searchHistory.Reset()
-	
+
 	// Return to normal mode
 	u.mode = ModeNormal
 }
@@ -907,13 +907,13 @@ func (u *UI) performSearch() {
 	if u.searchDebounceTimer != nil {
 		u.searchDebounceTimer.Stop()
 	}
-	
+
 	// Show "Searching..." indicator immediately if query is long
 	if len(u.searchQuery) > 20 {
 		u.searchIsSearching = true
 		u.screen.PushEvent(term.RedrawEvent{})
 	}
-	
+
 	// Debounce: wait 150ms after last keystroke
 	u.searchDebounceTimer = time.AfterFunc(150*time.Millisecond, func() {
 		u.doSearch()
@@ -923,7 +923,7 @@ func (u *UI) performSearch() {
 // doSearch performs the actual search without debouncing.
 func (u *UI) doSearch() {
 	u.searchIsSearching = false
-	
+
 	query := string(u.searchQuery)
 	if query == "" {
 		// Empty query - clear search session
@@ -931,17 +931,17 @@ func (u *UI) doSearch() {
 		u.screen.PushEvent(term.RedrawEvent{})
 		return
 	}
-	
+
 	// Start or update the search session
 	u.editor.StartSearchSession(query)
-	
+
 	// Get the session
 	session := u.editor.GetSearchSession()
 	if session == nil {
 		u.screen.PushEvent(term.RedrawEvent{})
 		return
 	}
-	
+
 	// If we have matches, move to the first one
 	if session.HasMatches() {
 		match := session.GetCurrentMatch()
@@ -952,7 +952,7 @@ func (u *UI) doSearch() {
 			u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
 		}
 	}
-	
+
 	// Trigger redraw
 	u.screen.PushEvent(term.RedrawEvent{})
 }
@@ -963,7 +963,7 @@ func (u *UI) nextSearchMatch() {
 	if session == nil || !session.HasMatches() {
 		return
 	}
-	
+
 	session.NextMatch()
 	match := session.GetCurrentMatch()
 	if match != nil {
@@ -979,7 +979,7 @@ func (u *UI) prevSearchMatch() {
 	if session == nil || !session.HasMatches() {
 		return
 	}
-	
+
 	session.PrevMatch()
 	match := session.GetCurrentMatch()
 	if match != nil {
@@ -1014,12 +1014,12 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 		// Exit search mode
 		u.exitSearch()
 		return true
-		
+
 	case term.KeyEnter:
 		// Move to next match (same as 'n' or F3)
 		u.nextSearchMatch()
 		return true
-		
+
 	case term.KeyBackspace:
 		// Remove character from search query
 		if len(u.searchQuery) > 0 {
@@ -1030,17 +1030,17 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 			u.exitSearch()
 		}
 		return true
-		
+
 	case term.KeyUp:
 		// Navigate search history backwards
 		u.searchHistoryPrev()
 		return true
-		
+
 	case term.KeyDown:
 		// Navigate search history forwards
 		u.searchHistoryNext()
 		return true
-		
+
 	case term.KeyF3:
 		// Next/previous match
 		if e.Modifiers == term.ModShift {
@@ -1049,12 +1049,12 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 			u.nextSearchMatch()
 		}
 		return true
-		
+
 	case term.KeyF1:
 		// Show search help overlay
 		u.mode = ModeHelp
 		return true
-		
+
 	case term.KeyRune:
 		if e.Modifiers == term.ModAlt {
 			switch e.Rune {
@@ -1144,45 +1144,45 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 				return true
 			}
 		}
-	
+
 	case term.KeyDelete:
 		// Delete key - consume but don't do anything special
 		return true
-		
+
 	case term.KeyHome:
 		// Home key - consume but don't do anything special
 		return true
-		
+
 	case term.KeyEnd:
 		// End key - consume but don't do anything special
 		return true
-		
+
 	case term.KeyLeft:
 		// Left arrow - consume but don't do anything special
 		return true
-		
+
 	case term.KeyRight:
 		// Right arrow - consume but don't do anything special
 		return true
-		
+
 	case term.KeyPageUp:
 		// Page up - consume but don't do anything special
 		return true
-		
+
 	case term.KeyPageDown:
 		// Page down - consume but don't do anything special
 		return true
-		
+
 	case term.KeyTab:
 		// Tab - consume but don't do anything special
 		return true
-	
+
 	default:
 		// CRITICAL: Consume ALL other keys to prevent leakage
 		// This includes any key type we didn't explicitly handle above
 		return true
 	}
-	
+
 	// NOTE: This line should never be reached due to default case above,
 	// but kept as final safety net
 	return true
