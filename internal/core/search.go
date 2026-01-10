@@ -26,7 +26,19 @@ const (
 
 type SearchState struct {
 	LastQuery     string
-	CaseSensitive bool // Session-level case sensitivity preference
+	CaseSensitive bool           // Session-level case sensitivity preference
+	WholeWord     bool           // Session-level whole word preference
+	Session       *SearchSession // Active search session (nil when not searching)
+}
+
+// SearchSession represents an active search session with real-time results.
+type SearchSession struct {
+	Query          string  // Current search term
+	CaseSensitive  bool    // Case sensitivity for this search
+	WholeWord      bool    // Whole word matching for this search
+	Matches        []Match // All match positions in current buffer
+	CurrentIndex   int     // Index of currently selected match (-1 if none)
+	LastReplaceStr string  // Last replacement string used
 }
 
 func (s *SearchState) SetQuery(q string) {
@@ -189,4 +201,64 @@ func FindAllMatches(lines [][]rune, query string, caseSensitive bool, maxMatches
 	}
 
 	return matches
+}
+
+// NewSearchSession creates a new search session with the given query and options.
+func NewSearchSession(query string, caseSensitive bool, wholeWord bool) *SearchSession {
+	return &SearchSession{
+		Query:         query,
+		CaseSensitive: caseSensitive,
+		WholeWord:     wholeWord,
+		Matches:       nil,
+		CurrentIndex:  -1,
+	}
+}
+
+// UpdateMatches updates the matches in the search session.
+// This should be called when the search query changes or when the buffer changes.
+func (s *SearchSession) UpdateMatches(lines [][]rune, maxMatches int) {
+	s.Matches = FindAllMatches(lines, s.Query, s.CaseSensitive, maxMatches)
+	// Reset to first match if we have any matches
+	if len(s.Matches) > 0 {
+		s.CurrentIndex = 0
+	} else {
+		s.CurrentIndex = -1
+	}
+}
+
+// HasMatches returns true if there are any matches.
+func (s *SearchSession) HasMatches() bool {
+	return len(s.Matches) > 0
+}
+
+// GetCurrentMatch returns the current match, or nil if no matches.
+func (s *SearchSession) GetCurrentMatch() *Match {
+	if s.CurrentIndex >= 0 && s.CurrentIndex < len(s.Matches) {
+		return &s.Matches[s.CurrentIndex]
+	}
+	return nil
+}
+
+// NextMatch moves to the next match. Wraps around to the first match.
+func (s *SearchSession) NextMatch() {
+	if len(s.Matches) == 0 {
+		return
+	}
+	s.CurrentIndex = (s.CurrentIndex + 1) % len(s.Matches)
+}
+
+// PrevMatch moves to the previous match. Wraps around to the last match.
+func (s *SearchSession) PrevMatch() {
+	if len(s.Matches) == 0 {
+		return
+	}
+	s.CurrentIndex--
+	if s.CurrentIndex < 0 {
+		s.CurrentIndex = len(s.Matches) - 1
+	}
+}
+
+// MatchCount returns the total number of matches.
+func (s *SearchSession) MatchCount() int {
+	return len(s.Matches)
 }

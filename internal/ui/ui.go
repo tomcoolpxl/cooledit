@@ -25,6 +25,88 @@ import (
 	"cooledit/internal/theme"
 )
 
+// SearchHistory maintains a history of search queries for navigation.
+type SearchHistory struct {
+	queries  []string // Recent search queries (most recent last)
+	index    int      // Current position in history (-1 if not navigating)
+	maxSize  int      // Maximum number of queries to remember
+	tempQuery string  // Temporary storage for current query when navigating
+}
+
+// NewSearchHistory creates a new search history with the given max size.
+func NewSearchHistory(maxSize int) *SearchHistory {
+	return &SearchHistory{
+		queries: make([]string, 0),
+		index:   -1,
+		maxSize: maxSize,
+	}
+}
+
+// Add adds a query to the history. Ignores empty queries and duplicates of the last query.
+func (h *SearchHistory) Add(query string) {
+	if query == "" {
+		return
+	}
+	// Don't add if it's the same as the last query
+	if len(h.queries) > 0 && h.queries[len(h.queries)-1] == query {
+		return
+	}
+	h.queries = append(h.queries, query)
+	// Trim if over limit
+	if len(h.queries) > h.maxSize {
+		h.queries = h.queries[1:]
+	}
+	// Reset navigation
+	h.index = -1
+}
+
+// Prev returns the previous query in history, or empty string if at the beginning.
+// On first call, stores the current query temporarily.
+func (h *SearchHistory) Prev(currentQuery string) string {
+	if len(h.queries) == 0 {
+		return currentQuery
+	}
+	
+	// First time navigating up? Store current query and start from end
+	if h.index == -1 {
+		h.tempQuery = currentQuery
+		h.index = len(h.queries) - 1
+		return h.queries[h.index]
+	}
+	
+	// Already navigating - move backwards if possible
+	if h.index > 0 {
+		h.index--
+		return h.queries[h.index]
+	}
+	
+	// Already at the beginning
+	return h.queries[h.index]
+}
+
+// Next returns the next query in history, or the original query if at the end.
+func (h *SearchHistory) Next(currentQuery string) string {
+	if h.index == -1 {
+		// Not currently navigating
+		return currentQuery
+	}
+	
+	h.index++
+	if h.index >= len(h.queries) {
+		// Past the end - return to temp query and stop navigating
+		h.index = -1
+		return h.tempQuery
+	}
+	
+	return h.queries[h.index]
+}
+
+// Reset stops navigation and clears temporary state.
+func (h *SearchHistory) Reset() {
+	h.index = -1
+	h.tempQuery = ""
+}
+
 type UIMode int
 
 const (
@@ -34,7 +116,8 @@ const (
 	ModeHelp
 	ModeAbout
 	ModeMenu
-	ModeFindReplace
+	ModeFindReplace // Legacy mode, being replaced by ModeSearch
+	ModeSearch      // Unified incremental search mode
 	ModeVimCommand
 )
 
@@ -80,6 +163,13 @@ type UI struct {
 
 	// Vim command mode
 	vimCommand []rune
+
+	// Unified search mode (ModeSearch)
+	searchQuery           []rune     // Current search query being typed
+	searchHistory         *SearchHistory // Search history for up/down navigation
+	searchDebounceTimer   *time.Timer    // Timer for search debouncing
+	searchIsSearching     bool           // True when search is executing (debouncing)
+	lastSearchQuery       string         // Last executed search query
 
 	// Features
 	showLineNumbers bool
@@ -136,6 +226,7 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		config:         cfg,
 		theme:          cfg.GetCurrentTheme(),
 		bracketMatcher: core.NewBracketMatcher(),
+		searchHistory:  NewSearchHistory(20), // Remember last 20 searches
 	}
 
 	// Initialize syntax highlighting
@@ -337,6 +428,12 @@ func (u *UI) Run() error {
 
 			if u.mode == ModeVimCommand {
 				if u.handleVimCommandKey(e) {
+					continue
+				}
+			}
+
+			if u.mode == ModeSearch {
+				if u.handleSearchKey(e) {
 					continue
 				}
 			}
@@ -564,7 +661,8 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return core.CmdRedo{}
 
 	case e.Key == term.KeyRune && e.Rune == 'f' && (e.Modifiers&term.ModCtrl) != 0:
-		u.enterFind()
+		// Enter unified search mode (ModeSearch)
+		u.enterSearch()
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == 'g' && (e.Modifiers&term.ModCtrl) != 0:
@@ -724,6 +822,368 @@ func (u *UI) handleFindReplaceKey(e term.KeyEvent) bool {
 	}
 
 	// NOTE: This line should never be reached due to default cases above,
+	// but kept as final safety net
+	return true
+}
+
+// enterSearch enters the unified search mode (ModeSearch).
+// If text is currently selected, it will be used as the initial search query.
+// Otherwise, the last search query will be used if available.
+func (u *UI) enterSearch() {
+	// Stop any existing debounce timer
+	if u.searchDebounceTimer != nil {
+		u.searchDebounceTimer.Stop()
+		u.searchDebounceTimer = nil
+	}
+	
+	// Pre-fill from selection if available
+	if u.editor.HasSelection() {
+		sl, sc, el, ec := u.editor.GetSelectionRange()
+		// Only pre-fill if selection is on a single line
+		if sl == el {
+			lines := u.editor.Lines()
+			if sl < len(lines) && ec <= len(lines[sl]) {
+				selectedText := lines[sl][sc:ec]
+				u.searchQuery = make([]rune, len(selectedText))
+				copy(u.searchQuery, selectedText)
+			}
+		}
+	} else if u.lastSearchQuery != "" {
+		// Use last search query
+		u.searchQuery = []rune(u.lastSearchQuery)
+	} else {
+		// Start with empty query
+		u.searchQuery = nil
+	}
+	
+	// Reset search history navigation
+	u.searchHistory.Reset()
+	
+	// Enter search mode
+	u.mode = ModeSearch
+	u.searchIsSearching = false
+	
+	// Perform initial search if we have a query
+	if len(u.searchQuery) > 0 {
+		u.performSearch()
+	}
+}
+
+// exitSearch exits the search mode and returns to normal mode.
+// Cleans up the search session and resets state.
+func (u *UI) exitSearch() {
+	// Stop any debounce timer
+	if u.searchDebounceTimer != nil {
+		u.searchDebounceTimer.Stop()
+		u.searchDebounceTimer = nil
+	}
+	
+	// Save the search query to history
+	if len(u.searchQuery) > 0 {
+		queryStr := string(u.searchQuery)
+		u.searchHistory.Add(queryStr)
+		u.lastSearchQuery = queryStr
+	}
+	
+	// End the search session in the editor
+	u.editor.EndSearchSession()
+	
+	// Clear selection if any
+	u.editor.ClearSelection()
+	
+	// Reset state
+	u.searchQuery = nil
+	u.searchIsSearching = false
+	u.searchHistory.Reset()
+	
+	// Return to normal mode
+	u.mode = ModeNormal
+}
+
+// performSearch executes the search with debouncing.
+// This is called whenever the search query changes.
+func (u *UI) performSearch() {
+	// Stop any existing timer
+	if u.searchDebounceTimer != nil {
+		u.searchDebounceTimer.Stop()
+	}
+	
+	// Show "Searching..." indicator immediately if query is long
+	if len(u.searchQuery) > 20 {
+		u.searchIsSearching = true
+		u.screen.PushEvent(term.RedrawEvent{})
+	}
+	
+	// Debounce: wait 150ms after last keystroke
+	u.searchDebounceTimer = time.AfterFunc(150*time.Millisecond, func() {
+		u.doSearch()
+	})
+}
+
+// doSearch performs the actual search without debouncing.
+func (u *UI) doSearch() {
+	u.searchIsSearching = false
+	
+	query := string(u.searchQuery)
+	if query == "" {
+		// Empty query - clear search session
+		u.editor.EndSearchSession()
+		u.screen.PushEvent(term.RedrawEvent{})
+		return
+	}
+	
+	// Start or update the search session
+	u.editor.StartSearchSession(query)
+	
+	// Get the session
+	session := u.editor.GetSearchSession()
+	if session == nil {
+		u.screen.PushEvent(term.RedrawEvent{})
+		return
+	}
+	
+	// If we have matches, move to the first one
+	if session.HasMatches() {
+		match := session.GetCurrentMatch()
+		if match != nil {
+			// Move cursor to the match and select it
+			u.editor.SetSelection(match.Line, match.Col, match.Length)
+			// Make sure the match is visible
+			u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
+		}
+	}
+	
+	// Trigger redraw
+	u.screen.PushEvent(term.RedrawEvent{})
+}
+
+// nextSearchMatch moves to the next search match.
+func (u *UI) nextSearchMatch() {
+	session := u.editor.GetSearchSession()
+	if session == nil || !session.HasMatches() {
+		return
+	}
+	
+	session.NextMatch()
+	match := session.GetCurrentMatch()
+	if match != nil {
+		u.editor.SetSelection(match.Line, match.Col, match.Length)
+		u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
+	}
+	u.screen.PushEvent(term.RedrawEvent{})
+}
+
+// prevSearchMatch moves to the previous search match.
+func (u *UI) prevSearchMatch() {
+	session := u.editor.GetSearchSession()
+	if session == nil || !session.HasMatches() {
+		return
+	}
+	
+	session.PrevMatch()
+	match := session.GetCurrentMatch()
+	if match != nil {
+		u.editor.SetSelection(match.Line, match.Col, match.Length)
+		u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
+	}
+	u.screen.PushEvent(term.RedrawEvent{})
+}
+
+// searchHistoryPrev navigates backwards in search history.
+func (u *UI) searchHistoryPrev() {
+	currentQuery := string(u.searchQuery)
+	prevQuery := u.searchHistory.Prev(currentQuery)
+	u.searchQuery = []rune(prevQuery)
+	u.performSearch()
+}
+
+// searchHistoryNext navigates forwards in search history.
+func (u *UI) searchHistoryNext() {
+	currentQuery := string(u.searchQuery)
+	nextQuery := u.searchHistory.Next(currentQuery)
+	u.searchQuery = []rune(nextQuery)
+	u.performSearch()
+}
+
+// handleSearchKey handles key events in unified search mode (ModeSearch).
+// This function must handle ALL keys to prevent key leakage to the editor.
+// Returns true for all keys to indicate they were handled.
+func (u *UI) handleSearchKey(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyEscape:
+		// Exit search mode
+		u.exitSearch()
+		return true
+		
+	case term.KeyEnter:
+		// Move to next match (same as 'n' or F3)
+		u.nextSearchMatch()
+		return true
+		
+	case term.KeyBackspace:
+		// Remove character from search query
+		if len(u.searchQuery) > 0 {
+			u.searchQuery = u.searchQuery[:len(u.searchQuery)-1]
+			u.performSearch()
+		} else {
+			// Backspace on empty search = exit (intuitive)
+			u.exitSearch()
+		}
+		return true
+		
+	case term.KeyUp:
+		// Navigate search history backwards
+		u.searchHistoryPrev()
+		return true
+		
+	case term.KeyDown:
+		// Navigate search history forwards
+		u.searchHistoryNext()
+		return true
+		
+	case term.KeyF3:
+		// Next/previous match
+		if e.Modifiers == term.ModShift {
+			u.prevSearchMatch()
+		} else {
+			u.nextSearchMatch()
+		}
+		return true
+		
+	case term.KeyF1:
+		// Show search help overlay
+		u.mode = ModeHelp
+		return true
+		
+	case term.KeyRune:
+		if e.Modifiers == term.ModAlt {
+			switch e.Rune {
+			case 'c', 'C':
+				// Toggle case sensitivity (Alt+C matches VS Code)
+				u.editor.ToggleCaseSensitivity()
+				u.performSearch()
+				return true
+			case 'w', 'W':
+				// Toggle whole word matching
+				u.editor.ToggleWholeWord()
+				u.performSearch()
+				return true
+			}
+			// Consume all other Alt combinations
+			return true
+		} else if e.Modifiers == term.ModCtrl {
+			switch e.Rune {
+			case 'v', 'V':
+				// Paste into search (helpful for long patterns)
+				clipboard := &SystemClipboard{}
+				if text, err := clipboard.Get(); err == nil {
+					u.searchQuery = append(u.searchQuery, []rune(text)...)
+					u.performSearch()
+				}
+				return true
+			case 'f', 'F':
+				// Ctrl+F in search mode - do nothing (already in search)
+				return true
+			}
+			// Consume all other Ctrl combinations
+			return true
+		} else {
+			// Handle regular runes
+			switch e.Rune {
+			case 'n', 'N':
+				// Next match (if Shift is held, treat as regular character)
+				if e.Modifiers == term.ModShift {
+					// 'N' - add to search
+					u.searchQuery = append(u.searchQuery, e.Rune)
+					u.performSearch()
+				} else {
+					// 'n' - next match
+					u.nextSearchMatch()
+				}
+				return true
+			case 'p', 'P':
+				// Previous match (if Shift is held, treat as regular character)
+				if e.Modifiers == term.ModShift {
+					// 'P' - add to search
+					u.searchQuery = append(u.searchQuery, e.Rune)
+					u.performSearch()
+				} else {
+					// 'p' - previous match
+					u.prevSearchMatch()
+				}
+				return true
+			case 'r', 'R':
+				// Replace current match - enter replace prompt
+				// TODO: Implement replace prompt integration
+				// For now, just treat as regular character
+				u.searchQuery = append(u.searchQuery, e.Rune)
+				u.performSearch()
+				return true
+			case 'a', 'A':
+				// Replace all - enter replace all prompt
+				// TODO: Implement replace all prompt integration
+				// For now, just treat as regular character
+				u.searchQuery = append(u.searchQuery, e.Rune)
+				u.performSearch()
+				return true
+			case 'q', 'Q':
+				// Exit search (if Shift is held, treat as regular character)
+				if e.Modifiers == term.ModShift {
+					// 'Q' - add to search
+					u.searchQuery = append(u.searchQuery, e.Rune)
+					u.performSearch()
+				} else {
+					// 'q' - exit search
+					u.exitSearch()
+				}
+				return true
+			default:
+				// Add character to search query
+				u.searchQuery = append(u.searchQuery, e.Rune)
+				u.performSearch()
+				return true
+			}
+		}
+	
+	case term.KeyDelete:
+		// Delete key - consume but don't do anything special
+		return true
+		
+	case term.KeyHome:
+		// Home key - consume but don't do anything special
+		return true
+		
+	case term.KeyEnd:
+		// End key - consume but don't do anything special
+		return true
+		
+	case term.KeyLeft:
+		// Left arrow - consume but don't do anything special
+		return true
+		
+	case term.KeyRight:
+		// Right arrow - consume but don't do anything special
+		return true
+		
+	case term.KeyPageUp:
+		// Page up - consume but don't do anything special
+		return true
+		
+	case term.KeyPageDown:
+		// Page down - consume but don't do anything special
+		return true
+		
+	case term.KeyTab:
+		// Tab - consume but don't do anything special
+		return true
+	
+	default:
+		// CRITICAL: Consume ALL other keys to prevent leakage
+		// This includes any key type we didn't explicitly handle above
+		return true
+	}
+	
+	// NOTE: This line should never be reached due to default case above,
 	// but kept as final safety net
 	return true
 }

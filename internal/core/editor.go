@@ -1002,3 +1002,66 @@ func (e *Editor) moveWordRight() {
 	}
 	e.buf.SetCursor(line, col)
 }
+
+// StartSearchSession starts a new search session with the given query.
+// This updates the matches and creates a new session.
+func (e *Editor) StartSearchSession(query string) {
+	if e.search.Session == nil {
+		e.search.Session = NewSearchSession(query, e.search.CaseSensitive, e.search.WholeWord)
+	} else {
+		e.search.Session.Query = query
+		e.search.Session.CaseSensitive = e.search.CaseSensitive
+		e.search.Session.WholeWord = e.search.WholeWord
+	}
+	
+	// Update matches (limit to 1000 for performance)
+	e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
+	
+	// Store the last query
+	e.search.LastQuery = query
+}
+
+// EndSearchSession ends the current search session and cleans up.
+func (e *Editor) EndSearchSession() {
+	e.search.Session = nil
+}
+
+// HasSearchSession returns true if there's an active search session.
+func (e *Editor) HasSearchSession() bool {
+	return e.search.Session != nil
+}
+
+// GetSearchSession returns the current search session, or nil if none.
+func (e *Editor) GetSearchSession() *SearchSession {
+	return e.search.Session
+}
+
+// ToggleCaseSensitivity toggles the case sensitivity setting.
+func (e *Editor) ToggleCaseSensitivity() {
+	e.search.CaseSensitive = !e.search.CaseSensitive
+	// If we have an active session, update it
+	if e.search.Session != nil {
+		e.search.Session.CaseSensitive = e.search.CaseSensitive
+		e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
+	}
+}
+
+// ToggleWholeWord toggles the whole word matching setting.
+func (e *Editor) ToggleWholeWord() {
+	e.search.WholeWord = !e.search.WholeWord
+	// If we have an active session, update it
+	if e.search.Session != nil {
+		e.search.Session.WholeWord = e.search.WholeWord
+		e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
+	}
+}
+
+// GetCaseSensitive returns the current case sensitivity setting.
+func (e *Editor) GetCaseSensitive() bool {
+	return e.search.CaseSensitive
+}
+
+// GetWholeWord returns the current whole word setting.
+func (e *Editor) GetWholeWord() bool {
+	return e.search.WholeWord
+}
