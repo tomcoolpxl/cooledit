@@ -34,13 +34,15 @@ type Theme struct {
 
 // EditorColors defines colors for the text editing area
 type EditorColors struct {
-	Fg            term.Color // Normal text foreground
-	Bg            term.Color // Normal text background
-	SelectionFg   term.Color // Selected text foreground
-	SelectionBg   term.Color // Selected text background
-	LineNumbersFg term.Color // Line numbers foreground
-	LineNumbersBg term.Color // Line numbers background
-	CursorColor   term.Color // Cursor color (terminal support varies)
+	Fg              term.Color // Normal text foreground
+	Bg              term.Color // Normal text background
+	SelectionFg     term.Color // Selected text foreground
+	SelectionBg     term.Color // Selected text background
+	LineNumbersFg   term.Color // Line numbers foreground
+	LineNumbersBg   term.Color // Line numbers background
+	CursorColor     term.Color // Cursor color (terminal support varies)
+	BracketMatchBg  term.Color // Background for matched bracket pair
+	BracketUnmatchBg term.Color // Background for unmatched bracket (error)
 }
 
 // SearchColors defines colors for search/find/replace

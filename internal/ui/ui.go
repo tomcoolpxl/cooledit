@@ -96,6 +96,20 @@ type UI struct {
 
 	// Configuration
 	config *config.Config
+
+	// Bracket matching
+	bracketMatcher    *core.BracketMatcher
+	bracketMatchState *BracketMatchState
+}
+
+// BracketMatchState holds the current bracket match information for highlighting
+type BracketMatchState struct {
+	CursorLine  int  // Line of bracket under cursor
+	CursorCol   int  // Column of bracket under cursor
+	MatchLine   int  // Line of matching bracket
+	MatchCol    int  // Column of matching bracket
+	HasMatch    bool // True if a match was found
+	IsOnBracket bool // True if cursor is on a bracket character
 }
 
 func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
@@ -114,6 +128,7 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		currentLanguage:    cfg.UI.Language,
 		config:             cfg,
 		theme:              cfg.GetCurrentTheme(),
+		bracketMatcher:     core.NewBracketMatcher(),
 	}
 
 	// Initialize syntax highlighting
@@ -262,6 +277,9 @@ func (u *UI) Run() error {
 		}
 
 		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar)
+
+		// Update bracket match state before drawing
+		u.updateBracketMatch()
 
 		u.draw()
 
@@ -556,6 +574,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	case e.Key == term.KeyDelete && e.Modifiers == 0:
 		return core.CmdDelete{}
 
+	case e.Key == term.KeyLeft && (e.Modifiers&term.ModCtrl) != 0:
+		return core.CmdMoveWordLeft{Select: e.Modifiers&term.ModShift != 0}
+	case e.Key == term.KeyRight && (e.Modifiers&term.ModCtrl) != 0:
+		return core.CmdMoveWordRight{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyLeft:
 		return core.CmdMoveLeft{Select: e.Modifiers&term.ModShift != 0}
 	case e.Key == term.KeyRight:
@@ -772,4 +794,56 @@ func (u *UI) executeVimCommand() {
 	default:
 		u.enterMessage("Unknown command: :" + cmd)
 	}
+}
+
+// updateBracketMatch updates the bracket match state based on the current cursor position
+func (u *UI) updateBracketMatch() {
+	u.bracketMatchState = nil
+
+	line, col := u.editor.Cursor()
+	lines := u.editor.Lines()
+
+	if line >= len(lines) || col >= len(lines[line]) {
+		return
+	}
+
+	ch := lines[line][col]
+	if !u.bracketMatcher.IsBracket(ch) {
+		return
+	}
+
+	// Check if cursor position is in string/comment (skip matching there)
+	if u.isInStringOrComment(line, col) {
+		return
+	}
+
+	matchLine, matchCol, found := u.bracketMatcher.FindMatch(
+		lines, line, col,
+		u.isInStringOrComment,
+	)
+
+	u.bracketMatchState = &BracketMatchState{
+		CursorLine:  line,
+		CursorCol:   col,
+		MatchLine:   matchLine,
+		MatchCol:    matchCol,
+		HasMatch:    found,
+		IsOnBracket: true,
+	}
+}
+
+// isInStringOrComment returns true if the position is inside a string or comment
+func (u *UI) isInStringOrComment(line, col int) bool {
+	if u.syntaxCache == nil {
+		return false // No syntax info, don't skip anything
+	}
+
+	lines := u.editor.Lines()
+	if line >= len(lines) {
+		return false
+	}
+
+	tokens := u.syntaxCache.GetTokens(line, lines[line])
+	tokenType := syntax.GetTokenAt(tokens, col)
+	return tokenType == syntax.TokenString || tokenType == syntax.TokenComment
 }

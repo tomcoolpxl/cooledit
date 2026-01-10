@@ -25,13 +25,15 @@ func ConvertThemeSpec(name string, spec ThemeSpec) *theme.Theme {
 	return &theme.Theme{
 		Name: name,
 		Editor: theme.EditorColors{
-			Fg:            parseColorField(spec.Editor.Fg),
-			Bg:            parseColorField(spec.Editor.Bg),
-			SelectionFg:   parseColorField(spec.Editor.SelectionFg),
-			SelectionBg:   parseColorField(spec.Editor.SelectionBg),
-			LineNumbersFg: parseColorField(spec.Editor.LineNumbersFg),
-			LineNumbersBg: parseColorField(spec.Editor.LineNumbersBg),
-			CursorColor:   parseColorField(spec.Editor.CursorColor),
+			Fg:               parseColorField(spec.Editor.Fg),
+			Bg:               parseColorField(spec.Editor.Bg),
+			SelectionFg:      parseColorField(spec.Editor.SelectionFg),
+			SelectionBg:      parseColorField(spec.Editor.SelectionBg),
+			LineNumbersFg:    parseColorField(spec.Editor.LineNumbersFg),
+			LineNumbersBg:    parseColorField(spec.Editor.LineNumbersBg),
+			CursorColor:      parseColorField(spec.Editor.CursorColor),
+			BracketMatchBg:   parseColorField(spec.Editor.BracketMatchBg),
+			BracketUnmatchBg: parseColorField(spec.Editor.BracketUnmatchBg),
 		},
 		Search: theme.SearchColors{
 			MatchFg:        parseColorField(spec.Search.MatchFg),

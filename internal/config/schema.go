@@ -63,13 +63,15 @@ type ThemeSpec struct {
 }
 
 type EditorThemeSpec struct {
-	Fg            string `toml:"fg"`
-	Bg            string `toml:"bg"`
-	SelectionFg   string `toml:"selection_fg"`
-	SelectionBg   string `toml:"selection_bg"`
-	LineNumbersFg string `toml:"line_numbers_fg"`
-	LineNumbersBg string `toml:"line_numbers_bg"`
-	CursorColor   string `toml:"cursor_color"`
+	Fg               string `toml:"fg"`
+	Bg               string `toml:"bg"`
+	SelectionFg      string `toml:"selection_fg"`
+	SelectionBg      string `toml:"selection_bg"`
+	LineNumbersFg    string `toml:"line_numbers_fg"`
+	LineNumbersBg    string `toml:"line_numbers_bg"`
+	CursorColor      string `toml:"cursor_color"`
+	BracketMatchBg   string `toml:"bracket_match_bg"`
+	BracketUnmatchBg string `toml:"bracket_unmatch_bg"`
 }
 
 type SearchThemeSpec struct {

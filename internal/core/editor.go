@@ -747,6 +747,10 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		e.handleMove(c.Select, func() { e.buf.MoveLeft() })
 	case CmdMoveRight:
 		e.handleMove(c.Select, func() { e.buf.MoveRight() })
+	case CmdMoveWordLeft:
+		e.handleMove(c.Select, func() { e.moveWordLeft() })
+	case CmdMoveWordRight:
+		e.handleMove(c.Select, func() { e.moveWordRight() })
 	case CmdMoveUp:
 		e.handleMove(c.Select, func() { e.buf.MoveUp() })
 	case CmdMoveDown:
@@ -838,4 +842,123 @@ func (e *Editor) EnsureVisible(w, h int) {
 	} else if cx >= e.vp.LeftCol+w {
 		e.vp.LeftCol = cx - w + 1
 	}
+}
+
+// isWordChar returns true if the rune is considered part of a word
+func isWordChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_'
+}
+
+// moveWordLeft moves cursor to the beginning of the previous word
+func (e *Editor) moveWordLeft() {
+	lines := e.buf.Lines()
+	line, col := e.buf.Cursor()
+	
+	if len(lines) == 0 {
+		return
+	}
+	
+	// Move left one position first
+	if col > 0 {
+		col--
+	} else if line > 0 {
+		// Jump to end of previous line
+		line--
+		col = len(lines[line])
+	} else {
+		// Already at start of file
+		return
+	}
+	
+	// Skip whitespace
+	for line >= 0 && col >= 0 {
+		if col >= len(lines[line]) {
+			col = len(lines[line]) - 1
+		}
+		if col < 0 {
+			if line == 0 {
+				col = 0
+				break
+			}
+			line--
+			col = len(lines[line]) - 1
+			continue
+		}
+		if !isWordChar(lines[line][col]) && lines[line][col] != ' ' && lines[line][col] != '\t' {
+			// Skip punctuation
+			if col == 0 {
+				break
+			}
+			col--
+			continue
+		}
+		if lines[line][col] != ' ' && lines[line][col] != '\t' {
+			break
+		}
+		col--
+	}
+	
+	// Move to start of word
+	for line >= 0 && col > 0 {
+		if col-1 < 0 {
+			break
+		}
+		if !isWordChar(lines[line][col-1]) {
+			break
+		}
+		col--
+	}
+	
+	if line < 0 {
+		line = 0
+	}
+	if col < 0 {
+		col = 0
+	}
+	
+	e.buf.SetCursor(line, col)
+}
+
+// moveWordRight moves cursor to the beginning of the next word
+func (e *Editor) moveWordRight() {
+	lines := e.buf.Lines()
+	line, col := e.buf.Cursor()
+	
+	if len(lines) == 0 {
+		return
+	}
+	
+	// Skip current word
+	for line < len(lines) && col < len(lines[line]) {
+		if !isWordChar(lines[line][col]) {
+			break
+		}
+		col++
+	}
+	
+	// Skip whitespace and punctuation
+	for line < len(lines) {
+		for col < len(lines[line]) {
+			if isWordChar(lines[line][col]) {
+				e.buf.SetCursor(line, col)
+				return
+			}
+			col++
+		}
+		// Move to next line
+		line++
+		if line >= len(lines) {
+			break
+		}
+		col = 0
+	}
+	
+	// Reached end of file
+	if line >= len(lines) {
+		line = len(lines) - 1
+	}
+	if line >= 0 && col > len(lines[line]) {
+		col = len(lines[line])
+	}
+	e.buf.SetCursor(line, col)
 }

@@ -59,6 +59,14 @@ type CmdMoveRight struct{ Select bool }
 
 func (CmdMoveRight) isCommand() {}
 
+type CmdMoveWordLeft struct{ Select bool }
+
+func (CmdMoveWordLeft) isCommand() {}
+
+type CmdMoveWordRight struct{ Select bool }
+
+func (CmdMoveWordRight) isCommand() {}
+
 type CmdMoveUp struct{ Select bool }
 
 func (CmdMoveUp) isCommand() {}

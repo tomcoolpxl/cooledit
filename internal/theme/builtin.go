@@ -70,13 +70,15 @@ func defaultTheme() *Theme {
 	return &Theme{
 		Name: "default",
 		Editor: EditorColors{
-			Fg:            term.ColorDefault,
-			Bg:            term.ColorDefault,
-			SelectionFg:   term.ColorDefault,
-			SelectionBg:   term.ColorDefault,
-			LineNumbersFg: term.ColorDefault,
-			LineNumbersBg: term.ColorDefault,
-			CursorColor:   "#00FF00",
+			Fg:               term.ColorDefault,
+			Bg:               term.ColorDefault,
+			SelectionFg:      term.ColorDefault,
+			SelectionBg:      term.ColorDefault,
+			LineNumbersFg:    term.ColorDefault,
+			LineNumbersBg:    term.ColorDefault,
+			CursorColor:      "#00FF00",
+			BracketMatchBg:   term.ColorCyan,
+			BracketUnmatchBg: term.ColorRed,
 		},
 		Search: SearchColors{
 			MatchFg:        term.ColorDefault,
@@ -147,13 +149,15 @@ func darkTheme() *Theme {
 	return &Theme{
 		Name: "dark",
 		Editor: EditorColors{
-			Fg:            "#D0D0D0",
-			Bg:            "#1E1E1E",
-			SelectionFg:   "#FFFFFF",
-			SelectionBg:   "#264F78",
-			LineNumbersFg: "#858585",
-			LineNumbersBg: "#1E1E1E",
-			CursorColor:   "#FFD700",
+			Fg:               "#D0D0D0",
+			Bg:               "#1E1E1E",
+			SelectionFg:      "#FFFFFF",
+			SelectionBg:      "#264F78",
+			LineNumbersFg:    "#858585",
+			LineNumbersBg:    "#1E1E1E",
+			CursorColor:      "#FFD700",
+			BracketMatchBg:   "#3A3A3A",
+			BracketUnmatchBg: "#5C2020",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -224,13 +228,15 @@ func lightTheme() *Theme {
 	return &Theme{
 		Name: "light",
 		Editor: EditorColors{
-			Fg:            "#000000",
-			Bg:            "#FFFFFF",
-			SelectionFg:   "#000000",
-			SelectionBg:   "#ADD6FF",
-			LineNumbersFg: "#6E6E6E",
-			LineNumbersBg: "#F5F5F5",
-			CursorColor:   "#FFFFFF",
+			Fg:               "#000000",
+			Bg:               "#FFFFFF",
+			SelectionFg:      "#000000",
+			SelectionBg:      "#ADD6FF",
+			LineNumbersFg:    "#6E6E6E",
+			LineNumbersBg:    "#F5F5F5",
+			CursorColor:      "#FFFFFF",
+			BracketMatchBg:   "#E0E0E0",
+			BracketUnmatchBg: "#FFCCCC",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -301,13 +307,15 @@ func monokaiTheme() *Theme {
 	return &Theme{
 		Name: "monokai",
 		Editor: EditorColors{
-			Fg:            "#F8F8F2",
-			Bg:            "#272822",
-			SelectionFg:   "#F8F8F2",
-			SelectionBg:   "#49483E",
-			LineNumbersFg: "#90908A",
-			LineNumbersBg: "#272822",
-			CursorColor:   "#F92672",
+			Fg:               "#F8F8F2",
+			Bg:               "#272822",
+			SelectionFg:      "#F8F8F2",
+			SelectionBg:      "#49483E",
+			LineNumbersFg:    "#90908A",
+			LineNumbersBg:    "#272822",
+			CursorColor:      "#F92672",
+			BracketMatchBg:   "#49483E",
+			BracketUnmatchBg: "#6E2020",
 		},
 		Search: SearchColors{
 			MatchFg:        "#272822",
@@ -378,13 +386,15 @@ func solarizedDarkTheme() *Theme {
 	return &Theme{
 		Name: "solarized-dark",
 		Editor: EditorColors{
-			Fg:            "#839496",
-			Bg:            "#002B36",
-			SelectionFg:   "#FDF6E3",
-			SelectionBg:   "#073642",
-			LineNumbersFg: "#586E75",
-			LineNumbersBg: "#002B36",
-			CursorColor:   "#268BD2",
+			Fg:               "#839496",
+			Bg:               "#002B36",
+			SelectionFg:      "#FDF6E3",
+			SelectionBg:      "#073642",
+			LineNumbersFg:    "#586E75",
+			LineNumbersBg:    "#002B36",
+			CursorColor:      "#268BD2",
+			BracketMatchBg:   "#073642",
+			BracketUnmatchBg: "#6E2020",
 		},
 		Search: SearchColors{
 			MatchFg:        "#002B36",
@@ -455,13 +465,15 @@ func solarizedLightTheme() *Theme {
 	return &Theme{
 		Name: "solarized-light",
 		Editor: EditorColors{
-			Fg:            "#657B83",
-			Bg:            "#FDF6E3",
-			SelectionFg:   "#002B36",
-			SelectionBg:   "#EEE8D5",
-			LineNumbersFg: "#93A1A1",
-			LineNumbersBg: "#FDF6E3",
-			CursorColor:   "#FDF6E3",
+			Fg:               "#657B83",
+			Bg:               "#FDF6E3",
+			SelectionFg:      "#002B36",
+			SelectionBg:      "#EEE8D5",
+			LineNumbersFg:    "#93A1A1",
+			LineNumbersBg:    "#FDF6E3",
+			CursorColor:      "#FDF6E3",
+			BracketMatchBg:   "#EEE8D5",
+			BracketUnmatchBg: "#FFCCCC",
 		},
 		Search: SearchColors{
 			MatchFg:        "#FDF6E3",
@@ -532,13 +544,15 @@ func gruvboxDarkTheme() *Theme {
 	return &Theme{
 		Name: "gruvbox-dark",
 		Editor: EditorColors{
-			Fg:            "#EBDBB2",
-			Bg:            "#282828",
-			SelectionFg:   "#EBDBB2",
-			SelectionBg:   "#504945",
-			LineNumbersFg: "#928374",
-			LineNumbersBg: "#282828",
-			CursorColor:   "#FE8019",
+			Fg:               "#EBDBB2",
+			Bg:               "#282828",
+			SelectionFg:      "#EBDBB2",
+			SelectionBg:      "#504945",
+			LineNumbersFg:    "#928374",
+			LineNumbersBg:    "#282828",
+			CursorColor:      "#FE8019",
+			BracketMatchBg:   "#3C3836",
+			BracketUnmatchBg: "#9D0006",
 		},
 		Search: SearchColors{
 			MatchFg:        "#282828",
@@ -609,13 +623,15 @@ func gruvboxLightTheme() *Theme {
 	return &Theme{
 		Name: "gruvbox-light",
 		Editor: EditorColors{
-			Fg:            "#3C3836",
-			Bg:            "#FBF1C7",
-			SelectionFg:   "#3C3836",
-			SelectionBg:   "#EBDBB2",
-			LineNumbersFg: "#928374",
-			LineNumbersBg: "#FBF1C7",
-			CursorColor:   "#458588",
+			Fg:               "#3C3836",
+			Bg:               "#FBF1C7",
+			SelectionFg:      "#3C3836",
+			SelectionBg:      "#EBDBB2",
+			LineNumbersFg:    "#928374",
+			LineNumbersBg:    "#FBF1C7",
+			CursorColor:      "#458588",
+			BracketMatchBg:   "#EBDBB2",
+			BracketUnmatchBg: "#9D0006",
 		},
 		Search: SearchColors{
 			MatchFg:        "#FBF1C7",
@@ -686,13 +702,15 @@ func draculaTheme() *Theme {
 	return &Theme{
 		Name: "dracula",
 		Editor: EditorColors{
-			Fg:            "#F8F8F2",
-			Bg:            "#282A36",
-			SelectionFg:   "#F8F8F2",
-			SelectionBg:   "#44475A",
-			LineNumbersFg: "#6272A4",
-			LineNumbersBg: "#282A36",
-			CursorColor:   "#FF79C6",
+			Fg:               "#F8F8F2",
+			Bg:               "#282A36",
+			SelectionFg:      "#F8F8F2",
+			SelectionBg:      "#44475A",
+			LineNumbersFg:    "#6272A4",
+			LineNumbersBg:    "#282A36",
+			CursorColor:      "#FF79C6",
+			BracketMatchBg:   "#44475A",
+			BracketUnmatchBg: "#FF5555",
 		},
 		Search: SearchColors{
 			MatchFg:        "#282A36",
@@ -763,13 +781,15 @@ func nordTheme() *Theme {
 	return &Theme{
 		Name: "nord",
 		Editor: EditorColors{
-			Fg:            "#D8DEE9",
-			Bg:            "#2E3440",
-			SelectionFg:   "#ECEFF4",
-			SelectionBg:   "#434C5E",
-			LineNumbersFg: "#4C566A",
-			LineNumbersBg: "#2E3440",
-			CursorColor:   "#88C0D0",
+			Fg:               "#D8DEE9",
+			Bg:               "#2E3440",
+			SelectionFg:      "#ECEFF4",
+			SelectionBg:      "#434C5E",
+			LineNumbersFg:    "#4C566A",
+			LineNumbersBg:    "#2E3440",
+			CursorColor:      "#88C0D0",
+			BracketMatchBg:   "#3B4252",
+			BracketUnmatchBg: "#BF616A",
 		},
 		Search: SearchColors{
 			MatchFg:        "#2E3440",
@@ -840,13 +860,15 @@ func dosTheme() *Theme {
 	return &Theme{
 		Name: "dos",
 		Editor: EditorColors{
-			Fg:            "#FFFFFF",
-			Bg:            "#0000AA",
-			SelectionFg:   "#000000",
-			SelectionBg:   "#00AAAA",
-			LineNumbersFg: "#AAAAAA",
-			LineNumbersBg: "#000055",
-			CursorColor:   "#FFFF00",
+			Fg:               "#FFFFFF",
+			Bg:               "#0000AA",
+			SelectionFg:      "#000000",
+			SelectionBg:      "#00AAAA",
+			LineNumbersFg:    "#AAAAAA",
+			LineNumbersBg:    "#000055",
+			CursorColor:      "#FFFF00",
+			BracketMatchBg:   "#0000AA",
+			BracketUnmatchBg: "#AA0000",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -917,13 +939,15 @@ func ibmGreenTheme() *Theme {
 	return &Theme{
 		Name: "ibm-green",
 		Editor: EditorColors{
-			Fg:            "#00FF00",
-			Bg:            "#000000",
-			SelectionFg:   "#000000",
-			SelectionBg:   "#00AA00",
-			LineNumbersFg: "#008800",
-			LineNumbersBg: "#000000",
-			CursorColor:   "#00FF00",
+			Fg:               "#00FF00",
+			Bg:               "#000000",
+			SelectionFg:      "#000000",
+			SelectionBg:      "#00AA00",
+			LineNumbersFg:    "#008800",
+			LineNumbersBg:    "#000000",
+			CursorColor:      "#00FF00",
+			BracketMatchBg:   "#003300",
+			BracketUnmatchBg: "#330000",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -994,13 +1018,15 @@ func ibmAmberTheme() *Theme {
 	return &Theme{
 		Name: "ibm-amber",
 		Editor: EditorColors{
-			Fg:            "#FFAA00",
-			Bg:            "#000000",
-			SelectionFg:   "#000000",
-			SelectionBg:   "#CC8800",
-			LineNumbersFg: "#AA7700",
-			LineNumbersBg: "#000000",
-			CursorColor:   "#FFAA00",
+			Fg:               "#FFAA00",
+			Bg:               "#000000",
+			SelectionFg:      "#000000",
+			SelectionBg:      "#CC8800",
+			LineNumbersFg:    "#AA7700",
+			LineNumbersBg:    "#000000",
+			CursorColor:      "#FFAA00",
+			BracketMatchBg:   "#332200",
+			BracketUnmatchBg: "#330000",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -1072,13 +1098,15 @@ func cyberpunkTheme() *Theme {
 	return &Theme{
 		Name: "cyberpunk",
 		Editor: EditorColors{
-			Fg:            "#00FFFF", // Cyan text
-			Bg:            "#0A0E27", // Deep dark blue
-			SelectionFg:   "#000000",
-			SelectionBg:   "#FF2A6D", // Hot pink selection
-			LineNumbersFg: "#8B5CF6", // Purple line numbers
-			LineNumbersBg: "#1a1f3a",
-			CursorColor:   "#00FF41", // Matrix green cursor
+			Fg:               "#00FFFF", // Cyan text
+			Bg:               "#0A0E27", // Deep dark blue
+			SelectionFg:      "#000000",
+			SelectionBg:      "#FF2A6D", // Hot pink selection
+			LineNumbersFg:    "#8B5CF6", // Purple line numbers
+			LineNumbersBg:    "#1a1f3a",
+			CursorColor:      "#00FF41", // Matrix green cursor
+			BracketMatchBg:   "#1A1A2E",
+			BracketUnmatchBg: "#FF0055",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",

@@ -453,7 +453,12 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 				style = *syntaxStyle
 			}
 
-			// Selection overrides syntax highlighting
+			// Apply bracket matching highlight (overrides syntax)
+			if bracketStyle := u.getBracketStyle(docY, runeIdx); bracketStyle != nil {
+				style = *bracketStyle
+			}
+
+			// Selection overrides all
 			if isSelected {
 				style = selectionStyle
 			}
@@ -660,7 +665,12 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				}
 			}
 
-			// Selection overrides syntax highlighting
+			// Apply bracket matching highlight (overrides syntax)
+			if bracketStyle := u.getBracketStyle(docY, runeIdx); bracketStyle != nil {
+				style = *bracketStyle
+			}
+
+			// Selection overrides all
 			if isSelected {
 				style = selectionStyle
 			}
@@ -824,7 +834,6 @@ func (u *UI) drawStatusBar() {
 			"Ctrl+Q Quit",
 			"Ctrl+S Save",
 			"Ctrl+F Find/Replace",
-			"Ins Insert/Replace",
 		}
 
 		// Calculate available space for center section
@@ -956,6 +965,7 @@ func (u *UI) drawHelp(w, h int) {
 		"",
 		"  NAVIGATION",
 		"    Arrows        Move cursor",
+		"    Ctrl+Arrows   Jump word",
 		"    Home/End      Line start/end",
 		"    Ctrl+Home     File start",
 		"    Ctrl+End      File end",
@@ -1280,4 +1290,41 @@ func (u *UI) getHelpTitleStyle() term.Style {
 		return term.Style{Inverse: true}
 	}
 	return term.Style{Foreground: u.theme.Help.TitleFg, Background: u.theme.Help.TitleBg}
+}
+
+// getBracketStyle returns the style for bracket highlighting at the given position.
+// Returns nil if the position is not a bracket that should be highlighted.
+func (u *UI) getBracketStyle(docY, runeIdx int) *term.Style {
+	if u.bracketMatchState == nil || !u.bracketMatchState.IsOnBracket {
+		return nil
+	}
+
+	state := u.bracketMatchState
+
+	// Check if this position is the cursor bracket or match bracket
+	isCursorBracket := docY == state.CursorLine && runeIdx == state.CursorCol
+	isMatchBracket := state.HasMatch && docY == state.MatchLine && runeIdx == state.MatchCol
+
+	if !isCursorBracket && !isMatchBracket {
+		return nil
+	}
+
+	// Choose color based on match status
+	var bg term.Color
+	if state.HasMatch {
+		bg = u.theme.Editor.BracketMatchBg
+	} else {
+		bg = u.theme.Editor.BracketUnmatchBg
+	}
+
+	// Use editor foreground with bracket background
+	fg := u.theme.Editor.Fg
+	if u.isDefaultTheme() {
+		fg = term.ColorDefault
+	}
+
+	return &term.Style{
+		Foreground: fg,
+		Background: bg,
+	}
 }
