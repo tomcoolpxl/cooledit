@@ -126,8 +126,6 @@ func (m *Menubar) initDefaults() {
 					u.ToggleSyntaxHighlighting()
 				}},
 				{IsSeparator: true},
-			}, append(languageItems, append([]MenuItem{
-				{IsSeparator: true},
 				cursorBlinkItem,
 			}, append(cursorItems, []MenuItem{
 				{IsSeparator: true},
@@ -145,7 +143,11 @@ func (m *Menubar) initDefaults() {
 					}
 					return enc
 				}},
-			}...)...)...)...),
+			}...)...),
+		},
+		{
+			Title: "Language",
+			Items: languageItems,
 		},
 		{
 			Title:       "Themes",
@@ -228,19 +230,39 @@ func (m *Menubar) buildCursorShapeItems() []MenuItem {
 // buildLanguageItems creates menu items for language selection
 func (m *Menubar) buildLanguageItems() []MenuItem {
 	languages := syntax.GetLanguageList()
-	items := make([]MenuItem, 0, len(languages)+1)
+	items := make([]MenuItem, 0, len(languages)+3)
+
+	// Off option
+	items = append(items, MenuItem{
+		Label:       "Off",
+		IsCheckable: true,
+		IsChecked: func(u *UI) bool {
+			return !u.IsSyntaxHighlightingEnabled()
+		},
+		Action: func(u *UI) {
+			if u.IsSyntaxHighlightingEnabled() {
+				u.ToggleSyntaxHighlighting()
+			}
+		},
+	})
 
 	// Auto-detect option
 	items = append(items, MenuItem{
 		Label:       "Auto",
 		IsCheckable: true,
 		IsChecked: func(u *UI) bool {
-			return u.currentLanguage == "" || u.currentLanguage == "Auto"
+			return u.IsSyntaxHighlightingEnabled() && (u.currentLanguage == "" || u.currentLanguage == "auto")
 		},
 		Action: func(u *UI) {
-			u.SwitchLanguage("")
+			if !u.IsSyntaxHighlightingEnabled() {
+				u.ToggleSyntaxHighlighting()
+			}
+			u.SwitchLanguage("auto")
 		},
 	})
+
+	// Separator
+	items = append(items, MenuItem{IsSeparator: true})
 
 	// All supported languages
 	for _, lang := range languages {
@@ -249,10 +271,13 @@ func (m *Menubar) buildLanguageItems() []MenuItem {
 			Label:       name,
 			IsCheckable: true,
 			IsChecked: func(u *UI) bool {
-				return u.GetCurrentLanguage() == name
+				return u.IsSyntaxHighlightingEnabled() && u.currentLanguage == name
 			},
 			Action: func(u *UI) {
-				u.SwitchLanguage(name)
+				if !u.IsSyntaxHighlightingEnabled() {
+					u.ToggleSyntaxHighlighting()
+				}
+				u.SwitchLanguageWithoutSavingConfig(name)
 			},
 		})
 	}

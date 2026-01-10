@@ -40,9 +40,11 @@ func RunWithScreen(path string, lineNumbers bool, cfg *config.Config, screen ter
 	if path != "" {
 		fd, err := fileio.Open(path)
 		if err != nil {
-			return err
+			// If file doesn't exist, set it up as a new file to be created
+			editor.SetNewFile(path)
+		} else {
+			editor.LoadFile(fd)
 		}
-		editor.LoadFile(fd)
 	}
 
 	u := ui.New(screen, editor, cfg)

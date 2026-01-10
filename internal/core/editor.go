@@ -117,6 +117,21 @@ func (e *Editor) LoadFile(fd *fileio.FileData) {
 	e.undo.MarkSaved()
 }
 
+// SetNewFile sets up the editor for a new file with the given path.
+// The file doesn't exist yet and will be created on first save.
+func (e *Editor) SetNewFile(path string) {
+	e.buf = buffer.NewLineBuffer()
+	e.vp = Viewport{}
+	e.file = FileState{
+		Path:     path,
+		BaseName: filepath.Base(path),
+		EOL:      "\n",
+		Encoding: "UTF-8",
+	}
+	e.undo = NewUndoStack()
+	// Don't mark as saved since the file doesn't exist yet
+}
+
 func (e *Editor) deleteSelection() Action {
 	if !e.selectionActive {
 		return nil

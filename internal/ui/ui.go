@@ -125,7 +125,12 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		showStatusBar:      cfg.UI.ShowStatusBar,
 		insertMode:         true, // Always start in insert mode
 		syntaxHighlighting: cfg.Editor.SyntaxHighlighting,
-		currentLanguage:    cfg.UI.Language,
+		currentLanguage:    func() string {
+			if cfg.UI.Language == "" {
+				return "auto"
+			}
+			return cfg.UI.Language
+		}(),
 		config:             cfg,
 		theme:              cfg.GetCurrentTheme(),
 		bracketMatcher:     core.NewBracketMatcher(),
@@ -158,7 +163,16 @@ func (u *UI) saveConfig() {
 	u.config.Editor.SoftWrap = u.softWrap
 	u.config.Editor.SyntaxHighlighting = u.syntaxHighlighting
 	u.config.UI.ShowStatusBar = u.showStatusBar
-	u.config.UI.Language = u.currentLanguage
+	// Only save "auto" state to config, not specific languages
+	if u.currentLanguage == "auto" || u.currentLanguage == "" {
+		u.config.UI.Language = "auto"
+	} else {
+		// Don't update config for specific language selections
+		// Keep existing auto state
+		if u.config.UI.Language == "" {
+			u.config.UI.Language = "auto"
+		}
+	}
 
 	// Save to file (ignore errors - don't interrupt user)
 	_ = config.Save(u.config)
@@ -173,7 +187,7 @@ func (u *UI) initSyntaxHighlighter() {
 
 	// Determine language (auto-detect or use manual override)
 	lang := u.currentLanguage
-	if lang == "" || lang == "Auto" {
+	if lang == "" || lang == "auto" || lang == "Auto" {
 		// Auto-detect from file
 		path := u.editor.File().Path
 		var firstLine []rune
@@ -204,25 +218,33 @@ func (u *UI) ToggleSyntaxHighlighting() {
 	}
 }
 
-// SwitchLanguage changes the syntax highlighting language
+// SwitchLanguage changes the syntax highlighting language and saves to config
 func (u *UI) SwitchLanguage(lang string) {
-	if lang == "Auto" {
-		lang = ""
+	if lang == "Auto" || lang == "auto" {
+		lang = "auto"
 	}
 	u.currentLanguage = lang
 	u.initSyntaxHighlighter()
 	u.saveConfig()
 
-	if lang == "" {
+	if lang == "auto" || lang == "" {
 		u.enterMessage("Language: Auto")
 	} else {
 		u.enterMessage("Language: " + lang)
 	}
 }
 
+// SwitchLanguageWithoutSavingConfig changes the language for the session only
+// Config only stores "auto" or "off" state, not specific languages
+func (u *UI) SwitchLanguageWithoutSavingConfig(lang string) {
+	u.currentLanguage = lang
+	u.initSyntaxHighlighter()
+	u.enterMessage("Language: " + lang)
+}
+
 // GetCurrentLanguage returns the current language for display
 func (u *UI) GetCurrentLanguage() string {
-	if u.currentLanguage != "" && u.currentLanguage != "Auto" {
+	if u.currentLanguage != "" && u.currentLanguage != "auto" && u.currentLanguage != "Auto" {
 		return u.currentLanguage
 	}
 

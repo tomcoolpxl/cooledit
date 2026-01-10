@@ -16,9 +16,13 @@
 package app
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"cooledit/internal/config"
+	"cooledit/internal/core"
+	"cooledit/internal/fileio"
 	"cooledit/internal/term"
 )
 
@@ -73,5 +77,107 @@ func TestRunWithScreenBasic(t *testing.T) {
 	}
 	if !m.finiCalled {
 		t.Errorf("Fini was not called")
+	}
+}
+
+func TestRunWithScreenNonExistentFile(t *testing.T) {
+	m := &mockScreen{}
+	cfg := config.Default()
+	// Test opening a non-existent file - should not error
+	err := RunWithScreen("nonexistent_file_that_does_not_exist.txt", false, cfg, m)
+	if err != nil {
+		t.Fatalf("Run with non-existent file failed: %v", err)
+	}
+	if !m.initCalled {
+		t.Errorf("Init was not called")
+	}
+	if !m.finiCalled {
+		t.Errorf("Fini was not called")
+	}
+}
+
+// Test the core logic without UI
+func TestNewFileSetup(t *testing.T) {
+	tests := []struct {
+		name         string
+		path         string
+		shouldExist  bool
+		wantBaseName string
+		wantModified bool
+	}{
+		{
+			name:         "non-existent file",
+			path:         filepath.Join(t.TempDir(), "newfile.txt"),
+			shouldExist:  false,
+			wantBaseName: "newfile.txt",
+			wantModified: false,
+		},
+		{
+			name:         "non-existent file with path",
+			path:         filepath.Join(t.TempDir(), "subdir", "another.go"),
+			shouldExist:  false,
+			wantBaseName: "another.go",
+			wantModified: false,
+		},
+		{
+			name:         "existing file",
+			path:         "",
+			shouldExist:  true,
+			wantBaseName: "test.txt",
+			wantModified: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			editor := core.NewEditor(nil)
+			
+			var path string
+			if tt.shouldExist {
+				// Create a temp file
+				tmpfile, err := os.CreateTemp(t.TempDir(), "test*.txt")
+				if err != nil {
+					t.Fatal(err)
+				}
+				path = tmpfile.Name()
+				tmpfile.WriteString("test content\n")
+				tmpfile.Close()
+				tt.wantBaseName = filepath.Base(path)
+			} else {
+				path = tt.path
+			}
+
+			// Simulate what RunWithScreen does
+			fd, err := fileio.Open(path)
+			if err != nil {
+				// File doesn't exist - set up as new file
+				editor.SetNewFile(path)
+			} else {
+				editor.LoadFile(fd)
+			}
+
+			// Verify editor state
+			fileState := editor.File()
+			if fileState.Path != path {
+				t.Errorf("Path = %q, want %q", fileState.Path, path)
+			}
+			if fileState.BaseName != tt.wantBaseName {
+				t.Errorf("BaseName = %q, want %q", fileState.BaseName, tt.wantBaseName)
+			}
+			if editor.Modified() != tt.wantModified {
+				t.Errorf("Modified = %v, want %v", editor.Modified(), tt.wantModified)
+			}
+
+			// For non-existent files, verify it's empty
+			if !tt.shouldExist {
+				lines := editor.Lines()
+				if len(lines) != 1 {
+					t.Errorf("Expected 1 empty line, got %d lines", len(lines))
+				}
+				if len(lines) > 0 && len(lines[0]) != 0 {
+					t.Errorf("Expected empty line, got %q", string(lines[0]))
+				}
+			}
+		})
 	}
 }
