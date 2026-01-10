@@ -302,17 +302,19 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 				u.mode = ModeNormal
 				u.enterMessage(res.Message)
 			} else {
-				// Replace current match and stay in find/replace mode
+				// Replace current match and return to search mode
 				res := u.editor.Apply(core.CmdReplace{
 					Find:    u.lastFindTerm,
 					Replace: replaceTerm,
 				}, u.layout.Viewport.H)
-				if res.Message != "" && res.Message[:9] == "Not found" {
+				if res.Message != "" && (res.Message[:9] == "Not found" || res.Message == "No matches found") {
 					u.mode = ModeNormal
 					u.enterMessage(res.Message)
 				} else {
-					// Stay in find/replace mode
-					u.mode = ModeFindReplace
+					// Return to search mode with the search query
+					u.searchQuery = []rune(u.lastFindTerm)
+					u.mode = ModeSearch
+					u.performSearch()
 				}
 			}
 			return true

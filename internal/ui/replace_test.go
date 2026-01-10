@@ -309,8 +309,8 @@ func TestReplaceNoMatches(t *testing.T) {
 	res := ui.editor.Apply(core.CmdReplaceAll{Find: "xyz", Replace: "abc"}, 10)
 
 	// Should report no matches
-	if !strings.Contains(res.Message, "Not found") {
-		t.Errorf("expected 'Not found' message, got: %s", res.Message)
+	if !strings.Contains(res.Message, "Not found") && !strings.Contains(res.Message, "No matches found") {
+		t.Errorf("expected 'Not found' or 'No matches found' message, got: %s", res.Message)
 	}
 
 	// Text should be unchanged

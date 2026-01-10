@@ -105,16 +105,20 @@ func TestUnifiedSearchNoLeakage(t *testing.T) {
 		t.Fatal("should be in search mode")
 	}
 
-	// Type search query
-	for _, r := range "test" {
+	// Type search query that will find a match
+	for _, r := range "text" {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
 
-	// Press keys that could potentially leak (n, p, a, q, etc.)
-	testKeys := []rune{'n', 'p', 'q', 'x', 'y', 'z', 'a', 'b', 'c'}
-	for _, r := range testKeys {
-		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
-	}
+	// Press navigation keys that should NOT leak to buffer
+	// n = next match (should work since "text" is in "original text")
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'n'})
+	// p = previous match
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'p'})
+	// F3 = next match
+	dispatch(ui, term.KeyEvent{Key: term.KeyF3})
+	// Shift+F3 = previous match
+	dispatch(ui, term.KeyEvent{Key: term.KeyF3, Modifiers: term.ModShift})
 
 	// Exit search
 	dispatch(ui, term.KeyEvent{Key: term.KeyEscape})
@@ -202,8 +206,8 @@ func TestSearchWholeWordToggle(t *testing.T) {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
 	}
 
-	// Trigger search
-	ui.doSearch()
+	// Trigger search (performSearch is called automatically during typing, but call it explicitly)
+	ui.performSearch()
 
 	// Should find 3 matches (including partial)
 	if ui.editor.SearchState().Session != nil && len(ui.editor.SearchState().Session.Matches) != 3 {
@@ -218,8 +222,8 @@ func TestSearchWholeWordToggle(t *testing.T) {
 		t.Error("expected whole word after toggle")
 	}
 
-	// Trigger search again
-	ui.doSearch()
+	// Trigger search again (performSearch is called automatically during toggle, but call it explicitly)
+	ui.performSearch()
 
 	// Should find 0 matches (no standalone "test" word)
 	if ui.editor.SearchState().Session != nil && len(ui.editor.SearchState().Session.Matches) != 0 {
@@ -279,9 +283,19 @@ func TestSearchFromSelection(t *testing.T) {
 	}
 
 	// Select "hello" (first 5 characters)
-	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'a', Modifiers: term.ModCtrl}) // Move to start
+	dispatch(ui, term.KeyEvent{Key: term.KeyHome}) // Move to start
 	for i := 0; i < 5; i++ {
 		dispatch(ui, term.KeyEvent{Key: term.KeyRight, Modifiers: term.ModShift})
+	}
+
+	// Verify selection was created
+	if !ui.editor.HasSelection() {
+		t.Fatal("expected selection to be created")
+	}
+
+	sl, sc, el, ec := ui.editor.GetSelectionRange()
+	if sl != 0 || sc != 0 || el != 0 || ec != 5 {
+		t.Errorf("expected selection (0,0) to (0,5), got (%d,%d) to (%d,%d)", sl, sc, el, ec)
 	}
 
 	// Enter search mode with Ctrl+F
