@@ -75,7 +75,6 @@ func dispatch(ui *UI, ev term.Event) {
 			}
 		}
 
-
 		if e.Key == term.KeyF10 {
 			ui.toggleMenuFocus()
 			return
