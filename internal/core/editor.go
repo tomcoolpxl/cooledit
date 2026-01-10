@@ -192,7 +192,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	case CmdFind:
 		e.search.SetQuery(c.Query)
 		line, col := e.buf.Cursor()
-		fl, fc, found := Search(e.buf.Lines(), c.Query, line, col, SearchForward, e.search.CaseSensitive)
+		fl, fc, found := Search(e.buf.Lines(), c.Query, line, col, SearchForward, e.search.CaseSensitive, e.search.WholeWord)
 		if found {
 			e.SetSelection(fl, fc, len(c.Query))
 			return Result{Message: "Found: " + c.Query}
@@ -205,7 +205,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 		line, col := e.buf.Cursor()
 		// Start search after current match to avoid overlapping matches
-		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+len(e.search.LastQuery), SearchForward, e.search.CaseSensitive)
+		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+len(e.search.LastQuery), SearchForward, e.search.CaseSensitive, e.search.WholeWord)
 		if found {
 			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found next: " + e.search.LastQuery}
@@ -217,7 +217,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "No previous search"}
 		}
 		line, col := e.buf.Cursor()
-		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col, SearchBackward, e.search.CaseSensitive)
+		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col, SearchBackward, e.search.CaseSensitive, e.search.WholeWord)
 		if found {
 			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found prev: " + e.search.LastQuery}
@@ -445,7 +445,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		action.Apply(e)
 
 		// Find next match
-		fl, fc, found := Search(e.buf.Lines(), c.Find, line, col+len(c.Replace), SearchForward, e.search.CaseSensitive)
+		fl, fc, found := Search(e.buf.Lines(), c.Find, line, col+len(c.Replace), SearchForward, e.search.CaseSensitive, e.search.WholeWord)
 		if found {
 			e.buf.SetCursor(fl, fc)
 			return Result{}
@@ -468,7 +468,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		// Keep replacing until no more matches
 		for {
 			lines := e.buf.Lines()
-			fl, fc, found := Search(lines, c.Find, line, col, SearchForward, e.search.CaseSensitive)
+			fl, fc, found := Search(lines, c.Find, line, col, SearchForward, e.search.CaseSensitive, e.search.WholeWord)
 			if !found {
 				break
 			}
@@ -869,6 +869,26 @@ func (e *Editor) SearchState() *SearchState {
 	return &e.search
 }
 
+// ToggleCaseSensitivity toggles case-sensitive search mode
+func (e *Editor) ToggleCaseSensitivity() {
+	e.search.CaseSensitive = !e.search.CaseSensitive
+	// Update active session if one exists and re-run search
+	if e.search.Session != nil {
+		e.search.Session.CaseSensitive = e.search.CaseSensitive
+		e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
+	}
+}
+
+// ToggleWholeWord toggles whole word search mode
+func (e *Editor) ToggleWholeWord() {
+	e.search.WholeWord = !e.search.WholeWord
+	// Update active session if one exists and re-run search
+	if e.search.Session != nil {
+		e.search.Session.WholeWord = e.search.WholeWord
+		e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
+	}
+}
+
 func (e *Editor) EnsureVisible(w, h int) {
 	if w < 1 {
 		w = 1
@@ -1039,26 +1059,6 @@ func (e *Editor) HasSearchSession() bool {
 // GetSearchSession returns the current search session, or nil if none.
 func (e *Editor) GetSearchSession() *SearchSession {
 	return e.search.Session
-}
-
-// ToggleCaseSensitivity toggles the case sensitivity setting.
-func (e *Editor) ToggleCaseSensitivity() {
-	e.search.CaseSensitive = !e.search.CaseSensitive
-	// If we have an active session, update it
-	if e.search.Session != nil {
-		e.search.Session.CaseSensitive = e.search.CaseSensitive
-		e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
-	}
-}
-
-// ToggleWholeWord toggles the whole word matching setting.
-func (e *Editor) ToggleWholeWord() {
-	e.search.WholeWord = !e.search.WholeWord
-	// If we have an active session, update it
-	if e.search.Session != nil {
-		e.search.Session.WholeWord = e.search.WholeWord
-		e.search.Session.UpdateMatches(e.buf.Lines(), 1000)
-	}
 }
 
 // GetCaseSensitive returns the current case sensitivity setting.

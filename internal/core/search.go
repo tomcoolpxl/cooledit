@@ -48,19 +48,20 @@ func (s *SearchState) SetQuery(q string) {
 // Search finds the next occurrence of query starting from (line, col).
 // Returns (line, col, true) if found, otherwise (-1, -1, false).
 // caseSensitive controls whether the search is case-sensitive.
-func Search(lines [][]rune, query string, startLine, startCol int, dir Direction, caseSensitive bool) (int, int, bool) {
+// wholeWord controls whether to match whole words only.
+func Search(lines [][]rune, query string, startLine, startCol int, dir Direction, caseSensitive, wholeWord bool) (int, int, bool) {
 	if query == "" {
 		return -1, -1, false
 	}
 
 	if dir == SearchForward {
-		return searchForward(lines, query, startLine, startCol, caseSensitive)
+		return searchForward(lines, query, startLine, startCol, caseSensitive, wholeWord)
 	} else {
-		return searchBackward(lines, query, startLine, startCol, caseSensitive)
+		return searchBackward(lines, query, startLine, startCol, caseSensitive, wholeWord)
 	}
 }
 
-func searchForward(lines [][]rune, query string, startLine, startCol int, caseSensitive bool) (int, int, bool) {
+func searchForward(lines [][]rune, query string, startLine, startCol int, caseSensitive, wholeWord bool) (int, int, bool) {
 	// Scan lines
 	for i := startLine; i < len(lines); i++ {
 		lineStr := string(lines[i])
@@ -75,22 +76,38 @@ func searchForward(lines [][]rune, query string, startLine, startCol int, caseSe
 		}
 
 		// Search in the substring
-		var matchIdx int
-		if caseSensitive {
-			matchIdx = strings.Index(lineStr[startIdx:], query)
-		} else {
-			matchIdx = indexCaseInsensitive(lineStr[startIdx:], query)
-		}
+		searchIn := lineStr[startIdx:]
+		offset := 0
 
-		if matchIdx != -1 {
-			return i, startIdx + matchIdx, true
+		for {
+			var matchIdx int
+			if caseSensitive {
+				matchIdx = strings.Index(searchIn, query)
+			} else {
+				matchIdx = indexCaseInsensitive(searchIn, query)
+			}
+
+			if matchIdx == -1 {
+				break
+			}
+
+			actualPos := startIdx + offset + matchIdx
+
+			// Check whole word boundary if needed
+			if !wholeWord || isWholeWordMatch(lineStr, actualPos, len(query)) {
+				return i, actualPos, true
+			}
+
+			// Move past this match and continue searching
+			offset += matchIdx + 1
+			searchIn = lineStr[startIdx+offset:]
 		}
 	}
 
 	return -1, -1, false
 }
 
-func searchBackward(lines [][]rune, query string, startLine, startCol int, caseSensitive bool) (int, int, bool) {
+func searchBackward(lines [][]rune, query string, startLine, startCol int, caseSensitive, wholeWord bool) (int, int, bool) {
 	// Scan lines backwards
 	for i := startLine; i >= 0; i-- {
 		lineStr := string(lines[i])
@@ -108,15 +125,35 @@ func searchBackward(lines [][]rune, query string, startLine, startCol int, caseS
 			searchSpace = lineStr[:endIdx]
 		}
 
-		var matchIdx int
-		if caseSensitive {
-			matchIdx = strings.LastIndex(searchSpace, query)
-		} else {
-			matchIdx = lastIndexCaseInsensitive(searchSpace, query)
+		// For backward search, find all matches and take the last one that satisfies whole word
+		var lastValidMatch int = -1
+
+		offset := 0
+		for {
+			var matchIdx int
+			if caseSensitive {
+				matchIdx = strings.Index(searchSpace[offset:], query)
+			} else {
+				matchIdx = indexCaseInsensitive(searchSpace[offset:], query)
+			}
+
+			if matchIdx == -1 {
+				break
+			}
+
+			actualPos := offset + matchIdx
+
+			// Check whole word boundary if needed
+			if !wholeWord || isWholeWordMatch(lineStr, actualPos, len(query)) {
+				lastValidMatch = actualPos
+			}
+
+			// Move past this match
+			offset = actualPos + 1
 		}
 
-		if matchIdx != -1 {
-			return i, matchIdx, true
+		if lastValidMatch != -1 {
+			return i, lastValidMatch, true
 		}
 	}
 	return -1, -1, false
@@ -147,6 +184,40 @@ func lastIndexCaseInsensitive(s, substr string) int {
 	return strings.LastIndex(lowerS, lowerSubstr)
 }
 
+// isWordBoundary checks if a position is at a word boundary.
+// A word boundary is before/after a word character (letter, digit, underscore).
+func isWordBoundary(s string, pos int) bool {
+	if pos < 0 || pos > len(s) {
+		return true
+	}
+	if pos == 0 || pos == len(s) {
+		return true
+	}
+	// Check if characters on either side are different types (word vs non-word)
+	before := pos > 0 && isWordRune(rune(s[pos-1]))
+	at := pos < len(s) && isWordRune(rune(s[pos]))
+	return before != at
+}
+
+// isWordRune returns true if the rune is a word character (letter, digit, underscore).
+func isWordRune(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_'
+}
+
+// isWholeWordMatch checks if a match at the given position is a whole word match.
+func isWholeWordMatch(s string, matchPos, matchLen int) bool {
+	// Check start boundary
+	if matchPos > 0 && isWordRune(rune(s[matchPos-1])) {
+		return false
+	}
+	// Check end boundary
+	endPos := matchPos + matchLen
+	if endPos < len(s) && isWordRune(rune(s[endPos])) {
+		return false
+	}
+	return true
+}
+
 // Match represents a single search match location.
 type Match struct {
 	Line   int
@@ -156,9 +227,9 @@ type Match struct {
 
 // FindAllMatches finds all occurrences of query in the given lines.
 // Returns a slice of Match structs containing the position and length of each match.
-// The search respects the caseSensitive parameter.
+// The search respects the caseSensitive and wholeWord parameters.
 // For performance, limits results to maxMatches (use 0 for unlimited).
-func FindAllMatches(lines [][]rune, query string, caseSensitive bool, maxMatches int) []Match {
+func FindAllMatches(lines [][]rune, query string, caseSensitive, wholeWord bool, maxMatches int) []Match {
 	if query == "" {
 		return nil
 	}
@@ -184,15 +255,19 @@ func FindAllMatches(lines [][]rune, query string, caseSensitive bool, maxMatches
 
 			// Found a match
 			actualCol := offset + matchIdx
-			matches = append(matches, Match{
-				Line:   lineNum,
-				Col:    actualCol,
-				Length: queryLen,
-			})
 
-			// Check if we've hit the limit
-			if maxMatches > 0 && len(matches) >= maxMatches {
-				return matches
+			// Check whole word boundary if needed
+			if !wholeWord || isWholeWordMatch(lineStr, actualCol, queryLen) {
+				matches = append(matches, Match{
+					Line:   lineNum,
+					Col:    actualCol,
+					Length: queryLen,
+				})
+
+				// Check if we've hit the limit
+				if maxMatches > 0 && len(matches) >= maxMatches {
+					return matches
+				}
 			}
 
 			// Move past this match to find next one (avoid overlapping)
@@ -217,7 +292,7 @@ func NewSearchSession(query string, caseSensitive bool, wholeWord bool) *SearchS
 // UpdateMatches updates the matches in the search session.
 // This should be called when the search query changes or when the buffer changes.
 func (s *SearchSession) UpdateMatches(lines [][]rune, maxMatches int) {
-	s.Matches = FindAllMatches(lines, s.Query, s.CaseSensitive, maxMatches)
+	s.Matches = FindAllMatches(lines, s.Query, s.CaseSensitive, s.WholeWord, maxMatches)
 	// Reset to first match if we have any matches
 	if len(s.Matches) > 0 {
 		s.CurrentIndex = 0
