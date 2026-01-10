@@ -256,7 +256,7 @@ func TestSearchNavigationWhileTyping(t *testing.T) {
 	// Navigate to next match with 'n'
 	initialIndex := ui.editor.SearchState().Session.CurrentIndex
 	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'n'})
-	
+
 	newIndex := ui.editor.SearchState().Session.CurrentIndex
 	if newIndex == initialIndex {
 		t.Error("expected current index to change after 'n'")
@@ -264,7 +264,7 @@ func TestSearchNavigationWhileTyping(t *testing.T) {
 
 	// Navigate to previous match with 'p'
 	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'p'})
-	
+
 	if ui.editor.SearchState().Session.CurrentIndex != initialIndex {
 		t.Error("expected to return to initial index after 'p'")
 	}
@@ -467,14 +467,14 @@ func TestSearchF3Navigation(t *testing.T) {
 
 	// Press F3 to go to next match
 	dispatch(ui, term.KeyEvent{Key: term.KeyF3})
-	
+
 	if ui.editor.SearchState().Session.CurrentIndex <= initialIndex {
 		t.Error("expected F3 to move to next match")
 	}
 
 	// Press Shift+F3 to go to previous match
 	dispatch(ui, term.KeyEvent{Key: term.KeyF3, Modifiers: term.ModShift})
-	
+
 	if ui.editor.SearchState().Session.CurrentIndex != initialIndex {
 		t.Error("expected Shift+F3 to return to previous match")
 	}
@@ -518,5 +518,3 @@ func TestSearchEnterMovesToNext(t *testing.T) {
 		t.Errorf("expected to stay in ModeSearch, got %v", ui.mode)
 	}
 }
-
-

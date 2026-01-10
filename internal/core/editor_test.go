@@ -727,7 +727,7 @@ func TestReplaceAllUndoable(t *testing.T) {
 
 func TestEditorIncrementalSearch(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Create test content with newlines
 	for _, r := range "hello world" {
 		e.Apply(CmdInsertRune{Rune: r}, 10)
@@ -745,7 +745,7 @@ func TestEditorIncrementalSearch(t *testing.T) {
 	// Start search session
 	e.SearchState().CaseSensitive = false
 	matches := FindAllMatches(e.Lines(), "hello", false, false, 0)
-	
+
 	if len(matches) != 2 {
 		t.Fatalf("expected 2 matches for 'hello', got %d", len(matches))
 	}
@@ -778,7 +778,7 @@ func TestEditorIncrementalSearch(t *testing.T) {
 
 func TestToggleCaseSensitivity(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Default should be case-insensitive (false)
 	if e.SearchState().CaseSensitive {
 		t.Error("expected default case sensitivity to be false")
@@ -799,7 +799,7 @@ func TestToggleCaseSensitivity(t *testing.T) {
 
 func TestToggleWholeWord(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Default should be false
 	if e.SearchState().WholeWord {
 		t.Error("expected default whole word to be false")
@@ -820,7 +820,7 @@ func TestToggleWholeWord(t *testing.T) {
 
 func TestSearchSessionPersistence(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Create test content
 	for _, r := range "test testing tested" {
 		e.Apply(CmdInsertRune{Rune: r}, 10)
@@ -865,12 +865,12 @@ func TestSearchSessionPersistence(t *testing.T) {
 
 func TestSearchStateAfterFileChange(t *testing.T) {
 	e := newTestEditor()
-	
+
 	// Create initial content and search
 	for _, r := range "hello world" {
 		e.Apply(CmdInsertRune{Rune: r}, 10)
 	}
-	
+
 	e.SearchState().LastQuery = "hello"
 	e.SearchState().Session = &SearchSession{
 		Query:        "hello",

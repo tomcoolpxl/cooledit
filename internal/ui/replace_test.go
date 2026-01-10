@@ -123,7 +123,7 @@ func TestReplaceAllUndo(t *testing.T) {
 
 	// Perform replace all via command
 	res := ui.editor.Apply(core.CmdReplaceAll{Find: "foo", Replace: "bar"}, 10)
-	
+
 	// Verify replacements happened
 	if !strings.Contains(res.Message, "Replaced 3 occurrences") {
 		t.Errorf("expected replace all message, got: %s", res.Message)
@@ -138,7 +138,7 @@ func TestReplaceAllUndo(t *testing.T) {
 
 	// Undo should revert ALL replacements in one operation
 	ui.editor.Apply(core.CmdUndo{}, 10)
-	
+
 	lines = ui.editor.Lines()
 	text = string(lines[0])
 	if text != originalText {
@@ -157,7 +157,7 @@ func TestReplaceWithEmptyString(t *testing.T) {
 
 	// Perform replace with empty string (deletion)
 	res := ui.editor.Apply(core.CmdReplaceAll{Find: "hello ", Replace: ""}, 10)
-	
+
 	// Verify deletion happened
 	if !strings.Contains(res.Message, "Replaced") {
 		t.Errorf("expected replace message, got: %s", res.Message)
@@ -384,5 +384,3 @@ func TestReplaceMultipleLines(t *testing.T) {
 		t.Errorf("line 2: expected 'exam line three', got '%s'", string(lines[2]))
 	}
 }
-
-

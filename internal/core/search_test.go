@@ -386,7 +386,7 @@ func TestFindAllMatchesWholeWord(t *testing.T) {
 
 	// Whole word search should find only 1 match (the standalone "test" on line 1)
 	matches := FindAllMatches(lines, "test", true, true, 0)
-	
+
 	if len(matches) != 1 {
 		// Debug: print all matches found
 		for i, m := range matches {

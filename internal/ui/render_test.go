@@ -392,5 +392,3 @@ func TestSearchStatusBarPreservesRightInfo(t *testing.T) {
 		t.Error("status bar should preserve right-side info in search mode")
 	}
 }
-
-
