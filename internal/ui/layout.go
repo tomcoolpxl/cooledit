@@ -42,9 +42,8 @@ func ComputeLayout(w, h int, mode UIMode, hasMenubar, hasStatusBar bool) Layout 
 	}
 
 	// Status Bar (always at bottom when visible)
-	// Always show statusbar in prompt/message/find/replace modes
-	showStatusBar := hasStatusBar || mode == ModePrompt || mode == ModeMessage ||
-		mode == ModeFindReplace
+	// Always show statusbar in prompt/message modes
+	showStatusBar := hasStatusBar || mode == ModePrompt || mode == ModeMessage
 
 	if showStatusBar {
 		l.StatusBar = Rect{0, h - 1, w, 1}

@@ -895,110 +895,6 @@ func (u *UI) drawSearchStatus(rect Rect, style term.Style) {
 	}
 }
 
-// drawFindReplaceStatus renders an enhanced status bar for ModeFindReplace mode.
-// Shows: match info, current match position, available actions
-// Format: Match 3 of 15 | Match Case | R:Replace N:Next P:Prev A:All Q:Quit | Ln 42, Col 8
-func (u *UI) drawFindReplaceStatus(rect Rect, style term.Style) {
-	// Background
-	for x := 0; x < rect.W; x++ {
-		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
-	}
-
-	// Get search session info
-	searchState := u.editor.SearchState()
-	session := searchState.Session
-
-	// Build left section: match info
-	left := ""
-	if session != nil && len(session.Matches) > 0 {
-		currentIdx := session.CurrentIndex + 1 // 1-based for display
-		totalMatches := len(session.Matches)
-		if session.LimitReached {
-			left = fmt.Sprintf("Match %d of %d+", currentIdx, totalMatches)
-		} else {
-			left = fmt.Sprintf("Match %d of %d", currentIdx, totalMatches)
-		}
-
-		// Add case sensitivity indicator
-		if searchState.CaseSensitive {
-			left += " | Match Case"
-		} else {
-			left += " | Ignore Case"
-		}
-
-		// Add whole word indicator if active
-		if searchState.WholeWord {
-			left += " | Whole Word"
-		}
-	} else {
-		left = "No matches"
-	}
-
-	// Build right section: cursor position
-	cy, cx := u.editor.Cursor()
-	fs := u.editor.File()
-	eol := "LF"
-	if fs.EOL == "\r\n" {
-		eol = "CRLF"
-	}
-	right := fmt.Sprintf("Ln %d, Col %d  %s %s", cy+1, cx+1, fs.Encoding, eol)
-
-	// Priority 1: Draw right section
-	startRight := rect.W - len(right)
-	if startRight < 0 {
-		startRight = 0
-	}
-	for i, r := range right {
-		x := startRight + i
-		if x >= 0 && x < rect.W {
-			u.screen.SetCell(rect.X+x, rect.Y, r, style)
-		}
-	}
-
-	// Priority 2: Draw left section (truncate if needed)
-	maxLeft := startRight - 1
-	if maxLeft < 0 {
-		maxLeft = 0
-	}
-	leftEnd := len(left)
-	if leftEnd > maxLeft {
-		leftEnd = maxLeft
-	}
-	for i, r := range left {
-		if i >= leftEnd {
-			break
-		}
-		u.screen.SetCell(rect.X+i, rect.Y, r, style)
-	}
-
-	// Priority 3: Draw action shortcuts in center if space allows
-	shortcuts := "R:Replace  N:Next  P:Prev  A:All  Q:Quit"
-	availStart := leftEnd + 2
-	availEnd := startRight - 2
-	availWidth := availEnd - availStart
-
-	if availWidth > len(shortcuts) {
-		// Center the shortcuts
-		centerX := availStart + (availWidth-len(shortcuts))/2
-		for i, r := range shortcuts {
-			x := centerX + i
-			if x >= availStart && x < availEnd {
-				u.screen.SetCell(rect.X+x, rect.Y, r, style)
-			}
-		}
-	} else if availWidth > 15 {
-		// Abbreviated shortcuts for medium screens
-		shortcutsAbbr := "R N P A Q"
-		centerX := availStart + (availWidth-len(shortcutsAbbr))/2
-		for i, r := range shortcutsAbbr {
-			x := centerX + i
-			if x >= availStart && x < availEnd {
-				u.screen.SetCell(rect.X+x, rect.Y, r, style)
-			}
-		}
-	}
-}
-
 func (u *UI) drawStatusBar() {
 	rect := u.layout.StatusBar
 	if rect.H < 1 {
@@ -1031,12 +927,6 @@ func (u *UI) drawStatusBar() {
 	// Enhanced status bar for search mode (unified incremental search)
 	if u.mode == ModeSearch {
 		u.drawSearchStatus(rect, style)
-		return
-	}
-
-	// Enhanced status bar for find/replace mode
-	if u.mode == ModeFindReplace {
-		u.drawFindReplaceStatus(rect, style)
 		return
 	}
 
@@ -1094,63 +984,61 @@ func (u *UI) drawStatusBar() {
 		u.screen.SetCell(rect.X+i, rect.Y, r, style)
 	}
 
-	// Priority 3: Draw centered mini-help (if not in find/replace mode)
-	if u.mode != ModeFindReplace {
-		// Build mini-help with priority from left to right
-		miniHelp := []string{
-			"F1 Help",
-			"Esc/F10 Menu",
-			"Ctrl+Q Quit",
-			"Ctrl+S Save",
-			"Ctrl+F Find/Replace",
+	// Priority 3: Draw centered mini-help
+	// Build mini-help with priority from left to right
+	miniHelp := []string{
+		"F1 Help",
+		"Esc/F10 Menu",
+		"Ctrl+Q Quit",
+		"Ctrl+S Save",
+		"Ctrl+F Find/Replace",
+	}
+
+	// Calculate available space for center section
+	availStart := leftEnd + 2
+	availEnd := startRight - 2
+	availWidth := availEnd - availStart
+
+	if availWidth > 0 {
+		// Build help string with available space
+		var helpParts []string
+		helpLen := 0
+		for _, part := range miniHelp {
+			newLen := helpLen
+			if len(helpParts) > 0 {
+				newLen += 3 // "  " separator
+			}
+			newLen += len(part)
+
+			if newLen <= availWidth {
+				helpParts = append(helpParts, part)
+				helpLen = newLen
+			} else {
+				break
+			}
 		}
 
-		// Calculate available space for center section
-		availStart := leftEnd + 2
-		availEnd := startRight - 2
-		availWidth := availEnd - availStart
-
-		if availWidth > 0 {
-			// Build help string with available space
-			var helpParts []string
-			helpLen := 0
-			for _, part := range miniHelp {
-				newLen := helpLen
-				if len(helpParts) > 0 {
-					newLen += 3 // "  " separator
+		if len(helpParts) > 0 {
+			// Join with separators
+			helpText := ""
+			for i, part := range helpParts {
+				if i > 0 {
+					helpText += "  "
 				}
-				newLen += len(part)
-
-				if newLen <= availWidth {
-					helpParts = append(helpParts, part)
-					helpLen = newLen
-				} else {
-					break
-				}
+				helpText += part
 			}
 
-			if len(helpParts) > 0 {
-				// Join with separators
-				helpText := ""
-				for i, part := range helpParts {
-					if i > 0 {
-						helpText += "  "
-					}
-					helpText += part
-				}
+			// Center the help text
+			centerX := availStart + (availWidth-len(helpText))/2
+			if centerX < availStart {
+				centerX = availStart
+			}
 
-				// Center the help text
-				centerX := availStart + (availWidth-len(helpText))/2
-				if centerX < availStart {
-					centerX = availStart
-				}
-
-				// Draw centered help
-				for i, r := range helpText {
-					x := centerX + i
-					if x >= availStart && x < availEnd {
-						u.screen.SetCell(rect.X+x, rect.Y, r, style)
-					}
+			// Draw centered help
+			for i, r := range helpText {
+				x := centerX + i
+				if x >= availStart && x < availEnd {
+					u.screen.SetCell(rect.X+x, rect.Y, r, style)
 				}
 			}
 		}
@@ -1610,8 +1498,8 @@ func (u *UI) getBracketStyle(docY, runeIdx int) *term.Style {
 // Returns nil if the position is not in a search match.
 // Distinguishes between current match and other matches.
 func (u *UI) getSearchMatchStyle(docY, runeIdx int) *term.Style {
-	// Only apply search highlighting in search or find/replace modes
-	if u.mode != ModeSearch && u.mode != ModeFindReplace {
+	// Only apply search highlighting in search mode
+	if u.mode != ModeSearch {
 		return nil
 	}
 

@@ -75,17 +75,6 @@ func dispatch(ui *UI, ev term.Event) {
 			}
 		}
 
-		if ui.mode == ModeFindReplace {
-			if ui.handleFindReplaceKey(e) {
-				return
-			}
-		}
-
-		if ui.mode == ModeMenu {
-			if ui.handleMenuKey(e) {
-				return
-			}
-		}
 
 		if e.Key == term.KeyF10 {
 			ui.toggleMenuFocus()
@@ -219,7 +208,7 @@ func TestCtrlQCleanQuitSetsFlag(t *testing.T) {
 	}
 }
 
-func TestCtrlFEnterFind(t *testing.T) {
+func TestCtrlFEnterSearch(t *testing.T) {
 	ui, _ := newTestUI(40, 5)
 
 	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'f', Modifiers: term.ModCtrl})
@@ -237,18 +226,19 @@ func TestCtrlFEnterFind(t *testing.T) {
 func TestPromptInteraction(t *testing.T) {
 	ui, screen := newTestUI(40, 5)
 
-	ui.enterFind()
-	draw(ui) // update layout to Prompt mode
+	// Test search mode typing instead of old prompt-based find
+	ui.enterSearch()
+	draw(ui) // update layout to Search mode
 
 	typeString(ui, "abc")
 
-	if string(ui.promptText) != "abc" {
-		t.Fatalf("expected prompt text 'abc', got %q", string(ui.promptText))
+	if string(ui.searchQuery) != "abc" {
+		t.Fatalf("expected search query 'abc', got %q", string(ui.searchQuery))
 	}
 
 	dispatch(ui, term.KeyEvent{Key: term.KeyBackspace})
-	if string(ui.promptText) != "ab" {
-		t.Fatalf("expected prompt text 'ab' after backspace, got %q", string(ui.promptText))
+	if string(ui.searchQuery) != "ab" {
+		t.Fatalf("expected search query 'ab' after backspace, got %q", string(ui.searchQuery))
 	}
 
 	dispatch(ui, term.KeyEvent{Key: term.KeyEscape})
@@ -258,7 +248,7 @@ func TestPromptInteraction(t *testing.T) {
 
 	draw(ui)
 	if screen.Cell(0, 3) != ' ' {
-		t.Fatalf("expected prompt row to be clear")
+		t.Fatalf("expected status row to be clear")
 	}
 }
 

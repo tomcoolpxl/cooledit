@@ -29,7 +29,6 @@ const (
 	PromptSaveAs PromptKind = iota
 	PromptOverwrite
 	PromptQuitConfirm
-	PromptFind
 	PromptGoToLine
 	PromptReplaceWith
 	PromptReplaceAllConfirm
@@ -57,17 +56,6 @@ func (u *UI) enterSaveAs(quitAfter bool) {
 	u.quitAfterSave = quitAfter
 }
 
-func (u *UI) enterFind() {
-	u.mode = ModePrompt
-	u.promptKind = PromptFind
-	u.promptLabel = "Find: "
-	if u.lastFindTerm != "" {
-		u.promptText = []rune(u.lastFindTerm)
-	} else {
-		u.promptText = nil
-	}
-}
-
 func (u *UI) enterGoToLine() {
 	u.mode = ModePrompt
 	u.promptKind = PromptGoToLine
@@ -80,7 +68,7 @@ func (u *UI) enterReplaceAllConfirm() {
 	matchCount := 0
 	searchState := u.editor.SearchState()
 
-	// If no session exists, create one from lastFindTerm (for legacy ModeFindReplace)
+	// If no session exists, create one from lastFindTerm
 	if searchState != nil && searchState.Session == nil && u.lastFindTerm != "" {
 		u.editor.StartSearchSession(u.lastFindTerm)
 		searchState = u.editor.SearchState()
@@ -214,40 +202,6 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 		}
 		return true
 
-	case PromptFind:
-		switch e.Key {
-		case term.KeyEnter:
-			query := string(u.promptText)
-			u.exitPrompt()
-			if query != "" {
-				u.lastFindTerm = query
-			}
-			res := u.editor.Apply(core.CmdFind{Query: query}, u.layout.Viewport.H)
-			if res.Message == "" || res.Message[:5] == "Found" {
-				// Found a match, enter find/replace mode (AFTER exitPrompt)
-				u.mode = ModeFindReplace
-			} else {
-				// Not found, show message
-				u.enterMessage(res.Message)
-			}
-			return true
-
-		case term.KeyEscape:
-			u.exitPrompt()
-			return true
-
-		case term.KeyBackspace:
-			if len(u.promptText) > 0 {
-				u.promptText = u.promptText[:len(u.promptText)-1]
-			}
-			return true
-
-		case term.KeyRune:
-			u.promptText = append(u.promptText, e.Rune)
-			return true
-		}
-		return true
-
 	case PromptGoToLine:
 		switch e.Key {
 		case term.KeyEnter:
@@ -322,8 +276,12 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 		case term.KeyEscape:
 			u.exitPrompt()
 			u.replacingAll = false
-			// Go back to find/replace mode
-			u.mode = ModeFindReplace
+			// Go back to search mode if we have a search query
+			if len(u.searchQuery) > 0 {
+				u.mode = ModeSearch
+			} else {
+				u.mode = ModeNormal
+			}
 			return true
 
 		case term.KeyBackspace:
@@ -358,7 +316,7 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 				if len(u.searchQuery) > 0 {
 					u.mode = ModeSearch
 				} else {
-					u.mode = ModeFindReplace
+					u.mode = ModeNormal
 				}
 				return true
 			}
@@ -368,7 +326,7 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 			if len(u.searchQuery) > 0 {
 				u.mode = ModeSearch
 			} else {
-				u.mode = ModeFindReplace
+				u.mode = ModeNormal
 			}
 			return true
 		}

@@ -180,8 +180,7 @@ const (
 	ModeHelp
 	ModeAbout
 	ModeMenu
-	ModeFindReplace // Legacy mode, being replaced by ModeSearch
-	ModeSearch      // Unified incremental search mode
+	ModeSearch // Unified incremental search mode
 	ModeVimCommand
 )
 
@@ -800,92 +799,6 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	}
 
 	return nil
-}
-
-func (u *UI) handleFindReplaceKey(e term.KeyEvent) bool {
-	switch e.Key {
-	case term.KeyEscape:
-		// Exit find/replace mode
-		u.mode = ModeNormal
-		u.editor.ClearSelection()
-		return true
-
-	case term.KeyF3:
-		// Find next
-		if e.Modifiers == term.ModShift {
-			res := u.editor.Apply(core.CmdFindPrev{}, u.layout.Viewport.H)
-			if res.Message != "" && res.Message[:9] == "Not found" {
-				u.mode = ModeNormal
-				u.enterMessage(res.Message)
-			}
-		} else {
-			res := u.editor.Apply(core.CmdFindNext{}, u.layout.Viewport.H)
-			if res.Message != "" && res.Message[:9] == "Not found" {
-				u.mode = ModeNormal
-				u.enterMessage(res.Message)
-			}
-		}
-		return true
-
-	case term.KeyRune:
-		switch e.Rune {
-		case 'n', 'N':
-			// Find next
-			res := u.editor.Apply(core.CmdFindNext{}, u.layout.Viewport.H)
-			if res.Message != "" && res.Message[:9] == "Not found" {
-				u.mode = ModeNormal
-				u.enterMessage(res.Message)
-			}
-			return true
-
-		case 'p', 'P':
-			// Find previous
-			res := u.editor.Apply(core.CmdFindPrev{}, u.layout.Viewport.H)
-			if res.Message != "" && res.Message[:9] == "Not found" {
-				u.mode = ModeNormal
-				u.enterMessage(res.Message)
-			}
-			return true
-
-		case 'r', 'R':
-			// Replace current match - need to prompt for replacement text
-			u.mode = ModePrompt
-			u.promptKind = PromptReplaceWith
-			u.promptLabel = "Replace with: "
-			if u.lastReplaceTerm != "" {
-				u.promptText = []rune(u.lastReplaceTerm)
-			} else {
-				u.promptText = nil
-			}
-			return true
-
-		case 'a', 'A':
-			// Replace all - show confirmation dialog first
-			u.enterReplaceAllConfirm()
-			return true
-
-		case 'q', 'Q':
-			// Quit find mode
-			u.mode = ModeNormal
-			u.editor.ClearSelection()
-			return true
-
-		default:
-			// CRITICAL: Explicitly consume all other runes to prevent key leakage
-			// In find/replace mode, only the above keys (n/p/r/a/q) are valid
-			// Any other character should be ignored, not inserted into editor
-			return true
-		}
-
-	default:
-		// Handle any other key types (arrows, function keys, etc.)
-		// Consume them to prevent unexpected behavior
-		return true
-	}
-
-	// NOTE: This line should never be reached due to default cases above,
-	// but kept as final safety net
-	return true
 }
 
 // enterSearch enters the unified search mode (ModeSearch).

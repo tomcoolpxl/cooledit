@@ -93,7 +93,7 @@ func (m *Menubar) initDefaults() {
 			Title:       "Search",
 			ShortcutKey: 'e',
 			Items: []MenuItem{
-				{Label: "Find / Replace", Accelerator: "Ctrl+F", ShortcutKey: 'f', Action: func(u *UI) { u.enterFind() }},
+				{Label: "Find / Replace", Accelerator: "Ctrl+F", ShortcutKey: 'f', Action: func(u *UI) { u.enterSearch() }},
 				{Label: "Find Next", Accelerator: "F3", ShortcutKey: 'n', Command: core.CmdFindNext{}},
 				{Label: "Find Previous", Accelerator: "Shift+F3", ShortcutKey: 'p', Command: core.CmdFindPrev{}},
 			},

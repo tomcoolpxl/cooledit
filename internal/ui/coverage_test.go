@@ -72,19 +72,19 @@ func TestPromptCoverage(t *testing.T) {
 		}
 	})
 
-	// 3. PromptFind with backspace and escape
-	t.Run("FindBackspaceEscape", func(t *testing.T) {
+	// 3. GoToLine with backspace
+	t.Run("GoToLineBackspace", func(t *testing.T) {
 		ui, _ := newTestUI(40, 5)
-		ui.enterFind()
+		ui.enterGoToLine()
 
-		typeString(ui, "abc")
-		if string(ui.promptText) != "abc" {
-			t.Fatalf("expected 'abc', got %q", string(ui.promptText))
+		typeString(ui, "123")
+		if string(ui.promptText) != "123" {
+			t.Fatalf("expected '123', got %q", string(ui.promptText))
 		}
 
 		dispatch(ui, term.KeyEvent{Key: term.KeyBackspace})
-		if string(ui.promptText) != "ab" {
-			t.Fatalf("expected 'ab', got %q", string(ui.promptText))
+		if string(ui.promptText) != "12" {
+			t.Fatalf("expected '12' after backspace, got %q", string(ui.promptText))
 		}
 
 		dispatch(ui, term.KeyEvent{Key: term.KeyEscape})
