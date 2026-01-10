@@ -1,6 +1,6 @@
 # cooledit
 
-A terminal-based text editor for Linux, macOS and Windows. Similar to nano but with modern keyboard shortcuts and better file handling.
+A terminal-based text editor for Linux, macOS and Windows. Similar to nano but with modern keyboard shortcuts and better file handling. And maybe a tiny bit larger in size :)
 
 ## Features
 
