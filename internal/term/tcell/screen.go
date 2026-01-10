@@ -55,7 +55,7 @@ func (s *Screen) Fini() {
 	if s.screen != nil {
 		// Restore cursor to terminal defaults using escape sequences
 		// DECSCUSR 0 = default cursor shape, OSC 112 = default cursor color
-		fmt.Fprint(os.Stdout, "\x1b[0 q")   // Reset cursor shape
+		fmt.Fprint(os.Stdout, "\x1b[0 q")     // Reset cursor shape
 		fmt.Fprint(os.Stdout, "\x1b]112\007") // Reset cursor color
 		s.screen.Fini()
 	}
