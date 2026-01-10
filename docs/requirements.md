@@ -26,8 +26,17 @@ The editor will **not include syntax highlighting**. Optional features include a
 
 **2.3 Search and Replace**
 
-* Interactive search (forward and backward).
-* Optional replace dialog.
+* Unified search mode with real-time results (incremental search)
+* Type to search - matches appear immediately as you type
+* Navigate through matches with keyboard shortcuts
+* Case-sensitive and whole word search options (toggleable)
+* Search history navigation with up/down arrows
+* Pre-fill search from current selection
+* Replace current match or replace all with confirmation
+* Visual highlighting of all matches in viewport
+* Match count display showing current position (e.g., "Match 3 of 15")
+* All operations work while typing (no need to "commit" search)
+* Persistent search preferences across searches
 
 **2.4 Text Manipulation**
 
@@ -109,11 +118,20 @@ Menus to include:
 * `Ctrl+Z` Undo
 * `Ctrl+Y` Redo
 
-**4.4 Search**
+**4.4 Search (Unified Mode)**
 
-* `Ctrl+F` Find
-* `F3` Find next
-* `Shift+F3` Find previous
+* `Ctrl+F` Enter unified search mode (incremental search with real-time results)
+* `Alt+C` Toggle case sensitivity (in search mode)
+* `Alt+W` Toggle whole word matching (in search mode)
+* `N` / `P` Navigate to next/previous match (in search mode)
+* `F3` / `Shift+F3` Find next/previous (works in and out of search mode)
+* `Up` / `Down` Navigate search history (in search mode)
+* `Enter` Move to next match (same as N in search mode)
+* `R` Replace current match (in search mode, prompts for replacement text)
+* `A` Replace all matches (in search mode, shows confirmation dialog)
+* `Esc` / `Q` Exit search mode
+* `Backspace` Delete character from query (or exit search if query is empty)
+* Any character: Add to search query (immediate real-time search)
 
 **4.5 Edit Mode**
 
@@ -144,7 +162,10 @@ Menus to include:
 
 **5.4 Dialogs**
 
-* Inline dialogs (search, replace, go to line) should appear integrated into the UI above status bar.
+* Inline dialogs (go to line) appear integrated into the UI above status bar.
+* Search uses a unified search mode with real-time feedback in the status bar.
+* Replace prompts appear as inline dialogs.
+* Replace-all shows a confirmation dialog with match count before proceeding.
 
 **5.5 Configuration Persistence**
 
@@ -158,7 +179,8 @@ Menus to include:
   * `editor.tab_width` - Spaces per tab
   * `ui.show_menubar` - Show menubar by default
   * `ui.theme` - Active theme name (default: "default")
-  * `search.case_sensitive` - Case-sensitive search by default
+  * `search.case_sensitive` - Case-sensitive search preference (persists across editor sessions)
+  * `search.whole_word` - Whole word search preference (persists across editor sessions)
   * `themes.*` - Theme definitions (see Section 9)
 * Behavior:
   * Config file created automatically on first toggle action

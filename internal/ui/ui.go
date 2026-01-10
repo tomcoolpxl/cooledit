@@ -26,6 +26,23 @@ import (
 )
 
 // SearchHistory maintains a history of search queries for navigation.
+// This allows users to navigate through their previous searches using up/down arrow keys,
+// similar to command-line history navigation.
+//
+// Features:
+//  - Stores up to maxSize queries (typically 20)
+//  - Automatically deduplicates consecutive identical queries
+//  - Supports bidirectional navigation (up/down)
+//  - Preserves current query when navigating (tempQuery)
+//
+// Usage pattern:
+//  1. User types query and presses Enter
+//  2. Add() is called to save query to history
+//  3. In next search, user presses Up to navigate to previous query
+//  4. First Prev() call stores current query in tempQuery
+//  5. Subsequent Prev() calls move backwards through history
+//  6. Next() calls move forwards, eventually returning to tempQuery
+//  7. Reset() clears navigation state
 type SearchHistory struct {
 	queries   []string // Recent search queries (most recent last)
 	index     int      // Current position in history (-1 if not navigating)
@@ -102,6 +119,9 @@ func (h *SearchHistory) Next(currentQuery string) string {
 }
 
 // Reset stops navigation and clears temporary state.
+// Reset resets the navigation state, clearing the temporary query and index.
+// This should be called when starting a new search or when the user types a character
+// (indicating they want to stop navigating history and start fresh).
 func (h *SearchHistory) Reset() {
 	h.index = -1
 	h.tempQuery = ""
@@ -1051,6 +1071,8 @@ func (u *UI) doSearch() {
 }
 
 // nextSearchMatch moves to the next search match.
+// If no matches exist or no session is active, this is a no-op.
+// Updates the editor selection to highlight the new match and ensures it's visible.
 func (u *UI) nextSearchMatch() {
 	session := u.editor.GetSearchSession()
 	if session == nil || !session.HasMatches() {
@@ -1067,6 +1089,8 @@ func (u *UI) nextSearchMatch() {
 }
 
 // prevSearchMatch moves to the previous search match.
+// If no matches exist or no session is active, this is a no-op.
+// Updates the editor selection to highlight the new match and ensures it's visible.
 func (u *UI) prevSearchMatch() {
 	session := u.editor.GetSearchSession()
 	if session == nil || !session.HasMatches() {
@@ -1083,6 +1107,9 @@ func (u *UI) prevSearchMatch() {
 }
 
 // searchHistoryPrev navigates backwards in search history.
+// On first call, stores the current query and moves to the most recent historical query.
+// On subsequent calls, continues moving backwards through history.
+// If already at the beginning, stays at the oldest query.
 func (u *UI) searchHistoryPrev() {
 	currentQuery := string(u.searchQuery)
 	prevQuery := u.searchHistory.Prev(currentQuery)
@@ -1091,6 +1118,8 @@ func (u *UI) searchHistoryPrev() {
 }
 
 // searchHistoryNext navigates forwards in search history.
+// Moves to the next query in history. If already at the end, returns to the
+// original query that was being typed (stored in tempQuery).
 func (u *UI) searchHistoryNext() {
 	currentQuery := string(u.searchQuery)
 	nextQuery := u.searchHistory.Next(currentQuery)

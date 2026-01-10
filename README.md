@@ -8,7 +8,8 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - UTF-8 and ISO-8859-1 encoding support with auto-detection
 - LF and CRLF line ending detection and preservation
 - Undo/redo with full history
-- Find and replace with non-overlapping matches
+- Find and replace with unified search mode (real-time incremental search)
+- Search history navigation and case-sensitive/whole word options
 - System clipboard integration (Ctrl+C/X/V)
 - Line numbers (toggle with Ctrl+L)
 - Word wrap (toggle with Ctrl+W)
@@ -87,9 +88,15 @@ cooledit --help
 - `Backspace` - Delete one character
 
 ### Search
-- `Ctrl+F` - Find/Replace (unified mode)
-- `F3` - Find next
-- `Shift+F3` - Find previous
+- `Ctrl+F` - Enter unified search mode (incremental search with real-time results)
+- `Alt+C` - Toggle case sensitivity (in search mode)
+- `Alt+W` - Toggle whole word matching (in search mode)
+- `N` / `P` - Navigate to next/previous match (in search mode)
+- `F3` / `Shift+F3` - Find next/previous (works in and out of search mode)
+- `Up` / `Down` - Navigate search history (in search mode)
+- `R` - Replace current match (in search mode)
+- `A` - Replace all matches (in search mode, with confirmation)
+- `Esc` / `Q` - Exit search mode
 - `Ctrl+G` - Go to line
 
 ### Navigation
@@ -138,7 +145,8 @@ theme = "default"
 cursor_shape = "block"  # Options: block, underline, bar
 
 [search]
-case_sensitive = true
+case_sensitive = false
+whole_word = false
 ```
 
 ## Themes
@@ -161,15 +169,40 @@ case_sensitive = true
 
 Custom themes can be defined in config file using `[themes.custom_name]` sections.
 
-## Find/Replace Mode
+## Unified Search Mode
 
-Press `Ctrl+F` to enter find/replace mode. After entering search term:
+Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 
-- `N` - Find next match
-- `P` - Find previous match
-- `R` - Replace current match (prompts for replacement)
-- `A` - Replace all matches
-- `Q` or `Esc` - Exit find/replace mode
+### Searching
+- Type to search - matches appear immediately as you type
+- Search highlights all matches in the viewport
+- Status bar shows match count (e.g., "Match 3 of 15")
+- `Enter` or `N` - Navigate to next match
+- `P` - Navigate to previous match
+- `F3` / `Shift+F3` - Also navigate next/previous
+- `Up` / `Down` - Navigate search history
+- `Backspace` - Delete character from query (or exit if query is empty)
+
+### Options
+- `Alt+C` - Toggle case sensitivity (indicator shows "Match Case" or "Ignore Case")
+- `Alt+W` - Toggle whole word matching (indicator shows "Whole Word")
+- Search preferences persist across searches within the session
+
+### Replacing
+- `R` - Replace current match (prompts for replacement text)
+- `A` - Replace all matches (shows confirmation dialog with match count)
+- Replace-all is undoable as a single operation
+
+### Exiting
+- `Q` or `Esc` - Exit search mode and return to normal editing
+- Query is saved to history for next search
+
+### Features
+- Pre-fills search from current selection (if text is selected)
+- Real-time match highlighting (current match vs other matches)
+- Visual error state when no matches found (red status bar)
+- Debounced search (waits 150ms after last keystroke)
+- Performance limit: up to 1000 matches (shows "1000+" if more exist)
 
 ## File Handling
 

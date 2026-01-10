@@ -17,16 +17,31 @@ package core
 
 import "strings"
 
+// Direction specifies the direction of a search operation.
 type Direction int
 
 const (
+	// SearchForward searches from the start position towards the end of the document.
 	SearchForward Direction = iota
+	// SearchBackward searches from the start position towards the beginning of the document.
 	SearchBackward
 )
 
 // SearchState maintains search preferences and the active search session.
-// Case sensitivity and whole word settings persist across multiple searches
-// within the editor session (they are session-level preferences, not per-search).
+// This struct contains both session-level preferences (CaseSensitive, WholeWord) which persist
+// across multiple searches, and the active search session (Session) which contains the current
+// search results and query.
+//
+// The session-level preferences are preserved even after EndSearchSession() is called,
+// ensuring that user preferences like case sensitivity persist throughout the editing session.
+//
+// Example usage:
+//
+//	e := NewEditor(clipboard)
+//	e.search.CaseSensitive = true // Set preference
+//	e.StartSearchSession("query") // Start session with case-sensitive search
+//	e.EndSearchSession()          // Clear session but preserve CaseSensitive setting
+//	e.StartSearchSession("other") // Next search still uses CaseSensitive=true
 type SearchState struct {
 	LastQuery     string         // Last search query used
 	CaseSensitive bool           // Session-level case sensitivity preference (persists across searches)
@@ -35,6 +50,20 @@ type SearchState struct {
 }
 
 // SearchSession represents an active search session with real-time results.
+// A search session is created when the user enters search mode and contains all the
+// match positions, current match index, and search options for that particular search.
+//
+// The session lifecycle:
+//  1. Created via NewSearchSession() or StartSearchSession()
+//  2. Updated via UpdateMatches() when query changes or buffer is modified
+//  3. Navigation via NextMatch()/PrevMatch()
+//  4. Destroyed via EndSearchSession()
+//
+// The session supports:
+//  - Real-time match finding (all matches are pre-computed)
+//  - Current match tracking (CurrentIndex points to active match)
+//  - Performance limits (LimitReached indicates if maxMatches was hit)
+//  - Replace operations (LastReplaceStr tracks replacement text)
 type SearchSession struct {
 	Query          string  // Current search term
 	CaseSensitive  bool    // Case sensitivity for this search
@@ -45,6 +74,8 @@ type SearchSession struct {
 	LimitReached   bool    // True if search hit the maxMatches limit
 }
 
+// SetQuery sets the last query used for search. This is typically called when
+// a search is performed to remember the query for future searches.
 func (s *SearchState) SetQuery(q string) {
 	s.LastQuery = q
 }
@@ -65,6 +96,9 @@ func Search(lines [][]rune, query string, startLine, startCol int, dir Direction
 	}
 }
 
+// searchForward searches for the query string starting from (startLine, startCol) towards the end of the document.
+// Returns (line, col, true) if found, (-1, -1, false) otherwise.
+// Supports case-sensitive/insensitive matching and whole word matching.
 func searchForward(lines [][]rune, query string, startLine, startCol int, caseSensitive, wholeWord bool) (int, int, bool) {
 	// Scan lines
 	for i := startLine; i < len(lines); i++ {
@@ -111,6 +145,9 @@ func searchForward(lines [][]rune, query string, startLine, startCol int, caseSe
 	return -1, -1, false
 }
 
+// searchBackward searches for the query string starting from (startLine, startCol) towards the beginning of the document.
+// Returns (line, col, true) if found, (-1, -1, false) otherwise.
+// Supports case-sensitive/insensitive matching and whole word matching.
 func searchBackward(lines [][]rune, query string, startLine, startCol int, caseSensitive, wholeWord bool) (int, int, bool) {
 	// Scan lines backwards
 	for i := startLine; i >= 0; i-- {
@@ -209,6 +246,9 @@ func isWordRune(r rune) bool {
 }
 
 // isWholeWordMatch checks if a match at the given position is a whole word match.
+// A whole word match requires that the characters immediately before and after the match
+// are non-word characters (or the match is at the start/end of the line).
+// Word characters are: a-z, A-Z, 0-9, and underscore.
 func isWholeWordMatch(s string, matchPos, matchLen int) bool {
 	// Check start boundary
 	if matchPos > 0 && isWordRune(rune(s[matchPos-1])) {
@@ -222,7 +262,14 @@ func isWholeWordMatch(s string, matchPos, matchLen int) bool {
 	return true
 }
 
-// Match represents a single search match location.
+// Match represents a single search match location in the document.
+// Line and Col are 0-based indices into the document's line array.
+// Length is the number of runes (not bytes) in the matched text.
+//
+// Example:
+//
+//	match := Match{Line: 5, Col: 10, Length: 4}
+//	// This represents a 4-character match at line 6 (1-based), column 11 (1-based)
 type Match struct {
 	Line   int
 	Col    int

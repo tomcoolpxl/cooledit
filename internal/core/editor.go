@@ -888,12 +888,23 @@ func (e *Editor) Modified() bool {
 	return !e.undo.IsSaved()
 }
 
-// SearchState returns a pointer to the editor's search state
+// SearchState returns a pointer to the editor's search state.
+// The returned pointer allows direct access to search preferences and the active search session.
+// This is primarily used by the UI layer to display search status and manage search operations.
 func (e *Editor) SearchState() *SearchState {
 	return &e.search
 }
 
-// ToggleCaseSensitivity toggles case-sensitive search mode
+// ToggleCaseSensitivity toggles case-sensitive search mode.
+// This is a session-level preference that persists across multiple searches.
+// If an active search session exists, it is immediately updated with the new setting
+// and all matches are re-computed to reflect the change.
+//
+// Example:
+//
+//	e.StartSearchSession("Hello")  // Finds "Hello", "hello", "HELLO" (case-insensitive by default)
+//	e.ToggleCaseSensitivity()      // Now case-sensitive
+//	// Session is automatically updated to only match "Hello" exactly
 func (e *Editor) ToggleCaseSensitivity() {
 	e.search.CaseSensitive = !e.search.CaseSensitive
 	// Update active session if one exists and re-run search
@@ -903,7 +914,17 @@ func (e *Editor) ToggleCaseSensitivity() {
 	}
 }
 
-// ToggleWholeWord toggles whole word search mode
+// ToggleWholeWord toggles whole word search mode.
+// This is a session-level preference that persists across multiple searches.
+// When enabled, only matches that are complete words are found (bounded by non-word characters).
+// If an active search session exists, it is immediately updated with the new setting
+// and all matches are re-computed to reflect the change.
+//
+// Example:
+//
+//	e.StartSearchSession("cat")  // Finds "cat", "catalog", "concatenate"
+//	e.ToggleWholeWord()          // Now only whole words
+//	// Session is automatically updated to only match "cat" as a complete word
 func (e *Editor) ToggleWholeWord() {
 	e.search.WholeWord = !e.search.WholeWord
 	// Update active session if one exists and re-run search
@@ -1053,7 +1074,19 @@ func (e *Editor) moveWordRight() {
 }
 
 // StartSearchSession starts a new search session with the given query.
-// This updates the matches and creates a new session.
+// If a search session already exists, it is reused and updated with the new query.
+// Otherwise, a new session is created with the current case sensitivity and whole word settings.
+//
+// This method:
+//  1. Creates or reuses a SearchSession
+//  2. Updates the query and search options (case sensitivity, whole word)
+//  3. Finds all matches in the buffer (up to 1000 for performance)
+//  4. Stores the query in LastQuery for history
+//
+// The matches are computed immediately, allowing for real-time display of all matches
+// and efficient navigation between them.
+//
+// Performance: Limited to 1000 matches to prevent slowdown on large files with common patterns.
 func (e *Editor) StartSearchSession(query string) {
 	if e.search.Session == nil {
 		e.search.Session = NewSearchSession(query, e.search.CaseSensitive, e.search.WholeWord)
@@ -1071,29 +1104,43 @@ func (e *Editor) StartSearchSession(query string) {
 }
 
 // EndSearchSession ends the current search session and cleans up.
-// NOTE: This only clears the active search session (match data, etc.).
-// Session-level preferences (CaseSensitive, WholeWord) are preserved
-// and will be used for the next search.
+// This clears the active search session (match data, current index, etc.) but preserves
+// session-level preferences (CaseSensitive, WholeWord) which will be used for the next search.
+//
+// This method is called when:
+//  - User exits search mode (Esc, Q)
+//  - User loads a new file
+//  - User creates a new file
+//
+// After calling this method, HasSearchSession() will return false and search highlights
+// will no longer be displayed in the UI.
+//
+// NOTE: LastQuery is NOT cleared, allowing the query to be reused in future searches.
 func (e *Editor) EndSearchSession() {
 	e.search.Session = nil
 }
 
 // HasSearchSession returns true if there's an active search session.
+// An active session means matches have been computed and search highlights should be displayed.
 func (e *Editor) HasSearchSession() bool {
 	return e.search.Session != nil
 }
 
-// GetSearchSession returns the current search session, or nil if none.
+// GetSearchSession returns the current search session, or nil if none exists.
+// The returned session contains all match positions, current match index, and search options.
+// This is used by the UI layer to display match counts, highlight matches, and navigate between them.
 func (e *Editor) GetSearchSession() *SearchSession {
 	return e.search.Session
 }
 
 // GetCaseSensitive returns the current case sensitivity setting.
+// This is a session-level preference that persists across multiple searches.
 func (e *Editor) GetCaseSensitive() bool {
 	return e.search.CaseSensitive
 }
 
 // GetWholeWord returns the current whole word setting.
+// This is a session-level preference that persists across multiple searches.
 func (e *Editor) GetWholeWord() bool {
 	return e.search.WholeWord
 }

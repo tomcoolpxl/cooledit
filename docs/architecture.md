@@ -107,9 +107,72 @@ Examples: `CmdInsertRune`, `CmdMoveDown`, `CmdSave`, `CmdUndo`, `CmdFind`, `CmdC
 
 ### Search
 
-* `SearchState` stores the last query.
-* `Search` function performs linear scan (forward/backward) over the buffer lines.
-* UI provides `PromptFind` to capture input.
+**Architecture:** Unified search mode with real-time incremental search
+
+**Core Components:**
+
+1. **SearchState** (`core/search.go`)
+   - Maintains session-level preferences (CaseSensitive, WholeWord)
+   - Stores last query for history and pre-filling
+   - References active SearchSession (nil when not searching)
+   - Preferences persist across multiple searches within editor session
+
+2. **SearchSession** (`core/search.go`)
+   - Represents an active search with pre-computed match positions
+   - Contains: Query, Matches array, CurrentIndex, search options
+   - Created when user enters search mode
+   - Destroyed when user exits search mode
+   - Supports navigation between matches via NextMatch()/PrevMatch()
+
+3. **Match** (`core/search.go`)
+   - Simple struct representing a single match: Line, Col, Length
+   - All matches in buffer are pre-computed for performance
+
+4. **SearchHistory** (`ui/ui.go`)
+   - Maintains up to 20 recent search queries
+   - Supports bidirectional navigation (up/down arrows)
+   - Stores temporary query when navigating history
+
+**Search Algorithm:**
+
+* Linear scan through buffer lines using `strings.Index()` or case-insensitive equivalent
+* Supports case-sensitive/insensitive matching
+* Supports whole word matching (checks word boundaries)
+* `FindAllMatches()` pre-computes all match positions (limited to 1000 for performance)
+* Real-time search executes on every keystroke with 150ms debouncing
+
+**Search Mode State Machine:**
+
+```
+ModeNormal ──[Ctrl+F]──> ModeSearch ──[Esc/Q]──> ModeNormal
+                              │
+                              │ [R] ──> ModePrompt (PromptReplaceWith)
+                              │             │
+                              │             └─[Enter]─> ModeSearch
+                              │
+                              │ [A] ──> ModeMessage (Confirm Replace All)
+                                            │
+                                            └─[Y]─> ModeSearch
+```
+
+**Key Features:**
+
+* **Real-time search:** Matches appear as you type (debounced 150ms)
+* **Visual feedback:** All matches highlighted in viewport, current match distinct color
+* **Match navigation:** Works while typing (no mode transition needed)
+* **Search options:** Alt+C (case), Alt+W (whole word), toggle with immediate re-search
+* **Selection pre-fill:** Ctrl+F with selection pre-fills query
+* **Search history:** Up/Down arrows navigate previous 20 queries
+* **Replace support:** R (single), A (all with confirmation), undoable
+* **Error state:** Red status bar when no matches, mode stays active for correction
+* **Performance:** Debouncing, 1000 match limit, "Searching..." indicator
+
+**UI Integration:**
+
+* Status bar shows: query, match count (3 of 15), case/word indicators, shortcuts
+* Viewport rendering applies search highlighting via `getSearchMatchStyle()`
+* Key handling in `handleSearchKey()` consumes ALL keys to prevent leakage
+* Clean state transitions documented with guards and side effects
 
 ### Clipboard
 
