@@ -231,12 +231,12 @@ type UI struct {
 
 	// Unified search mode (ModeSearch)
 	// Session state: These persist for the duration of the editor session
-	searchQuery           []rune         // Current search query being typed
-	searchQueryPreFilled  bool           // True if query was pre-filled from selection (cleared on first keystroke)
-	searchHistory         *SearchHistory // Search history for up/down navigation (persists in session)
-	searchDebounceTimer   *time.Timer    // Timer for search debouncing
-	searchIsSearching     bool           // True when search is executing (debouncing)
-	lastSearchQuery       string         // Last executed search query (persists in session)
+	searchQuery          []rune         // Current search query being typed
+	searchQueryPreFilled bool           // True if query was pre-filled from selection (cleared on first keystroke)
+	searchHistory        *SearchHistory // Search history for up/down navigation (persists in session)
+	searchDebounceTimer  *time.Timer    // Timer for search debouncing
+	searchIsSearching    bool           // True when search is executing (debouncing)
+	lastSearchQuery      string         // Last executed search query (persists in session)
 
 	// Features
 	showLineNumbers bool
@@ -1265,7 +1265,7 @@ func (u *UI) handleSearchKey(e term.KeyEvent) bool {
 			// Handle regular runes - ALL characters should be added to search query
 			// This is the correct UX: a search field is primarily for TEXT INPUT
 			// Commands (next, prev, replace) are accessed via function keys or Ctrl shortcuts
-			
+
 			// If query was pre-filled from selection, replace it on first keystroke
 			if u.searchQueryPreFilled {
 				u.searchQuery = []rune{e.Rune}

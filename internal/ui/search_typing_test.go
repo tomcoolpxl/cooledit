@@ -103,8 +103,8 @@ func TestSearchCanTypeCommandLetters(t *testing.T) {
 
 	// Test typing "nanny" (contains 'n' which means "next")
 	testCases := []struct {
-		word    string
-		desc    string
+		word string
+		desc string
 	}{
 		{"nanny", "word starting with 'n' (next command letter)"},
 		{"proper", "word with 'p' (previous command letter)"},
@@ -210,13 +210,13 @@ func TestSearchTypingMixedContent(t *testing.T) {
 
 	// Type realistic search queries
 	testQueries := []string{
-		"function",      // Normal word
-		"price",         // Contains 'p' (previous)
-		"return",        // Contains 'r' (replace)
-		"item.price",    // With dot
-		"* 1.2",         // Math expression
+		"function",       // Normal word
+		"price",          // Contains 'p' (previous)
+		"return",         // Contains 'r' (replace)
+		"item.price",     // With dot
+		"* 1.2",          // Math expression
 		"calculatePrice", // CamelCase
-		"qna",           // Contains 'q', 'n', 'a'
+		"qna",            // Contains 'q', 'n', 'a'
 	}
 
 	for _, query := range testQueries {
@@ -365,12 +365,12 @@ func TestSearchCommandLettersBehavior(t *testing.T) {
 		// Use F3 for navigation
 		ui.searchQuery = []rune("no") // Reset query
 		ui.doSearch()
-		
+
 		// Check that we have multiple matches to navigate
 		if ui.editor.SearchState().Session == nil || len(ui.editor.SearchState().Session.Matches) < 2 {
 			t.Skip("need at least 2 matches for navigation test")
 		}
-		
+
 		idxBefore = ui.editor.SearchState().Session.CurrentIndex
 
 		dispatch(ui, term.KeyEvent{Key: term.KeyF3})
