@@ -25,7 +25,8 @@ const (
 )
 
 type SearchState struct {
-	LastQuery string
+	LastQuery     string
+	CaseSensitive bool // Session-level case sensitivity preference
 }
 
 func (s *SearchState) SetQuery(q string) {
@@ -34,25 +35,20 @@ func (s *SearchState) SetQuery(q string) {
 
 // Search finds the next occurrence of query starting from (line, col).
 // Returns (line, col, true) if found, otherwise (-1, -1, false).
-// If forward=true, searches forward (wrapping around? maybe not for now).
-// For now: no wrap, linear scan.
-func Search(lines [][]rune, query string, startLine, startCol int, dir Direction) (int, int, bool) {
+// caseSensitive controls whether the search is case-sensitive.
+func Search(lines [][]rune, query string, startLine, startCol int, dir Direction, caseSensitive bool) (int, int, bool) {
 	if query == "" {
 		return -1, -1, false
 	}
 
 	if dir == SearchForward {
-		return searchForward(lines, query, startLine, startCol)
+		return searchForward(lines, query, startLine, startCol, caseSensitive)
 	} else {
-		return searchBackward(lines, query, startLine, startCol)
+		return searchBackward(lines, query, startLine, startCol, caseSensitive)
 	}
 }
 
-func searchForward(lines [][]rune, query string, startLine, startCol int) (int, int, bool) {
-	// Check current line starting from startCol
-	// But if startCol is in middle of line, we need to match carefully.
-	// Simplest: Convert line to string, search.
-
+func searchForward(lines [][]rune, query string, startLine, startCol int, caseSensitive bool) (int, int, bool) {
 	// Scan lines
 	for i := startLine; i < len(lines); i++ {
 		lineStr := string(lines[i])
@@ -66,8 +62,14 @@ func searchForward(lines [][]rune, query string, startLine, startCol int) (int, 
 			}
 		}
 
-		// Optimization: simple string search in the substring
-		matchIdx := strings.Index(lineStr[startIdx:], query)
+		// Search in the substring
+		var matchIdx int
+		if caseSensitive {
+			matchIdx = strings.Index(lineStr[startIdx:], query)
+		} else {
+			matchIdx = indexCaseInsensitive(lineStr[startIdx:], query)
+		}
+		
 		if matchIdx != -1 {
 			return i, startIdx + matchIdx, true
 		}
@@ -76,7 +78,7 @@ func searchForward(lines [][]rune, query string, startLine, startCol int) (int, 
 	return -1, -1, false
 }
 
-func searchBackward(lines [][]rune, query string, startLine, startCol int) (int, int, bool) {
+func searchBackward(lines [][]rune, query string, startLine, startCol int, caseSensitive bool) (int, int, bool) {
 	// Scan lines backwards
 	for i := startLine; i >= 0; i-- {
 		lineStr := string(lines[i])
@@ -86,13 +88,6 @@ func searchBackward(lines [][]rune, query string, startLine, startCol int) (int,
 			endIdx = startCol
 		}
 
-		// We want the *last* occurrence that starts before endIdx.
-		// LastIndex gives last occurrence in the whole string.
-		// We search in lineStr[:endIdx] ?
-		// Wait, LastIndex of "abc" in "abcabc" is 3.
-		// If cursor is at 4.
-		// We want to search in substring.
-
 		searchSpace := lineStr
 		if i == startLine {
 			if endIdx > len(lineStr) {
@@ -101,10 +96,97 @@ func searchBackward(lines [][]rune, query string, startLine, startCol int) (int,
 			searchSpace = lineStr[:endIdx]
 		}
 
-		matchIdx := strings.LastIndex(searchSpace, query)
+		var matchIdx int
+		if caseSensitive {
+			matchIdx = strings.LastIndex(searchSpace, query)
+		} else {
+			matchIdx = lastIndexCaseInsensitive(searchSpace, query)
+		}
+		
 		if matchIdx != -1 {
 			return i, matchIdx, true
 		}
 	}
 	return -1, -1, false
+}
+
+// indexCaseInsensitive finds the first occurrence of substr in s, case-insensitively.
+// Returns -1 if not found.
+func indexCaseInsensitive(s, substr string) int {
+	if substr == "" {
+		return 0
+	}
+	lowerS := strings.ToLower(s)
+	lowerSubstr := strings.ToLower(substr)
+	return strings.Index(lowerS, lowerSubstr)
+}
+
+// lastIndexCaseInsensitive finds the last occurrence of substr in s, case-insensitively.
+// Returns -1 if not found.
+func lastIndexCaseInsensitive(s, substr string) int {
+	if substr == "" {
+		if s == "" {
+			return 0
+		}
+		return len(s)
+	}
+	lowerS := strings.ToLower(s)
+	lowerSubstr := strings.ToLower(substr)
+	return strings.LastIndex(lowerS, lowerSubstr)
+}
+
+// Match represents a single search match location.
+type Match struct {
+	Line   int
+	Col    int
+	Length int
+}
+
+// FindAllMatches finds all occurrences of query in the given lines.
+// Returns a slice of Match structs containing the position and length of each match.
+// The search respects the caseSensitive parameter.
+// For performance, limits results to maxMatches (use 0 for unlimited).
+func FindAllMatches(lines [][]rune, query string, caseSensitive bool, maxMatches int) []Match {
+	if query == "" {
+		return nil
+	}
+
+	matches := make([]Match, 0)
+	queryLen := len(query)
+
+	for lineNum, line := range lines {
+		lineStr := string(line)
+		offset := 0
+
+		for offset < len(lineStr) {
+			var matchIdx int
+			if caseSensitive {
+				matchIdx = strings.Index(lineStr[offset:], query)
+			} else {
+				matchIdx = indexCaseInsensitive(lineStr[offset:], query)
+			}
+
+			if matchIdx == -1 {
+				break
+			}
+
+			// Found a match
+			actualCol := offset + matchIdx
+			matches = append(matches, Match{
+				Line:   lineNum,
+				Col:    actualCol,
+				Length: queryLen,
+			})
+
+			// Check if we've hit the limit
+			if maxMatches > 0 && len(matches) >= maxMatches {
+				return matches
+			}
+
+			// Move past this match to find next one (avoid overlapping)
+			offset = actualCol + queryLen
+		}
+	}
+
+	return matches
 }

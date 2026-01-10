@@ -709,9 +709,22 @@ func (u *UI) handleFindReplaceKey(e term.KeyEvent) bool {
 			u.mode = ModeNormal
 			u.editor.ClearSelection()
 			return true
+
+		default:
+			// CRITICAL: Explicitly consume all other runes to prevent key leakage
+			// In find/replace mode, only the above keys (n/p/r/a/q) are valid
+			// Any other character should be ignored, not inserted into editor
+			return true
 		}
+
+	default:
+		// Handle any other key types (arrows, function keys, etc.)
+		// Consume them to prevent unexpected behavior
+		return true
 	}
 
+	// NOTE: This line should never be reached due to default cases above,
+	// but kept as final safety net
 	return true
 }
 

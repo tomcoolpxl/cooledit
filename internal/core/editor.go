@@ -192,7 +192,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	case CmdFind:
 		e.search.SetQuery(c.Query)
 		line, col := e.buf.Cursor()
-		fl, fc, found := Search(e.buf.Lines(), c.Query, line, col, SearchForward)
+		fl, fc, found := Search(e.buf.Lines(), c.Query, line, col, SearchForward, e.search.CaseSensitive)
 		if found {
 			e.SetSelection(fl, fc, len(c.Query))
 			return Result{Message: "Found: " + c.Query}
@@ -205,7 +205,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		}
 		line, col := e.buf.Cursor()
 		// Start search after current match to avoid overlapping matches
-		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+len(e.search.LastQuery), SearchForward)
+		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col+len(e.search.LastQuery), SearchForward, e.search.CaseSensitive)
 		if found {
 			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found next: " + e.search.LastQuery}
@@ -217,7 +217,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			return Result{Message: "No previous search"}
 		}
 		line, col := e.buf.Cursor()
-		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col, SearchBackward)
+		fl, fc, found := Search(e.buf.Lines(), e.search.LastQuery, line, col, SearchBackward, e.search.CaseSensitive)
 		if found {
 			e.SetSelection(fl, fc, len(e.search.LastQuery))
 			return Result{Message: "Found prev: " + e.search.LastQuery}
@@ -445,7 +445,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		action.Apply(e)
 
 		// Find next match
-		fl, fc, found := Search(e.buf.Lines(), c.Find, line, col+len(c.Replace), SearchForward)
+		fl, fc, found := Search(e.buf.Lines(), c.Find, line, col+len(c.Replace), SearchForward, e.search.CaseSensitive)
 		if found {
 			e.buf.SetCursor(fl, fc)
 			return Result{}
@@ -468,7 +468,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		// Keep replacing until no more matches
 		for {
 			lines := e.buf.Lines()
-			fl, fc, found := Search(lines, c.Find, line, col, SearchForward)
+			fl, fc, found := Search(lines, c.Find, line, col, SearchForward, e.search.CaseSensitive)
 			if !found {
 				break
 			}
