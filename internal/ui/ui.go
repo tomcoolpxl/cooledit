@@ -702,6 +702,9 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.enterSaveAs(false)
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == 'a' && e.Modifiers == term.ModCtrl:
+		return core.CmdSelectAll{}
+
 	case e.Key == term.KeyRune && e.Rune == 'c' && e.Modifiers == term.ModCtrl:
 		return core.CmdCopy{}
 

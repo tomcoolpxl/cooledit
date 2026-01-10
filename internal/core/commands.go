@@ -180,3 +180,7 @@ func (CmdReplaceAll) isCommand() {}
 type CmdJumpToMatchingBracket struct{}
 
 func (CmdJumpToMatchingBracket) isCommand() {}
+
+type CmdSelectAll struct{}
+
+func (CmdSelectAll) isCommand() {}

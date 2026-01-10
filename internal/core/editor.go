@@ -862,6 +862,21 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 			}
 			e.buf.MoveEnd()
 		})
+
+	case CmdSelectAll:
+		lines := e.buf.Lines()
+		// Check if buffer is empty (single empty line)
+		if len(lines) == 1 && len(lines[0]) == 0 {
+			return Result{Message: "Buffer is empty"}
+		}
+		// Set selection from start (0,0) to end of last line
+		lastLine := len(lines) - 1
+		lastCol := len(lines[lastLine])
+		e.selectionActive = true
+		e.selectionAnchor.Line = 0
+		e.selectionAnchor.Col = 0
+		e.buf.SetCursor(lastLine, lastCol)
+		return Result{Message: "All text selected"}
 	}
 
 	return Result{}

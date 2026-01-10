@@ -1,0 +1,10 @@
+This is a test file for Ctrl+A select all functionality.
+
+Line 1: Hello World
+Line 2: Testing selection
+Line 3: Multiple lines
+Line 4: With some content
+Line 5: To verify that
+Line 6: Select all works correctly
+
+Try pressing Ctrl+A to select all this text!
