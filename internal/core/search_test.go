@@ -231,3 +231,178 @@ func TestFindAllMatchesEmpty(t *testing.T) {
 		t.Fatalf("expected 0 matches for non-existent pattern, got %d", len(matches))
 	}
 }
+
+func TestSearchWithEmptyQuery(t *testing.T) {
+	lines := [][]rune{
+		[]rune("hello world"),
+	}
+
+	// Empty query should return not found
+	_, _, found := Search(lines, "", 0, 0, SearchForward, true, false)
+	if found {
+		t.Fatal("empty query should not find anything")
+	}
+
+	_, _, found = Search(lines, "", 0, 0, SearchBackward, true, false)
+	if found {
+		t.Fatal("empty query should not find anything (backward)")
+	}
+}
+
+func TestSearchMultipleLines(t *testing.T) {
+	lines := [][]rune{
+		[]rune("first line"),
+		[]rune("second line with pattern"),
+		[]rune("third line"),
+		[]rune("fourth line with pattern"),
+		[]rune("fifth line"),
+	}
+
+	// Search forward across multiple lines
+	l, c, found := Search(lines, "pattern", 0, 0, SearchForward, true, false)
+	if !found || l != 1 || c != 17 {
+		t.Fatalf("expected to find first pattern at (1, 17), got (%d, %d)", l, c)
+	}
+
+	// Continue from after first match
+	l, c, found = Search(lines, "pattern", 1, 18, SearchForward, true, false)
+	if !found || l != 3 || c != 17 {
+		t.Fatalf("expected to find second pattern at (3, 17), got (%d, %d)", l, c)
+	}
+
+	// Search backward across multiple lines
+	l, c, found = Search(lines, "pattern", 4, 0, SearchBackward, true, false)
+	if !found || l != 3 || c != 17 {
+		t.Fatalf("expected to find pattern at (3, 17) going backward, got (%d, %d)", l, c)
+	}
+}
+
+func TestSearchSpecialCharacters(t *testing.T) {
+	lines := [][]rune{
+		[]rune("hello.world"),
+		[]rune("test[0]"),
+		[]rune("a + b = c"),
+		[]rune("path/to/file"),
+	}
+
+	// Test searching for special characters
+	testCases := []struct {
+		query    string
+		expected struct{ line, col int }
+	}{
+		{".", struct{ line, col int }{0, 5}},
+		{"[0]", struct{ line, col int }{1, 4}},
+		{" + ", struct{ line, col int }{2, 1}},
+		{"/", struct{ line, col int }{3, 4}},
+	}
+
+	for _, tc := range testCases {
+		l, c, found := Search(lines, tc.query, 0, 0, SearchForward, true, false)
+		if !found {
+			t.Fatalf("failed to find '%s'", tc.query)
+		}
+		if l != tc.expected.line || c != tc.expected.col {
+			t.Fatalf("for query '%s': expected (%d, %d), got (%d, %d)",
+				tc.query, tc.expected.line, tc.expected.col, l, c)
+		}
+	}
+}
+
+func TestSearchSessionLifecycle(t *testing.T) {
+	// Create a new search session
+	session := &SearchSession{
+		Query:          "test",
+		CaseSensitive:  true,
+		WholeWord:      false,
+		Matches:        []Match{{Line: 0, Col: 0, Length: 4}},
+		CurrentIndex:   0,
+		LastReplaceStr: "",
+		LimitReached:   false,
+	}
+
+	// Verify initial state
+	if session.Query != "test" {
+		t.Errorf("expected query 'test', got '%s'", session.Query)
+	}
+	if len(session.Matches) != 1 {
+		t.Errorf("expected 1 match, got %d", len(session.Matches))
+	}
+	if session.CurrentIndex != 0 {
+		t.Errorf("expected current index 0, got %d", session.CurrentIndex)
+	}
+
+	// Update session with new matches
+	session.Matches = []Match{
+		{Line: 0, Col: 0, Length: 4},
+		{Line: 1, Col: 5, Length: 4},
+		{Line: 2, Col: 10, Length: 4},
+	}
+	session.CurrentIndex = 1
+
+	if len(session.Matches) != 3 {
+		t.Errorf("expected 3 matches after update, got %d", len(session.Matches))
+	}
+	if session.CurrentIndex != 1 {
+		t.Errorf("expected current index 1, got %d", session.CurrentIndex)
+	}
+
+	// Set replacement string
+	session.LastReplaceStr = "replacement"
+	if session.LastReplaceStr != "replacement" {
+		t.Errorf("expected replacement 'replacement', got '%s'", session.LastReplaceStr)
+	}
+
+	// Test limit reached flag
+	session.LimitReached = true
+	if !session.LimitReached {
+		t.Error("expected LimitReached to be true")
+	}
+}
+
+func TestWholeWordSearch(t *testing.T) {
+	lines := [][]rune{
+		[]rune("testing tester"),
+		[]rune("this is a test case"),
+	}
+
+	// Whole word search should find only the standalone "test" word
+	l, c, found := Search(lines, "test", 0, 0, SearchForward, true, true)
+	if !found || l != 1 || c != 10 {
+		t.Fatalf("whole word search: expected to find 'test' at (1, 10), got (%d, %d)", l, c)
+	}
+
+	// Regular search should find the first occurrence (part of "testing")
+	l, c, found = Search(lines, "test", 0, 0, SearchForward, true, false)
+	if !found || l != 0 || c != 0 {
+		t.Fatalf("regular search: expected to find 'test' at (0, 0), got (%d, %d)", l, c)
+	}
+}
+
+func TestFindAllMatchesWholeWord(t *testing.T) {
+	lines := [][]rune{
+		[]rune("testing tester"),
+		[]rune("this is a test case"),
+	}
+
+	// Whole word search should find only 1 match (the standalone "test" on line 1)
+	matches := FindAllMatches(lines, "test", true, true, 0)
+	
+	if len(matches) != 1 {
+		// Debug: print all matches found
+		for i, m := range matches {
+			t.Logf("Match %d: Line=%d, Col=%d, Length=%d", i, m.Line, m.Col, m.Length)
+		}
+		t.Fatalf("expected 1 whole word match, got %d", len(matches))
+	}
+
+	expected := Match{Line: 1, Col: 10, Length: 4}
+	if matches[0] != expected {
+		t.Errorf("expected match at %+v, got %+v", expected, matches[0])
+	}
+
+	// Regular search should find 2 matches (as part of "testing" and "tester")
+	matches = FindAllMatches(lines, "test", true, false, 0)
+	if len(matches) != 3 {
+		t.Fatalf("expected 3 regular matches, got %d", len(matches))
+	}
+}

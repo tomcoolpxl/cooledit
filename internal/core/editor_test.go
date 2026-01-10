@@ -724,3 +724,170 @@ func TestReplaceAllUndoable(t *testing.T) {
 		t.Fatalf("expected %q after redo, got %q", expected, text)
 	}
 }
+
+func TestEditorIncrementalSearch(t *testing.T) {
+	e := newTestEditor()
+	
+	// Create test content with newlines
+	for _, r := range "hello world" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "hello again" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "goodbye" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdMoveHome{}, 10)
+
+	// Start search session
+	e.SearchState().CaseSensitive = false
+	matches := FindAllMatches(e.Lines(), "hello", false, false, 0)
+	
+	if len(matches) != 2 {
+		t.Fatalf("expected 2 matches for 'hello', got %d", len(matches))
+	}
+
+	// Create search session
+	e.SearchState().Session = &SearchSession{
+		Query:         "hello",
+		CaseSensitive: false,
+		WholeWord:     false,
+		Matches:       matches,
+		CurrentIndex:  0,
+	}
+
+	// Verify session state
+	if e.SearchState().Session.Query != "hello" {
+		t.Errorf("expected query 'hello', got '%s'", e.SearchState().Session.Query)
+	}
+	if len(e.SearchState().Session.Matches) != 2 {
+		t.Errorf("expected 2 matches in session, got %d", len(e.SearchState().Session.Matches))
+	}
+
+	// Verify match positions
+	if matches[0].Line != 0 || matches[0].Col != 0 {
+		t.Errorf("expected first match at (0, 0), got (%d, %d)", matches[0].Line, matches[0].Col)
+	}
+	if matches[1].Line != 1 || matches[1].Col != 0 {
+		t.Errorf("expected second match at (1, 0), got (%d, %d)", matches[1].Line, matches[1].Col)
+	}
+}
+
+func TestToggleCaseSensitivity(t *testing.T) {
+	e := newTestEditor()
+	
+	// Default should be case-insensitive (false)
+	if e.SearchState().CaseSensitive {
+		t.Error("expected default case sensitivity to be false")
+	}
+
+	// Toggle to case-sensitive
+	e.ToggleCaseSensitivity()
+	if !e.SearchState().CaseSensitive {
+		t.Error("expected case sensitivity to be true after first toggle")
+	}
+
+	// Toggle back to case-insensitive
+	e.ToggleCaseSensitivity()
+	if e.SearchState().CaseSensitive {
+		t.Error("expected case sensitivity to be false after second toggle")
+	}
+}
+
+func TestToggleWholeWord(t *testing.T) {
+	e := newTestEditor()
+	
+	// Default should be false
+	if e.SearchState().WholeWord {
+		t.Error("expected default whole word to be false")
+	}
+
+	// Toggle to true
+	e.ToggleWholeWord()
+	if !e.SearchState().WholeWord {
+		t.Error("expected whole word to be true after first toggle")
+	}
+
+	// Toggle back to false
+	e.ToggleWholeWord()
+	if e.SearchState().WholeWord {
+		t.Error("expected whole word to be false after second toggle")
+	}
+}
+
+func TestSearchSessionPersistence(t *testing.T) {
+	e := newTestEditor()
+	
+	// Create test content
+	for _, r := range "test testing tested" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Perform first search
+	e.SearchState().LastQuery = "test"
+	e.SearchState().CaseSensitive = true
+	e.SearchState().WholeWord = false
+
+	// Verify state persists
+	if e.SearchState().LastQuery != "test" {
+		t.Errorf("expected last query 'test', got '%s'", e.SearchState().LastQuery)
+	}
+	if !e.SearchState().CaseSensitive {
+		t.Error("expected case sensitivity to persist")
+	}
+
+	// Perform second search with different settings
+	e.SearchState().LastQuery = "testing"
+	e.SearchState().CaseSensitive = false
+
+	// Verify new state
+	if e.SearchState().LastQuery != "testing" {
+		t.Errorf("expected last query 'testing', got '%s'", e.SearchState().LastQuery)
+	}
+	if e.SearchState().CaseSensitive {
+		t.Error("expected case sensitivity to be false")
+	}
+
+	// End session and verify state is cleared properly
+	e.EndSearchSession()
+	if e.SearchState().Session != nil {
+		t.Error("expected session to be nil after ending")
+	}
+
+	// But preferences should persist
+	if e.SearchState().LastQuery != "testing" {
+		t.Error("expected last query to persist after ending session")
+	}
+}
+
+func TestSearchStateAfterFileChange(t *testing.T) {
+	e := newTestEditor()
+	
+	// Create initial content and search
+	for _, r := range "hello world" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	
+	e.SearchState().LastQuery = "hello"
+	e.SearchState().Session = &SearchSession{
+		Query:        "hello",
+		Matches:      []Match{{Line: 0, Col: 0, Length: 5}},
+		CurrentIndex: 0,
+	}
+
+	// Load a new file (simulated by SetNewFile)
+	e.SetNewFile("")
+
+	// Session should be cleared
+	if e.SearchState().Session != nil {
+		t.Error("expected search session to be cleared after file change")
+	}
+
+	// But preferences should persist
+	if e.SearchState().LastQuery != "hello" {
+		t.Error("expected last query to persist after file change")
+	}
+}
