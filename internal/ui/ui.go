@@ -85,6 +85,7 @@ type UI struct {
 	showLineNumbers bool
 	showStatusBar   bool
 	softWrap        bool
+	showWhitespace  bool
 
 	// Theme
 	theme *theme.Theme
@@ -123,6 +124,7 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		mode:               ModeNormal,
 		showMenubar:        false,
 		showStatusBar:      cfg.UI.ShowStatusBar,
+		showWhitespace:     cfg.Editor.ShowWhitespace,
 		insertMode:         true, // Always start in insert mode
 		syntaxHighlighting: cfg.Editor.SyntaxHighlighting,
 		currentLanguage: func() string {
@@ -162,6 +164,7 @@ func (u *UI) saveConfig() {
 	u.config.Editor.LineNumbers = u.showLineNumbers
 	u.config.Editor.SoftWrap = u.softWrap
 	u.config.Editor.SyntaxHighlighting = u.syntaxHighlighting
+	u.config.Editor.ShowWhitespace = u.showWhitespace
 	u.config.UI.ShowStatusBar = u.showStatusBar
 	// Only save "auto" state to config, not specific languages
 	if u.currentLanguage == "auto" || u.currentLanguage == "" {

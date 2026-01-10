@@ -411,10 +411,13 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			// Find which rune index this display column corresponds to
 			runeIdx := 0
 			col := 0
+			isFirstColOfTab := false
 			for runeIdx < len(line) {
 				if line[runeIdx] == '\t' {
 					nextStop := ((col / tabWidth) + 1) * tabWidth
 					if displayCol < nextStop {
+						// We're inside this tab expansion
+						isFirstColOfTab = (displayCol == col)
 						break
 					}
 					col = nextStop
@@ -464,15 +467,32 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			}
 
 			// Draw the expanded character
-			u.screen.SetCell(drawX+sx, vpRect.Y+sy, expanded[displayCol], style)
+			ch := expanded[displayCol]
+			if u.showWhitespace {
+				// Show visible representations of whitespace
+				if runeIdx < len(line) && line[runeIdx] == '\t' && isFirstColOfTab {
+					ch = '→' // Tab: show arrow only on first column
+				} else if ch == ' ' {
+					ch = '·' // Space character
+				}
+			}
+			u.screen.SetCell(drawX+sx, vpRect.Y+sy, ch, style)
 		}
 
-		// Highlight newline at end of line if selected
+		// Highlight newline at end of line if selected, or show line ending marker
 		expandedLen := len(expanded)
 		if expandedLen >= vp.LeftCol && expandedLen < vp.LeftCol+availW {
 			sx := expandedLen - vp.LeftCol
 			if hasSelection && docY >= sl && docY < el {
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', selectionStyle)
+			} else if u.showWhitespace {
+				// Show line ending marker
+				eol := u.editor.File().EOL
+				marker := '↵' // LF (Unix)
+				if eol == "\r\n" {
+					marker = '¶' // CRLF (Windows)
+				}
+				u.screen.SetCell(drawX+sx, vpRect.Y+sy, marker, editorStyle)
 			}
 		}
 	}

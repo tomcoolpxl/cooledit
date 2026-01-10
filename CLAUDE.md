@@ -73,13 +73,21 @@ internal/
 ### Implemented (Milestone 5 - Syntax Highlighting)
 - ✅ Chroma-based syntax highlighting with 50+ supported languages
 - ✅ Language auto-detection via file extension and shebang
-- ✅ Manual language selection via View → Language menu
+- ✅ Separate Language menu (no longer in View menu)
+- ✅ Language menu structure: Off/Auto/separator/languages (only Off/Auto stored in config)
 - ✅ Viewport-based highlighting (only tokenizes visible lines for performance)
 - ✅ Line-based token caching with hash invalidation
 - ✅ Theme-integrated syntax colors (all 14 themes have syntax color schemes)
 - ✅ Toggle syntax highlighting with Ctrl+H or View menu
 - ✅ Status bar shows current language
 - ✅ Syntax highlighting enabled by default
+
+### Implemented (Additional Features)
+- ✅ Word navigation with Ctrl+Left/Right arrow keys
+- ✅ Bracket matching and jumping with Ctrl+B
+- ✅ Non-existent file creation (allows opening files that don't exist yet)
+- ✅ Whitespace visualization toggle (Ctrl+Shift+W) - displays spaces (·), tabs (→), and line endings (↵/¶)
+- ✅ Smart tab rendering (single arrow per tab character, not per expanded space)
 
 ### Planned (Remaining)
 - ⏳ Add --config CLI flag for alternate config file location
@@ -101,8 +109,11 @@ internal/
 - `Ctrl+F` - Find/Replace (unified mode)
 - `F3` / `Shift+F3` - Find Next/Previous
 - `Ctrl+G` - Go to Line (always available)
+- `Ctrl+Left` / `Ctrl+Right` - Jump by word
+- `Ctrl+B` - Jump to matching bracket
 - `Ctrl+L` - Toggle line numbers
 - `Ctrl+W` - Toggle word wrap
+- `Ctrl+Shift+W` - Toggle whitespace display
 - `Ctrl+H` - Toggle syntax highlighting
 - `F11` - Toggle status bar (Zen mode)
 - `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
@@ -129,7 +140,7 @@ internal/
 
 ### Menubar (Auto-hidden by Default)
 - Toggle with F10 or Esc
-- Menus: File, Edit, Search, View, Help
+- Menus: File, Edit, Search, View, Language, Themes, Help
 - **DOS-style keyboard shortcuts**: Press underlined letter to activate menu item
   - File: **S**ave, Save **A**s, **Q**uit
   - Edit: **U**ndo, **R**edo, Cu**t**, **C**opy, **P**aste, Select All (**G**rab All)
@@ -140,10 +151,9 @@ internal/
 - View menu includes:
   - Toggle Line Numbers (checkmark when enabled)
   - Toggle Word Wrap (checkmark when enabled)
+  - Show Whitespace (checkmark when enabled)
   - Toggle Status Bar (checkmark when enabled)
   - Syntax Highlighting toggle (checkmark when enabled)
-  - **Separator line**
-  - Language selection submenu (Auto + 50+ languages with checkmark for current)
   - **Separator line**
   - Cursor Blink toggle (checkmark when enabled)
   - Cursor shapes (block, underline, bar with checkmark for active shape)
@@ -390,6 +400,7 @@ line_numbers = false        # Show line numbers column
 soft_wrap = false           # Enable word wrap
 tab_width = 4               # Spaces per tab
 syntax_highlighting = true  # Enable syntax highlighting (default: true)
+show_whitespace = false     # Show whitespace characters (default: false)
 
 [ui]
 show_menubar = false     # Show menubar by default

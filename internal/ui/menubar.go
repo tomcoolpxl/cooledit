@@ -114,6 +114,12 @@ func (m *Menubar) initDefaults() {
 					u.softWrap = !u.softWrap
 					u.saveConfig()
 				}},
+				{Label: "Show Whitespace", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.showWhitespace
+				}, Action: func(u *UI) {
+					u.showWhitespace = !u.showWhitespace
+					u.saveConfig()
+				}},
 				{Label: "Toggle Status Bar", Accelerator: "F11", IsCheckable: true, IsChecked: func(u *UI) bool {
 					return u.showStatusBar
 				}, Action: func(u *UI) {

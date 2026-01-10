@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-10
+
+### Added
+- Word navigation with Ctrl+Left and Ctrl+Right arrow keys
+- Bracket matching and jumping with Ctrl+B
+- Whitespace visualization toggle (Ctrl+Shift+W) showing spaces (·), tabs (→), and line endings (↵/¶)
+- Separate Language menu for syntax highlighting language selection
+- Support for opening non-existent files (creates new file on save)
+- Smart tab rendering in whitespace mode (single arrow per tab character)
+
+### Changed
+- Language selection moved from View menu to dedicated top-level Language menu
+- Language menu structure: Off/Auto options at top, followed by separator, then all languages
+- Configuration only stores Off/Auto state for language; specific language selections are session-only
+- Improved tab visualization to show single character per tab instead of repeating
+- Removed "Ins Insert/Replace" text from statusbar for cleaner UI
+
+### Fixed
+- Tab character display in whitespace mode now shows single arrow (→) at tab start position
+
 ## [0.1.0] - 2026-01-09
 
 ### Added

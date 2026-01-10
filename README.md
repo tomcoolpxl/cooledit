@@ -14,8 +14,11 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Word wrap (toggle with Ctrl+W)
 - Configurable cursor shapes (block, underline, bar)
 - 13 built-in color themes including retro DOS and IBM phosphor styles
+- Syntax highlighting with 50+ language support (Chroma-based)
+- Whitespace visualization (spaces, tabs, line endings)
 - Auto-indentation (preserves leading whitespace on Enter)
 - Zen mode (F11 to hide status bar)
+- Bracket matching and navigation (Ctrl+B)
 
 ## Installation
 
@@ -41,7 +44,10 @@ Binary will be in current directory. Move it to your PATH.
 # Open a file
 cooledit filename.txt
 
-# Create new file
+# Create new file (opens for editing even if doesn't exist)
+cooledit newfile.txt
+
+# Create file without name
 cooledit
 
 # Show line numbers
@@ -89,14 +95,17 @@ cooledit --help
 ### Navigation
 - `Arrow keys` - Move cursor
 - `Shift+Arrow keys` - Select text
+- `Ctrl+Left` / `Ctrl+Right` - Jump by word
 - `Home` / `End` - Line start/end
 - `Ctrl+Home` - File start
 - `Ctrl+End` - File end
 - `Page Up` / `Page Down` - Scroll by page
+- `Ctrl+B` - Jump to matching bracket
 
 ### View
 - `Ctrl+L` - Toggle line numbers
 - `Ctrl+W` - Toggle word wrap
+- `Ctrl+Shift+W` - Toggle whitespace display
 - `F11` - Toggle status bar (Zen mode)
 - `F10` or `Esc` - Toggle menu
 - `F1` - Show keyboard shortcuts help
@@ -190,7 +199,6 @@ go run ./cmd/cooledit filename.txt
 
 ## Non-Features
 
-- No syntax highlighting (by design)
 - No multiple file buffers
 - No plugin system
 - Single file editing only

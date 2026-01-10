@@ -32,6 +32,7 @@ type Editor struct {
 	SoftWrap           bool `toml:"soft_wrap"`
 	TabWidth           int  `toml:"tab_width"`
 	SyntaxHighlighting bool `toml:"syntax_highlighting"`
+	ShowWhitespace     bool `toml:"show_whitespace"`
 }
 
 // UI contains user interface settings
