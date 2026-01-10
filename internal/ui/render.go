@@ -1175,11 +1175,6 @@ func (u *UI) getSyntaxStyle(docY, runeIdx int, line []rune) *term.Style {
 		return nil
 	}
 
-	// Skip for default theme (uses terminal colors)
-	if u.isDefaultTheme() {
-		return nil
-	}
-
 	tokens := u.syntaxCache.GetTokens(docY, line)
 	tokenType := syntax.GetTokenAt(tokens, runeIdx)
 

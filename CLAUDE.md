@@ -29,8 +29,10 @@ internal/
     buffer/            - Text buffer implementation
     text/              - Text processing utilities
   fileio/              - File operations, encoding, EOL handling
+  syntax/              - Syntax highlighting with Chroma
   term/                - Terminal backend abstraction
     tcell/             - Tcell implementation
+  theme/               - Theme system and color management
   ui/                  - User interface components
     keymap/            - Keyboard bindings
 ```
@@ -59,7 +61,7 @@ internal/
 ### Implemented (Milestone 4 - Theme System)
 - ✅ Term.Style extended with Foreground/Background color fields
 - ✅ Theme package with comprehensive color element definitions
-- ✅ 13 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos, ibm-green, ibm-amber
+- ✅ 14 built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos, ibm-green, ibm-amber, cyberpunk
 - ✅ Custom theme support from config file
 - ✅ All UI elements use theme colors (editor, menubar, status bar, prompt, help)
 - ✅ View menu with theme selection (checkmarks for current theme)
@@ -68,7 +70,18 @@ internal/
 - ✅ Backward compatibility with "default" theme using inverse video
 - ✅ Menu backgrounds fixed to be distinct from editor backgrounds in all themes
 
-### Planned (Milestone 4 Remaining)
+### Implemented (Milestone 5 - Syntax Highlighting)
+- ✅ Chroma-based syntax highlighting with 50+ supported languages
+- ✅ Language auto-detection via file extension and shebang
+- ✅ Manual language selection via View → Language menu
+- ✅ Viewport-based highlighting (only tokenizes visible lines for performance)
+- ✅ Line-based token caching with hash invalidation
+- ✅ Theme-integrated syntax colors (all 14 themes have syntax color schemes)
+- ✅ Toggle syntax highlighting with Ctrl+H or View menu
+- ✅ Status bar shows current language
+- ✅ Syntax highlighting enabled by default
+
+### Planned (Remaining)
 - ⏳ Add --config CLI flag for alternate config file location
 - ⏳ Add tests for theme system (ParseColor, theme loading, switching)
 
@@ -90,6 +103,7 @@ internal/
 - `Ctrl+G` - Go to Line (always available)
 - `Ctrl+L` - Toggle line numbers
 - `Ctrl+W` - Toggle word wrap
+- `Ctrl+H` - Toggle syntax highlighting
 - `F11` - Toggle status bar (Zen mode)
 - `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
 - `Ctrl+I` - Insert literal tab character (\t)
@@ -127,13 +141,17 @@ internal/
   - Toggle Line Numbers (checkmark when enabled)
   - Toggle Word Wrap (checkmark when enabled)
   - Toggle Status Bar (checkmark when enabled)
+  - Syntax Highlighting toggle (checkmark when enabled)
   - **Separator line**
-  - CRLF status (readonly display, shows current line ending: LF or CRLF)
-  - Encoding status (readonly display, shows current file encoding)
+  - Language selection submenu (Auto + 50+ languages with checkmark for current)
   - **Separator line**
+  - Cursor Blink toggle (checkmark when enabled)
   - Cursor shapes (block, underline, bar with checkmark for active shape)
   - **Separator line**
-  - Themes submenu (all 13 available themes with checkmark for active theme)
+  - EOL Format display (readonly: LF or CRLF)
+  - Encoding display (readonly: UTF-8, etc.)
+  - **Separator line (in Themes menu)**
+  - Themes submenu (all 14 available themes with checkmark for active theme)
 - Navigation via arrow keys
 - Menu items support: checkmarks (for toggles only), separators (visual lines), and readonly items (informational display, no checkmarks)
 - **Smart navigation**: Up/Down arrows automatically skip separator lines and readonly items
@@ -238,12 +256,34 @@ internal/
 - **Rendering**: Literal tab characters render with proper width via tcell
 - **Undo/Redo**: Tab insertion and smart backspace are atomic operations
 
+### Syntax Highlighting
+- **Enabled by default**: Can be toggled with Ctrl+H or View menu
+- **Chroma-based**: Uses the Chroma library for lexer support
+- **50+ languages supported**: Programming, scripting, config files, markup
+- **Auto-detection**: Language detected from file extension first, then shebang
+- **Manual override**: View → Language menu allows forcing specific language
+- **Viewport-based**: Only visible lines are tokenized for performance
+- **Line caching**: Tokens cached per line with FNV hash-based invalidation
+- **Theme integration**: Each theme defines syntax colors for 13 token types
+- **Token types**: Keyword, String, Comment, Number, Operator, Function, Type, Variable, Constant, Punctuation, Preproc, Builtin
+- **Status bar**: Shows current language (e.g., "Go", "Python", "Auto")
+
+**Supported Languages Include:**
+- **Programming**: Go, Python, JavaScript, TypeScript, Java, C, C++, C#, Rust, Ruby, PHP, Swift, Kotlin, Scala, Perl, Lua, R, Haskell, Erlang, Elixir, Clojure, OCaml, F#, Dart, Julia, Zig, Nim, Crystal, V
+- **Web**: HTML, CSS, SCSS, SASS, Less
+- **Shell/Sysadmin**: Bash, PowerShell, Batch, Fish, Zsh
+- **Config**: YAML, JSON, TOML, INI, XML, Nginx, Apache, Properties, Registry
+- **Data**: SQL, GraphQL, Protobuf
+- **Build**: Makefile, CMake, Gradle, Dockerfile
+- **Markup**: Markdown, reStructuredText, LaTeX, Diff
+- **Cloud/DevOps**: Terraform, HCL
+
 ## Testing Strategy
 
 - Unit tests for core components (buffer, editor, search, undo)
 - UI tests with fake screen implementation
 - Coverage tracking in place
-- **102+ tests covering**:
+- **120+ tests covering**:
   - Non-overlapping search matches (TestFindNextNoOverlapping, TestFindNextTwoNonOverlapping)
   - Replace All starting from file beginning (TestReplaceAllFromBeginning)
   - Text highlighting during search (TestSearchHighlightsText)
@@ -260,6 +300,7 @@ internal/
   - Insert/Replace mode (TestInsertMode, TestReplaceMode, TestReplaceModeAtEndOfLine, TestInsertKeyToggle)
   - Status bar replace indicator (TestStatusBarReplaceModeIndicator)
   - Menu navigation and rendering (including menu scrolling on small screens)
+  - Syntax highlighting (20 tests: token types, language detection, caching, Chroma integration)
 
 ### Technical Details
 
@@ -289,7 +330,7 @@ internal/
 ## Theme System (Implemented - Milestone 4)
 
 **Built-in Themes:**
-13 hardcoded themes that work out of the box without any configuration:
+14 hardcoded themes that work out of the box without any configuration:
 1. `default` - Uses terminal defaults with inverse video, green cursor (backward compatibility)
 2. `dark` - Dark background with light text (simple, high contrast)
 3. `light` - Light background with dark text (simple, high contrast)
@@ -303,6 +344,7 @@ internal/
 11. `dos` - Classic DOS Edit colors (blue background, white/cyan text)
 12. `ibm-green` - Classic IBM green phosphor monitor (black background, green shades)
 13. `ibm-amber` - Classic IBM amber phosphor monitor (black background, amber/orange shades)
+14. `cyberpunk` - Neon colors on dark background with pink/cyan/yellow accents
 
 **Custom Themes:**
 Users can define additional themes in config file using `[themes.custom_name]` sections.
@@ -322,6 +364,7 @@ Each element has `fg` (foreground) and `bg` (background) properties.
 - **prompt**: `fg`, `bg`, `label_fg`, `input_fg`
 - **help**: `fg`, `bg`, `title_fg`, `title_bg`, `footer_fg`
 - **message**: `info_fg`, `info_bg`, `warning_fg`, `warning_bg`, `error_fg`, `error_bg`
+- **syntax**: `keyword_fg/bg`, `string_fg/bg`, `comment_fg/bg`, `number_fg/bg`, `operator_fg/bg`, `function_fg/bg`, `type_fg/bg`, `variable_fg/bg`, `constant_fg/bg`, `preproc_fg/bg`, `builtin_fg/bg`, `punctuation_fg/bg`
 
 **Color Format:**
 - Named colors: `"black"`, `"red"`, `"green"`, `"blue"`, `"white"`, etc.
@@ -343,15 +386,18 @@ Each element has `fg` (foreground) and `bg` (background) properties.
 **Settings:**
 ```toml
 [editor]
-line_numbers = false  # Show line numbers column
-soft_wrap = false     # Enable word wrap
-tab_width = 4         # Spaces per tab
+line_numbers = false        # Show line numbers column
+soft_wrap = false           # Enable word wrap
+tab_width = 4               # Spaces per tab
+syntax_highlighting = true  # Enable syntax highlighting (default: true)
 
 [ui]
 show_menubar = false     # Show menubar by default
 show_statusbar = true    # Show status bar (F11 toggles Zen mode)
 theme = "default"        # Active theme name
 cursor_shape = "block"   # Cursor shape: "block", "underline", or "bar"
+cursor_blink = true      # Enable cursor blinking
+language = ""            # Manual language override (empty = auto-detect)
 
 [search]
 case_sensitive = true # Case-sensitive search by default
@@ -394,7 +440,7 @@ title_bg = "default"
 - Invalid or conflicting bindings fall back to defaults with warning
 
 **Theme System (Implemented):**
-- 13 built-in themes (hardcoded, no external dependencies required):
+- 14 built-in themes (hardcoded, no external dependencies required):
   1. `default` - Terminal defaults with inverse video, green cursor (backward compatibility)
   2. `dark` - Classic dark background with light text
   3. `light` - Classic light background with dark text
@@ -408,6 +454,7 @@ title_bg = "default"
   11. `dos` - Classic DOS Edit colors (blue background, white/cyan text)
   12. `ibm-green` - Classic IBM green phosphor monitor (black background, green shades)
   13. `ibm-amber` - Classic IBM amber phosphor monitor (black background, amber/orange shades)
+  14. `cyberpunk` - Neon colors with pink/cyan/yellow accents
 - Custom themes can be defined in `[themes.custom_name]` sections of config file
 - Built-in themes always available without config file
 - View menu includes theme menu items with checkmarks showing current theme
@@ -426,11 +473,11 @@ title_bg = "default"
 
 ## Non-Goals
 
-- ❌ Syntax highlighting
 - ❌ Tabbed interface
 - ❌ Multiple simultaneous file buffers
-- ❌ Markdown rendering
+- ❌ Markdown rendering/preview
 - ❌ Plugin system (not initial scope)
+- ❌ Modal editing (vim-like modes)
 
 ## Development Context
 
@@ -454,24 +501,27 @@ Project is fully functional with all core features complete:
 - ✅ Soft wrap rendering with proper line wrapping and cursor positioning
 - ✅ Insert/Replace mode with Insert key toggle and smart cursor shape alternation
 - ✅ Configurable cursor shapes (block, underline, bar) with theme-based colors
-- ✅ 13 built-in themes including retro IBM phosphor themes
+- ✅ 14 built-in themes including retro IBM phosphor themes
 - ✅ DOS-style menu shortcuts with underlined letters
 - ✅ Automatic menu scrolling for small screens
 - ✅ Secret vim command mode (`:w`, `:q`, `:wq`, etc.)
 - ✅ Terminal cursor state preservation
-- ✅ Comprehensive test coverage (102+ tests, all passing)
+- ✅ Syntax highlighting with Chroma library (50+ languages)
+- ✅ Language auto-detection and manual selection
+- ✅ Theme-integrated syntax colors
+- ✅ Comprehensive test coverage (120+ tests, all passing)
 
 Focus areas:
 - Additional features as requested
 
 ## When Working on This Project
 
-1. **No syntax highlighting** - If asked about it, refer to design decision
-2. **Follow existing patterns** - Buffer management, command pattern for undo/redo
-3. **Test thoroughly** - Especially buffer operations and UI interactions
-4. **Maintain simplicity** - This is meant to be a simple, nano-like editor
-5. **Cross-platform** - Consider Windows, Linux, and macOS compatibility
-6. **Terminal constraints** - Remember this runs in a terminal, not a GUI
+1. **Follow existing patterns** - Buffer management, command pattern for undo/redo
+2. **Test thoroughly** - Especially buffer operations and UI interactions
+3. **Maintain simplicity** - This is meant to be a simple, nano-like editor
+4. **Cross-platform** - Consider Windows, Linux, and macOS compatibility
+5. **Terminal constraints** - Remember this runs in a terminal, not a GUI
+6. **Syntax highlighting uses Chroma** - Language support via internal/syntax package
 
 ---
 
