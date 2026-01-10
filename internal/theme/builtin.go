@@ -641,7 +641,7 @@ func nordTheme() *Theme {
 			SelectionBg:   "#434C5E",
 			LineNumbersFg: "#4C566A",
 			LineNumbersBg: "#2E3440",
-			CursorColor:   "#88C0D0",
+			CursorColor:   "#ECEFF4",
 		},
 		Search: SearchColors{
 			MatchFg:        "#2E3440",
