@@ -100,7 +100,7 @@ func TestBuiltinThemesExist(t *testing.T) {
 		"solarized-dark", "solarized-light",
 		"gruvbox-dark", "gruvbox-light",
 		"dracula", "nord", "dos",
-		"ibm-green", "ibm-amber",
+		"ibm-green", "ibm-amber", "cyberpunk",
 	}
 
 	if len(BuiltinThemes) != len(expectedThemes) {
@@ -136,8 +136,8 @@ func TestBuiltinThemeNameMatch(t *testing.T) {
 func TestListBuiltinThemes(t *testing.T) {
 	list := ListBuiltinThemes()
 
-	if len(list) != 13 {
-		t.Errorf("Expected 13 themes in list, got %d", len(list))
+	if len(list) != 14 {
+		t.Errorf("Expected 14 themes in list, got %d", len(list))
 	}
 
 	// First should be "default"
@@ -256,8 +256,8 @@ func TestLoadThemeEmptyCustom(t *testing.T) {
 // TestGetAvailableThemes tests available themes list
 func TestGetAvailableThemes(t *testing.T) {
 	themes := GetAvailableThemes(nil)
-	if len(themes) != 13 {
-		t.Errorf("Expected 13 themes, got %d", len(themes))
+	if len(themes) != 14 {
+		t.Errorf("Expected 14 themes, got %d", len(themes))
 	}
 }
 

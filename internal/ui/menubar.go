@@ -146,6 +146,7 @@ func (m *Menubar) buildThemeItems() []MenuItem {
 		"dos",
 		"ibm-green",
 		"ibm-amber",
+		"cyberpunk",
 	}
 
 	items := make([]MenuItem, len(themes))

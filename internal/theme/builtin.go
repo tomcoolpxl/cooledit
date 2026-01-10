@@ -17,7 +17,7 @@ package theme
 
 import "cooledit/internal/term"
 
-// BuiltinThemes contains all 13 hardcoded themes that ship with cooledit.
+// BuiltinThemes contains all 14 hardcoded themes that ship with cooledit.
 // These themes are always available without any configuration file.
 var BuiltinThemes = map[string]*Theme{
 	"default":         defaultTheme(),
@@ -33,6 +33,7 @@ var BuiltinThemes = map[string]*Theme{
 	"dos":             dosTheme(),
 	"ibm-green":       ibmGreenTheme(),
 	"ibm-amber":       ibmAmberTheme(),
+	"cyberpunk":       cyberpunkTheme(),
 }
 
 // GetBuiltinTheme returns a built-in theme by name, or the default theme if not found
@@ -60,6 +61,7 @@ func ListBuiltinThemes() []string {
 		"dos",
 		"ibm-green",
 		"ibm-amber",
+		"cyberpunk",
 	}
 }
 
@@ -878,6 +880,70 @@ func ibmAmberTheme() *Theme {
 			WarningBg: "#443300",
 			ErrorFg:   "#FFAA00",
 			ErrorBg:   "#554400",
+		},
+	}
+}
+
+// cyberpunkTheme is a neon/gradient theme with vibrant colors
+// Features: hot pink, cyan, purple gradients on dark background
+func cyberpunkTheme() *Theme {
+	return &Theme{
+		Name: "cyberpunk",
+		Editor: EditorColors{
+			Fg:            "#00FFFF", // Cyan text
+			Bg:            "#0A0E27", // Deep dark blue
+			SelectionFg:   "#000000",
+			SelectionBg:   "#FF2A6D", // Hot pink selection
+			LineNumbersFg: "#8B5CF6", // Purple line numbers
+			LineNumbersBg: "#1a1f3a",
+			CursorColor:   "#00FF41", // Matrix green cursor
+		},
+		Search: SearchColors{
+			MatchFg:        "#000000",
+			MatchBg:        "#FFD700", // Gold
+			CurrentMatchFg: "#000000",
+			CurrentMatchBg: "#FF2A6D", // Hot pink
+		},
+		Status: StatusColors{
+			Fg:         "#00FFFF",
+			Bg:         "#1a1f3a",
+			FilenameFg: "#FF2A6D", // Hot pink filename
+			ModifiedFg: "#FFD700", // Gold for modified
+			PositionFg: "#8B5CF6", // Purple position
+			ModeFg:     "#00FF41", // Matrix green mode
+			HelpFg:     "#888888",
+		},
+		Menu: MenuColors{
+			Fg:            "#00FFFF",
+			Bg:            "#1a1f3a",
+			SelectedFg:    "#000000",
+			SelectedBg:    "#FF2A6D",
+			DropdownFg:    "#00FFFF",
+			DropdownBg:    "#0A0E27",
+			DropdownSelFg: "#000000",
+			DropdownSelBg: "#8B5CF6",
+			AcceleratorFg: "#FF2A6D",
+		},
+		Prompt: PromptColors{
+			Fg:      "#00FFFF",
+			Bg:      "#1a1f3a",
+			LabelFg: "#FF2A6D",
+			InputFg: "#00FF41",
+		},
+		Help: HelpColors{
+			Fg:       "#00FFFF",
+			Bg:       "#0A0E27",
+			TitleFg:  "#000000",
+			TitleBg:  "#FF2A6D",
+			FooterFg: "#8B5CF6",
+		},
+		Msg: MessageColors{
+			InfoFg:    "#00FFFF",
+			InfoBg:    "#1a1f3a",
+			WarningFg: "#FFD700",
+			WarningBg: "#332200",
+			ErrorFg:   "#FF2A6D",
+			ErrorBg:   "#330011",
 		},
 	}
 }
