@@ -32,8 +32,9 @@ type MenuItem struct {
 }
 
 type Menu struct {
-	Title string
-	Items []MenuItem
+	Title       string
+	ShortcutKey rune // Single letter to activate this menu (e.g., 'f' for File)
+	Items       []MenuItem
 }
 
 type Menubar struct {
@@ -60,10 +61,12 @@ func NewMenubar() *Menubar {
 func (m *Menubar) initDefaults() {
 	themeItems := m.buildThemeItems()
 	cursorItems := m.buildCursorShapeItems()
-
+	cursorBlinkItem := m.buildCursorBlinkItem()
+	
 	m.Menus = []Menu{
 		{
-			Title: "File",
+			Title:       "File",
+			ShortcutKey: 'f',
 			Items: []MenuItem{
 				{Label: "Save", Accelerator: "Ctrl+S", ShortcutKey: 's', Command: core.CmdSave{}},
 				{Label: "Save As", Accelerator: "Ctrl+Shift+S", ShortcutKey: 'a', Action: func(u *UI) { u.enterSaveAs(false) }},
@@ -71,7 +74,8 @@ func (m *Menubar) initDefaults() {
 			},
 		},
 		{
-			Title: "Edit",
+			Title:       "Edit",
+			ShortcutKey: 'd',
 			Items: []MenuItem{
 				{Label: "Undo", Accelerator: "Ctrl+Z", ShortcutKey: 'u', Command: core.CmdUndo{}},
 				{Label: "Redo", Accelerator: "Ctrl+Y", ShortcutKey: 'r', Command: core.CmdRedo{}},
@@ -82,7 +86,8 @@ func (m *Menubar) initDefaults() {
 			},
 		},
 		{
-			Title: "Search",
+			Title:       "Search",
+			ShortcutKey: 'e',
 			Items: []MenuItem{
 				{Label: "Find / Replace", Accelerator: "Ctrl+F", ShortcutKey: 'f', Action: func(u *UI) { u.enterFind() }},
 				{Label: "Find Next", Accelerator: "F3", ShortcutKey: 'n', Command: core.CmdFindNext{}},
@@ -90,7 +95,8 @@ func (m *Menubar) initDefaults() {
 			},
 		},
 		{
-			Title: "View",
+			Title:       "View",
+			ShortcutKey: 'v',
 			Items: append([]MenuItem{
 				{Label: "Toggle Line Numbers", Accelerator: "Ctrl+L", IsCheckable: true, IsChecked: func(u *UI) bool {
 					return u.showLineNumbers
@@ -111,17 +117,33 @@ func (m *Menubar) initDefaults() {
 					u.saveConfig()
 				}},
 				{IsSeparator: true},
+				cursorBlinkItem,
+			}, append(cursorItems, []MenuItem{
+				{IsSeparator: true},
 				{Label: "EOL Format", IsReadOnly: true, GetValue: func(u *UI) string {
-					return u.editor.File().EOL
+					eol := "LF"
+					if u.editor.File().EOL == "\r\n" {
+						eol = "CRLF"
+					}
+					return eol
 				}},
 				{Label: "Encoding", IsReadOnly: true, GetValue: func(u *UI) string {
-					return u.editor.File().Encoding
+					enc := u.editor.File().Encoding
+					if enc == "" {
+						enc = "UTF-8"
+					}
+					return enc
 				}},
-				{IsSeparator: true},
-			}, append(cursorItems, append([]MenuItem{{IsSeparator: true}}, themeItems...)...)...),
+			}...)...),
 		},
 		{
-			Title: "Help",
+			Title:       "Themes",
+			ShortcutKey: 'm',
+			Items:       themeItems,
+		},
+		{
+			Title:       "Help",
+			ShortcutKey: 'h',
 			Items: []MenuItem{
 				{Label: "Keyboard Shortcuts", Accelerator: "F1", ShortcutKey: 'k', Action: func(u *UI) { u.mode = ModeHelp }},
 				{Label: "About", ShortcutKey: 'a', Action: func(u *UI) { u.mode = ModeAbout }},
@@ -154,7 +176,7 @@ func (m *Menubar) buildThemeItems() []MenuItem {
 		// Capture themeName in closure
 		name := themeName
 		items[i] = MenuItem{
-			Label:       "Theme: " + name,
+			Label:       name,
 			Accelerator: "",
 			IsCheckable: true,
 			IsChecked: func(u *UI) bool {
@@ -177,7 +199,7 @@ func (m *Menubar) buildCursorShapeItems() []MenuItem {
 		// Capture shapeName in closure
 		name := shapeName
 		items[i] = MenuItem{
-			Label:       "Cursor: " + name,
+			Label:       name,
 			Accelerator: "",
 			IsCheckable: true,
 			IsChecked: func(u *UI) bool {
@@ -190,6 +212,22 @@ func (m *Menubar) buildCursorShapeItems() []MenuItem {
 		}
 	}
 	return items
+}
+
+// buildCursorBlinkItem creates a toggle menu item for cursor blinking
+func (m *Menubar) buildCursorBlinkItem() MenuItem {
+	return MenuItem{
+		Label:       "Cursor Blink",
+		Accelerator: "",
+		IsCheckable: true,
+		IsChecked: func(u *UI) bool {
+			return u.config.UI.CursorBlink
+		},
+		Action: func(u *UI) {
+			u.config.UI.CursorBlink = !u.config.UI.CursorBlink
+			u.saveConfig()
+		},
+	}
 }
 
 // Navigation methods

@@ -76,7 +76,7 @@ func (u *UI) draw() {
 	u.clear()
 
 	// Set cursor shape and color based on insert/replace mode
-	insertShape := ParseCursorShape(u.config.UI.CursorShape)
+	insertShape := ParseCursorShapeWithBlink(u.config.UI.CursorShape, u.config.UI.CursorBlink)
 	cursorColor := u.theme.Editor.CursorColor
 	if u.insertMode {
 		u.screen.SetCursorShape(insertShape, cursorColor)
@@ -143,18 +143,32 @@ func (u *UI) drawMenubar() {
 
 	x := 0
 	for i, menu := range u.menubar.Menus {
-		label := fmt.Sprintf(" %s ", menu.Title)
-
 		s := style
 		if u.menubar.Active && i == u.menubar.SelectedMenuIndex {
 			s = styleSelected
 		}
 
-		for _, r := range label {
+		// Draw space before
+		u.screen.SetCell(rect.X+x, rect.Y, ' ', s)
+		x++
+
+		// Draw menu title with underlined shortcut key
+		for j, r := range menu.Title {
 			if x >= rect.W {
 				break
 			}
-			u.screen.SetCell(rect.X+x, rect.Y, r, s)
+			cellStyle := s
+			// Underline the first character (shortcut key)
+			if j == 0 && menu.ShortcutKey != 0 {
+				cellStyle.Underline = true
+			}
+			u.screen.SetCell(rect.X+x, rect.Y, r, cellStyle)
+			x++
+		}
+
+		// Draw space after
+		if x < rect.W {
+			u.screen.SetCell(rect.X+x, rect.Y, ' ', s)
 			x++
 		}
 	}

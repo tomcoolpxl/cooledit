@@ -40,6 +40,7 @@ type UI struct {
 
 	Theme       string `toml:"theme"`
 	CursorShape string `toml:"cursor_shape"`
+	CursorBlink bool   `toml:"cursor_blink"`
 }
 
 // Search contains search-related settings
@@ -134,6 +135,7 @@ func Default() *Config {
 			ShowStatusBar: true,
 			Theme:         "default",
 			CursorShape:   "block",
+			CursorBlink:   true,
 		},
 		Search: Search{
 			CaseSensitive: true,

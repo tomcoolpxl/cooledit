@@ -164,6 +164,12 @@ func (s *Screen) SetCursorShape(shape term.CursorShape, color term.Color) {
 		cursorStyle = tcell.CursorStyleBlinkingUnderline
 	case term.CursorBar:
 		cursorStyle = tcell.CursorStyleBlinkingBar
+	case term.CursorSteadyBlock:
+		cursorStyle = tcell.CursorStyleSteadyBlock
+	case term.CursorSteadyUnderline:
+		cursorStyle = tcell.CursorStyleSteadyUnderline
+	case term.CursorSteadyBar:
+		cursorStyle = tcell.CursorStyleSteadyBar
 	default:
 		cursorStyle = tcell.CursorStyleDefault
 	}

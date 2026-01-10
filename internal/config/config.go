@@ -104,4 +104,10 @@ func applyDefaults(cfg *Config) {
 	if cfg.Editor.TabWidth == 0 {
 		cfg.Editor.TabWidth = defaults.Editor.TabWidth
 	}
+	
+	// Apply UI defaults
+	if cfg.UI.CursorShape == "" {
+		cfg.UI.CursorShape = defaults.UI.CursorShape
+		cfg.UI.CursorBlink = defaults.UI.CursorBlink
+	}
 }

@@ -195,10 +195,8 @@ func (u *UI) Run() error {
 				if u.handleMenuKey(e) {
 					continue
 				}
-			}
-
-			if e.Key == term.KeyF10 {
-				u.toggleMenuFocus()
+			// Don't pass unhandled keys to editor when menu is active
+			continue
 				continue
 			}
 
@@ -279,7 +277,16 @@ func (u *UI) handleMenuKey(e term.KeyEvent) bool {
 			u.vimCommand = nil
 			return true
 		}
-		// Check for menu item shortcut keys
+		// First check for top-level menu shortcuts (always available)
+		for i, menu := range u.menubar.Menus {
+			if menu.ShortcutKey != 0 && (e.Rune == menu.ShortcutKey || e.Rune == menu.ShortcutKey-32) {
+				u.menubar.SelectedMenuIndex = i
+				u.menubar.SelectedItemIndex = 0
+				u.adjustMenuScroll()
+				return true
+			}
+		}
+		// Then check for menu item shortcut keys in current menu
 		menu := u.menubar.Menus[u.menubar.SelectedMenuIndex]
 		for i, item := range menu.Items {
 			if item.ShortcutKey != 0 && (e.Rune == item.ShortcutKey || e.Rune == item.ShortcutKey-32) { // case insensitive

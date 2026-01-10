@@ -18,6 +18,7 @@ package ui
 import "cooledit/internal/term"
 
 // ParseCursorShape converts a string to a CursorShape
+// Returns the blinking version by default
 func ParseCursorShape(s string) term.CursorShape {
 	switch s {
 	case "block":
@@ -28,6 +29,24 @@ func ParseCursorShape(s string) term.CursorShape {
 		return term.CursorBar
 	default:
 		return term.CursorBlock
+	}
+}
+
+// ParseCursorShapeWithBlink converts a string and blink flag to a CursorShape
+func ParseCursorShapeWithBlink(s string, blink bool) term.CursorShape {
+	if blink {
+		return ParseCursorShape(s)
+	}
+	// Return steady versions
+	switch s {
+	case "block":
+		return term.CursorSteadyBlock
+	case "underline":
+		return term.CursorSteadyUnderline
+	case "bar":
+		return term.CursorSteadyBar
+	default:
+		return term.CursorSteadyBlock
 	}
 }
 
@@ -49,6 +68,7 @@ func CursorShapeToString(shape term.CursorShape) string {
 // Logic: If insert is block → replace is underline
 //        If insert is underline → replace is block
 //        If insert is bar → replace is block
+// Preserves blinking/steady state
 func GetAlternateCursorShape(insertShape term.CursorShape) term.CursorShape {
 	switch insertShape {
 	case term.CursorBlock:
@@ -57,6 +77,12 @@ func GetAlternateCursorShape(insertShape term.CursorShape) term.CursorShape {
 		return term.CursorBlock
 	case term.CursorBar:
 		return term.CursorBlock
+	case term.CursorSteadyBlock:
+		return term.CursorSteadyUnderline
+	case term.CursorSteadyUnderline:
+		return term.CursorSteadyBlock
+	case term.CursorSteadyBar:
+		return term.CursorSteadyBlock
 	default:
 		return term.CursorUnderline
 	}

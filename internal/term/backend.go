@@ -88,6 +88,9 @@ const (
 	CursorBlock CursorShape = iota
 	CursorUnderline
 	CursorBar
+	CursorSteadyBlock
+	CursorSteadyUnderline
+	CursorSteadyBar
 )
 
 type Event interface {
