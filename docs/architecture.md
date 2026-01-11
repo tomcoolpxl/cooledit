@@ -4,7 +4,6 @@
 
 * Terminal text editor similar to nano
 * Non-modal editing
-* No syntax highlighting
 * Cross-platform: Linux and Windows terminals
 * Vanilla Go plus minimal terminal layer (no tview)
 * Correct handling of:

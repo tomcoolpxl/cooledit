@@ -14,7 +14,7 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Line numbers (toggle with Ctrl+L)
 - Word wrap (toggle with Ctrl+W)
 - Configurable cursor shapes (block, underline, bar)
-- 13 built-in color themes including retro DOS and IBM phosphor styles
+- 14 built-in color themes including retro DOS and IBM phosphor styles
 - Syntax highlighting with 50+ language support (Chroma-based)
 - Whitespace visualization (spaces, tabs, line endings)
 - Auto-indentation (preserves leading whitespace on Enter)
@@ -151,7 +151,7 @@ whole_word = false
 
 ## Themes
 
-13 built-in themes available via View → Themes menu:
+14 built-in themes available via View → Themes menu:
 
 1. **default** - Terminal defaults with green cursor
 2. **dark** - Dark background, light text
@@ -166,6 +166,7 @@ whole_word = false
 11. **dos** - Classic DOS Edit blue background
 12. **ibm-green** - Classic green phosphor monitor
 13. **ibm-amber** - Classic amber phosphor monitor
+14. **cyberpunk** - Neon theme with hot pink and cyan
 
 Custom themes can be defined in config file using `[themes.custom_name]` sections.
 

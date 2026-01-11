@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Line numbers toggle (Ctrl+L)
 - Word wrap toggle (Ctrl+W)
 - Configurable cursor shapes (block, underline, bar)
-- 13 built-in color themes including retro DOS and IBM phosphor styles
+- 14 built-in color themes including retro DOS and IBM phosphor styles
 - Auto-indentation
 - Zen mode (F11 to hide status bar)
 - Help dialog with keyboard shortcuts (F1)

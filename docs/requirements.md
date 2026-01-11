@@ -6,7 +6,7 @@ Projectname: cooledit
 
 The goal is to develop a **terminal text editor** similar in functionality and simplicity to *nano*, addressing *nano*’s UI and keyboard shortcut issues. It will be written in vanilla **Go**. The editor should be easy to use both for beginners and experienced users, with a clean status bar, optional menubar, and predictable shortcuts.
 
-The editor will **not include syntax highlighting**. Optional features include a line numbers column and an always-visible menubar.
+Optional features include a line numbers column, an always-visible menubar, and syntax highlighting.
 
 ---
 
@@ -347,7 +347,6 @@ Not in initial scope but candidates:
 
 ## 10. Non-Goals
 
-* No syntax highlighting.
 * No tabbed interface.
 * No markdown rendering.
 
