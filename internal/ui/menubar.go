@@ -87,6 +87,8 @@ func (m *Menubar) initDefaults() {
 				{Label: "Copy", Accelerator: "Ctrl+C", ShortcutKey: 'c', Command: core.CmdCopy{}},
 				{Label: "Paste", Accelerator: "Ctrl+V", ShortcutKey: 'p', Command: core.CmdPaste{}},
 				{Label: "Go to Line", Accelerator: "Ctrl+G", ShortcutKey: 'g', Action: func(u *UI) { u.enterGoToLine() }},
+				{IsSeparator: true},
+				{Label: "Format Document", Accelerator: "Ctrl+Shift+F", ShortcutKey: 'f', Action: func(u *UI) { u.formatDocument() }},
 			},
 		},
 		{

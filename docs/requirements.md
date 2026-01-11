@@ -137,7 +137,12 @@ Menus to include:
 
 * `Insert` Toggle Insert/Replace mode
 
-**4.6 Display**
+**4.6 Code Formatting**
+
+* `Ctrl+Shift+F` Format document with external formatter
+* `Ctrl+/` Toggle comment on line or selection
+
+**4.7 Display**
 
 * `F1` Help overlay
 * `F10` Toggle Menubar focus
@@ -393,9 +398,32 @@ Not in initial scope but candidates:
 * Soft wrap rendering with adaptive line wrapping.
 * Insert/Replace mode with Insert key and cursor shapes.
 
-**Milestone 4 (Planned)**
+**Milestone 4 (Complete)**
 
-* Keybinding customization.
+* Theme/Color system with 14 built-in themes.
+* Current line highlight.
+
+**Milestone 5 (Complete)**
+
+* Syntax highlighting with Chroma (50+ languages).
+* Language auto-detection and manual selection.
+
+**Milestone 6 (Complete)**
+
+* Autosave with recovery prompt.
+
+**Milestone 7 (Complete)**
+
+* Smart Home key, block indent/unindent.
+* Comment/Uncomment toggle (Ctrl+/).
+* Trim trailing whitespace, position log, scrollbar.
+* Verbatim Unicode input.
+* External formatter integration (Ctrl+Shift+F).
+
+**Future (Optional)**
+
+* Keybinding customization (config-file-only).
+* File browser, linter integration.
 
 
 

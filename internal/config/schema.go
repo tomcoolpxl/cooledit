@@ -20,11 +20,18 @@ const DefaultTabWidth = 4
 
 // Config represents the application configuration
 type Config struct {
-	Editor   Editor               `toml:"editor"`
-	UI       UI                   `toml:"ui"`
-	Search   Search               `toml:"search"`
-	Autosave Autosave             `toml:"autosave"`
-	Themes   map[string]ThemeSpec `toml:"themes"`
+	Editor     Editor                       `toml:"editor"`
+	UI         UI                           `toml:"ui"`
+	Search     Search                       `toml:"search"`
+	Autosave   Autosave                     `toml:"autosave"`
+	Themes     map[string]ThemeSpec         `toml:"themes"`
+	Formatters map[string]FormatterConfigSpec `toml:"formatters"`
+}
+
+// FormatterConfigSpec defines a formatter configuration in the config file
+type FormatterConfigSpec struct {
+	Command string   `toml:"command"`
+	Args    []string `toml:"args"`
 }
 
 // Autosave contains autosave settings
@@ -201,6 +208,7 @@ func Default() *Config {
 			IdleTimeout: DefaultAutosaveIdleTimeout,
 			MinInterval: DefaultAutosaveMinInterval,
 		},
-		Themes: make(map[string]ThemeSpec),
+		Themes:     make(map[string]ThemeSpec),
+		Formatters: make(map[string]FormatterConfigSpec),
 	}
 }

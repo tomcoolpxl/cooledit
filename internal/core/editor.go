@@ -894,6 +894,9 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 
 	case CmdToggleComment:
 		return e.toggleComment(c.CommentPrefix)
+
+	case CmdFormat:
+		return e.applyFormat(c.FormattedText)
 	}
 
 	return Result{}
@@ -1457,6 +1460,99 @@ func hasCommentPrefix(line []rune, prefix []rune) bool {
 	for i, r := range prefix {
 		if line[i] != r {
 			return false
+		}
+	}
+	return true
+}
+
+// applyFormat replaces the entire buffer with formatted text.
+// This is an undoable operation that replaces all lines at once.
+func (e *Editor) applyFormat(formattedText string) Result {
+	if formattedText == "" {
+		return Result{Message: "Formatter returned empty output"}
+	}
+
+	// Get current state
+	oldLines := e.buf.Lines()
+	oldLine, oldCol := e.buf.Cursor()
+
+	// Parse formatted text into lines
+	var newLines [][]rune
+	currentLine := []rune{}
+	for _, r := range formattedText {
+		if r == '\n' {
+			newLines = append(newLines, currentLine)
+			currentLine = []rune{}
+		} else if r != '\r' { // Skip CR for cross-platform compatibility
+			currentLine = append(currentLine, r)
+		}
+	}
+	// Add last line if there's content or if text didn't end with newline
+	if len(currentLine) > 0 || len(newLines) == 0 {
+		newLines = append(newLines, currentLine)
+	}
+
+	// Check if content actually changed
+	if linesEqual(oldLines, newLines) {
+		return Result{Message: "No formatting changes needed"}
+	}
+
+	// Create a copy of old lines for undo
+	oldLinesCopy := make([][]rune, len(oldLines))
+	for i, line := range oldLines {
+		oldLinesCopy[i] = make([]rune, len(line))
+		copy(oldLinesCopy[i], line)
+	}
+
+	// Try to preserve cursor position reasonably
+	newLine := oldLine
+	newCol := oldCol
+	if newLine >= len(newLines) {
+		newLine = len(newLines) - 1
+	}
+	if newLine < 0 {
+		newLine = 0
+	}
+	if newLine < len(newLines) && newCol > len(newLines[newLine]) {
+		newCol = len(newLines[newLine])
+	}
+
+	// Create undoable action
+	action := &ReplaceLinesAction{
+		StartLine:  0,
+		OldLines:   oldLinesCopy,
+		NewLines:   newLines,
+		BeforeLine: oldLine,
+		BeforeCol:  oldCol,
+		AfterLine:  newLine,
+		AfterCol:   newCol,
+	}
+
+	e.undo.Push(action)
+	action.Apply(e)
+
+	linesDiff := len(newLines) - len(oldLines)
+	if linesDiff == 0 {
+		return Result{Message: fmt.Sprintf("Formatted %d lines", len(newLines))}
+	} else if linesDiff > 0 {
+		return Result{Message: fmt.Sprintf("Formatted %d lines (+%d)", len(newLines), linesDiff)}
+	}
+	return Result{Message: fmt.Sprintf("Formatted %d lines (%d)", len(newLines), linesDiff)}
+}
+
+// linesEqual checks if two line slices are equal.
+func linesEqual(a, b [][]rune) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if len(a[i]) != len(b[i]) {
+			return false
+		}
+		for j := range a[i] {
+			if a[i][j] != b[i][j] {
+				return false
+			}
 		}
 	}
 	return true

@@ -198,3 +198,9 @@ type CmdToggleComment struct {
 }
 
 func (CmdToggleComment) isCommand() {}
+
+type CmdFormat struct {
+	FormattedText string // The formatted text to replace buffer with
+}
+
+func (CmdFormat) isCommand() {}

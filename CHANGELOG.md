@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-11
+
+### Added
+- External formatter integration (Ctrl+Shift+F) with 20+ built-in language defaults
+- Smart Home key (cycles between first non-whitespace and column 0)
+- Block indent/unindent (Tab/Shift+Tab with selection)
+- Comment/Uncomment toggle (Ctrl+/) - language-aware line comments
+- Trim trailing whitespace on save (configurable via View menu)
+- Position log - remembers cursor position across sessions
+- Scrollbar indicator showing viewport position
+- Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
+- Custom formatter configuration in TOML config file
+
+### Changed
+- Test count increased to 170+
+
 ## [0.3.0] - 2026-01-11
 
 ### Added

@@ -30,6 +30,7 @@ internal/
     buffer/            - Text buffer implementation
     text/              - Text processing utilities
   fileio/              - File operations, encoding, EOL handling
+  formatter/           - External formatter integration
   positionlog/         - Cursor position persistence across sessions
   syntax/              - Syntax highlighting with Chroma
   term/                - Terminal backend abstraction
@@ -97,6 +98,7 @@ internal/
 - ✅ Position Log - remembers cursor position in recently edited files, restores on reopen
 - ✅ Scrollbar/Indicator - visual scrollbar on right edge showing viewport position
 - ✅ Verbatim Character Input - insert Unicode characters by code point (Ctrl+Shift+U for hex, Ctrl+Shift+D for decimal)
+- ✅ Formatter Integration - external formatter support (Ctrl+Shift+F) with built-in defaults for 20+ languages
 
 ### Implemented (Milestone 6 - Autosave)
 - ✅ Automatic backup after idle timeout (default: 2 seconds)
@@ -148,6 +150,7 @@ internal/
 - `Ctrl+I` - Insert literal tab character (\t)
 - `Ctrl+Shift+U` - Verbatim Unicode hex input (e.g., type "2665" for ♥)
 - `Ctrl+Shift+D` - Verbatim Unicode decimal input (e.g., type "9829" for ♥)
+- `Ctrl+Shift+F` - Format document with external formatter
 - `Insert` - Toggle Insert/Replace mode
 - `F1` - Help overlay (adaptive two-column/single-column layout)
 - `F10` / `Esc` - Toggle menubar
@@ -591,6 +594,7 @@ Project is fully functional with all core features complete:
 - ✅ Position log for cursor position persistence across sessions
 - ✅ Scrollbar indicator for viewport position
 - ✅ Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
+- ✅ External formatter integration (Ctrl+Shift+F) with 20+ built-in language defaults
 - ✅ Comprehensive test coverage (170+ tests, all passing)
 
 Focus areas:

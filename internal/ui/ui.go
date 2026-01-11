@@ -18,12 +18,14 @@ package ui
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"cooledit/internal/autosave"
 	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/fileio"
+	"cooledit/internal/formatter"
 	"cooledit/internal/positionlog"
 	"cooledit/internal/syntax"
 	"cooledit/internal/term"
@@ -1155,7 +1157,12 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return core.CmdRedo{}
 
 	case e.Key == term.KeyRune && e.Rune == 'f' && (e.Modifiers&term.ModCtrl) != 0:
-		// Enter unified search mode (ModeSearch)
+		// Ctrl+Shift+F = Format document
+		if (e.Modifiers & term.ModShift) != 0 {
+			u.formatDocument()
+			return nil
+		}
+		// Ctrl+F = Enter unified search mode (ModeSearch)
 		u.enterSearch()
 		return nil
 
@@ -1228,6 +1235,85 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 	}
 
 	return nil
+}
+
+// formatDocument formats the current document using an external formatter.
+// The formatter is determined by the current language (syntax detection).
+// This triggers a CmdFormat which replaces the buffer content atomically.
+func (u *UI) formatDocument() {
+	// Get current language
+	language := u.currentLanguage
+	if language == "" || language == "auto" {
+		// Try to detect language from file
+		file := u.editor.File()
+		if file.Path != "" {
+			lines := u.editor.Lines()
+			var firstLine []rune
+			if len(lines) > 0 {
+				firstLine = lines[0]
+			}
+			language = syntax.DetectLanguage(file.Path, firstLine)
+		}
+	}
+
+	if language == "" {
+		u.enterMessage("Cannot format: no language detected")
+		return
+	}
+
+	// Convert user config formatters to formatter.Config map
+	var userFormatters map[string]formatter.Config
+	if len(u.config.Formatters) > 0 {
+		userFormatters = make(map[string]formatter.Config)
+		for lang, cfg := range u.config.Formatters {
+			userFormatters[lang] = formatter.Config{
+				Command: cfg.Command,
+				Args:    cfg.Args,
+			}
+		}
+	}
+
+	// Get formatter for this language
+	cfg := formatter.GetFormatter(language, userFormatters)
+	if cfg == nil {
+		u.enterMessage(fmt.Sprintf("No formatter configured for %s", language))
+		return
+	}
+
+	// Get buffer content
+	lines := u.editor.Lines()
+	var content strings.Builder
+	for i, line := range lines {
+		content.WriteString(string(line))
+		if i < len(lines)-1 {
+			content.WriteString("\n")
+		}
+	}
+
+	// Get filename for formatters that need it
+	filename := u.editor.File().Path
+	if filename == "" {
+		filename = "untitled"
+	}
+
+	// Execute formatter
+	formatted, err := formatter.Format(cfg, content.String(), filename)
+	if err != nil {
+		// Show error in status bar
+		errMsg := err.Error()
+		// Truncate long error messages
+		if len(errMsg) > 60 {
+			errMsg = errMsg[:57] + "..."
+		}
+		u.enterMessage(errMsg)
+		return
+	}
+
+	// Apply formatting
+	result := u.editor.Apply(core.CmdFormat{FormattedText: formatted}, u.layout.Viewport.H)
+	if result.Message != "" {
+		u.enterMessage(result.Message)
+	}
 }
 
 // enterSearch enters the unified search mode (ModeSearch).

@@ -239,6 +239,19 @@ cooledit/
     config/
       config.go           // Config load/save, path management
       schema.go           // Config data structures
+
+    autosave/
+      autosave.go         // Autosave manager and storage
+
+    syntax/
+      syntax.go           // Chroma-based syntax highlighting
+
+    positionlog/
+      positionlog.go      // Cursor position persistence
+
+    formatter/
+      formatter.go        // External formatter integration
+      executor.go         // Command execution with timeout
 ```
 
 ---
@@ -268,14 +281,26 @@ cooledit/
 * Built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos, ibm-green, ibm-amber, cyberpunk.
 * Current line highlight (toggle via View menu, off by default).
 
+### Milestone 5 (Complete)
+* Syntax highlighting with Chroma library (50+ languages).
+* Language auto-detection and manual selection.
+* Theme-integrated syntax colors.
+
+### Milestone 6 (Complete)
+* Autosave with idle-based trigger and recovery prompt.
+* Cross-platform autosave storage with metadata.
+
+### Milestone 7 (Complete) - Nano-inspired Features
+* Smart Home key (cycles between first non-whitespace and column 0).
+* Block indent/unindent (Tab/Shift+Tab with selection).
+* Comment/Uncomment toggle (Ctrl+/) - language-aware.
+* Trim trailing whitespace on save (configurable).
+* Position log - remembers cursor position across sessions.
+* Scrollbar indicator showing viewport position.
+* Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal).
+* External formatter integration (Ctrl+Shift+F) with 20+ built-in language defaults.
+
 ### Future (Optional)
 * Keybinding customization (config-file-only).
-* Text Selection.
-* Clipboard integration.
-* Configuration persistence with TOML.
-* Toggle settings auto-save.
-* Soft wrap rendering with line wrapping.
-* Insert/Replace mode with cursor shape indicators.
-
-### Milestone 4 (Planned)
-* Keybinding customization.
+* File browser for open/save operations.
+* Linter integration.

@@ -82,6 +82,12 @@ func dispatch(ui *UI, ev term.Event) {
 			}
 		}
 
+		if ui.mode == ModeVerbatimHex || ui.mode == ModeVerbatimDec {
+			if ui.handleVerbatimKey(e) {
+				return
+			}
+		}
+
 		if e.Key == term.KeyF10 {
 			ui.toggleMenuFocus()
 			return

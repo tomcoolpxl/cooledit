@@ -29,6 +29,7 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Position log - remembers cursor position across sessions
 - Scrollbar indicator showing viewport position
 - Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
+- External formatter integration (Ctrl+Shift+F) with built-in support for 20+ languages
 
 ## Installation
 
@@ -98,6 +99,7 @@ cooledit --help
 - `Ctrl+I` - Insert literal tab character
 - `Ctrl+Shift+U` - Insert Unicode character by hex code point
 - `Ctrl+Shift+D` - Insert Unicode character by decimal code point
+- `Ctrl+Shift+F` - Format document with external formatter
 - `Backspace` - Delete one character
 
 ### Search
@@ -260,6 +262,50 @@ If cooledit finds an autosave backup when opening a file, it shows a recovery pr
 - Autosave is **cleared** when you save with Ctrl+S
 - Autosave is **kept** if you quit without saving (for future recovery)
 - Toggle autosave via View → Autosave menu
+
+## Code Formatting
+
+Press `Ctrl+Shift+F` or use Edit → Format Document to format the current file using an external formatter.
+
+### Built-in Formatter Support
+
+Cooledit includes default formatters for many languages:
+
+| Language | Formatter | Language | Formatter |
+|----------|-----------|----------|-----------|
+| Go | `gofmt` | Python | `black` |
+| JavaScript | `prettier` | TypeScript | `prettier` |
+| Rust | `rustfmt` | JSON | `prettier` |
+| YAML | `prettier` | HTML/CSS | `prettier` |
+| C/C++ | `clang-format` | Java | `google-java-format` |
+| Shell/Bash | `shfmt` | TOML | `taplo` |
+| Markdown | `prettier` | SQL | `sql-formatter` |
+
+### Custom Formatters
+
+Override or add formatters in your config file:
+
+```toml
+# Use goimports instead of gofmt for Go
+[formatters.go]
+command = "goimports"
+
+# Use autopep8 instead of black for Python
+[formatters.python]
+command = "autopep8"
+args = ["-"]
+
+# Add formatter for a language without built-in support
+[formatters.haskell]
+command = "ormolu"
+args = ["--stdin-input-file", ".hs"]
+```
+
+### Features
+- Format is undoable with `Ctrl+Z`
+- 5-second timeout prevents hangs
+- Error messages shown in status bar
+- Works with any command that reads from stdin and writes to stdout
 
 ## Building
 
