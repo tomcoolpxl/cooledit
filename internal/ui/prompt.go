@@ -35,6 +35,9 @@ const (
 )
 
 func (u *UI) startQuitFlow() {
+	// Save cursor position before quitting
+	u.SaveCursorPosition()
+
 	if !u.editor.Modified() {
 		// Clear autosave on clean quit (no unsaved changes)
 		u.ClearAutosaveForCurrentFile()

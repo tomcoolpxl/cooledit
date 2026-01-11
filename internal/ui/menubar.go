@@ -142,6 +142,21 @@ func (m *Menubar) initDefaults() {
 				}, Action: func(u *UI) {
 					u.ToggleAutosave()
 				}},
+				{Label: "Trim Trailing Whitespace on Save", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.IsTrimTrailingWhitespaceEnabled()
+				}, Action: func(u *UI) {
+					u.ToggleTrimTrailingWhitespace()
+				}},
+				{Label: "Remember Cursor Position", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.IsRememberPositionEnabled()
+				}, Action: func(u *UI) {
+					u.ToggleRememberPosition()
+				}},
+				{Label: "Show Scrollbar", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.IsScrollbarEnabled()
+				}, Action: func(u *UI) {
+					u.ToggleScrollbar()
+				}},
 				{IsSeparator: true},
 				cursorBlinkItem,
 			}, append(cursorItems, []MenuItem{

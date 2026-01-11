@@ -23,6 +23,7 @@ import (
 	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/fileio"
+	"cooledit/internal/positionlog"
 	"cooledit/internal/syntax"
 	"cooledit/internal/term"
 	"cooledit/internal/theme"
@@ -247,6 +248,8 @@ type UI struct {
 	softWrap             bool
 	showWhitespace       bool
 	currentLineHighlight bool
+	rememberPosition     bool
+	showScrollbar        bool
 
 	// Theme
 	theme *theme.Theme
@@ -279,8 +282,9 @@ type BracketMatchState struct {
 }
 
 func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
-	// Set editor tab width from config
+	// Set editor settings from config
 	editor.TabWidth = cfg.Editor.TabWidth
+	editor.TrimTrailingWhitespaceOnSave = cfg.Editor.TrimTrailingWhitespaceOnSave
 
 	u := &UI{
 		screen:               screen,
@@ -291,6 +295,8 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		showStatusBar:        cfg.UI.ShowStatusBar,
 		showWhitespace:       cfg.Editor.ShowWhitespace,
 		currentLineHighlight: cfg.Editor.CurrentLineHighlight,
+		rememberPosition:     cfg.Editor.RememberPosition,
+		showScrollbar:        cfg.Editor.ShowScrollbar,
 		insertMode:           true, // Always start in insert mode
 		syntaxHighlighting:   cfg.Editor.SyntaxHighlighting,
 		currentLanguage: func() string {
@@ -336,6 +342,8 @@ func (u *UI) saveConfig() {
 	u.config.Editor.SyntaxHighlighting = u.syntaxHighlighting
 	u.config.Editor.ShowWhitespace = u.showWhitespace
 	u.config.Editor.CurrentLineHighlight = u.currentLineHighlight
+	u.config.Editor.RememberPosition = u.rememberPosition
+	u.config.Editor.ShowScrollbar = u.showScrollbar
 	u.config.UI.ShowStatusBar = u.showStatusBar
 	// Only save "auto" state to config, not specific languages
 	if u.currentLanguage == "auto" || u.currentLanguage == "" {
@@ -450,6 +458,136 @@ func (u *UI) IsAutosaveEnabled() bool {
 		return false
 	}
 	return u.autosaveManager.IsEnabled()
+}
+
+// IsTrimTrailingWhitespaceEnabled returns whether trim trailing whitespace on save is enabled
+func (u *UI) IsTrimTrailingWhitespaceEnabled() bool {
+	return u.editor.TrimTrailingWhitespaceOnSave
+}
+
+// ToggleTrimTrailingWhitespace toggles trim trailing whitespace on save on/off
+func (u *UI) ToggleTrimTrailingWhitespace() {
+	u.editor.TrimTrailingWhitespaceOnSave = !u.editor.TrimTrailingWhitespaceOnSave
+
+	// Update config
+	if u.config != nil {
+		u.config.Editor.TrimTrailingWhitespaceOnSave = u.editor.TrimTrailingWhitespaceOnSave
+		u.saveConfig()
+	}
+
+	if u.editor.TrimTrailingWhitespaceOnSave {
+		u.enterMessage("Trim trailing whitespace on save enabled")
+	} else {
+		u.enterMessage("Trim trailing whitespace on save disabled")
+	}
+}
+
+// IsRememberPositionEnabled returns whether remember cursor position is enabled
+func (u *UI) IsRememberPositionEnabled() bool {
+	return u.rememberPosition
+}
+
+// ToggleRememberPosition toggles remember cursor position on/off
+func (u *UI) ToggleRememberPosition() {
+	u.rememberPosition = !u.rememberPosition
+
+	// Update config
+	if u.config != nil {
+		u.config.Editor.RememberPosition = u.rememberPosition
+		u.saveConfig()
+	}
+
+	if u.rememberPosition {
+		u.enterMessage("Remember cursor position enabled")
+	} else {
+		u.enterMessage("Remember cursor position disabled")
+	}
+}
+
+// IsScrollbarEnabled returns whether the scrollbar is enabled
+func (u *UI) IsScrollbarEnabled() bool {
+	return u.showScrollbar
+}
+
+// ToggleScrollbar toggles the scrollbar on/off
+func (u *UI) ToggleScrollbar() {
+	u.showScrollbar = !u.showScrollbar
+
+	// Update config
+	if u.config != nil {
+		u.config.Editor.ShowScrollbar = u.showScrollbar
+		u.saveConfig()
+	}
+
+	if u.showScrollbar {
+		u.enterMessage("Scrollbar enabled")
+	} else {
+		u.enterMessage("Scrollbar disabled")
+	}
+}
+
+// SaveCursorPosition saves the current cursor position for the current file
+func (u *UI) SaveCursorPosition() {
+	if !u.rememberPosition {
+		return
+	}
+
+	path := u.editor.File().Path
+	if path == "" {
+		return // Don't save positions for unnamed buffers
+	}
+
+	line, col := u.editor.Cursor()
+	_ = positionlog.Get().SavePosition(path, line, col)
+}
+
+// RestoreCursorPosition restores the saved cursor position for the current file
+func (u *UI) RestoreCursorPosition() {
+	if !u.rememberPosition {
+		return
+	}
+
+	path := u.editor.File().Path
+	if path == "" {
+		return
+	}
+
+	line, col, found := positionlog.Get().GetPosition(path)
+	if !found {
+		return
+	}
+
+	// Move cursor to saved position
+	u.editor.Apply(core.CmdGoToLine{Line: line + 1}, u.layout.Viewport.H)
+	// Try to restore column position
+	currentLine, _ := u.editor.Cursor()
+	if currentLine == line {
+		lines := u.editor.Lines()
+		if line >= 0 && line < len(lines) && col <= len(lines[line]) {
+			for i := 0; i < col; i++ {
+				u.editor.Apply(core.CmdMoveRight{}, u.layout.Viewport.H)
+			}
+		}
+	}
+}
+
+// getCommentPrefix returns the comment prefix for the current language.
+// Returns empty string if no language is detected or language doesn't support line comments.
+func (u *UI) getCommentPrefix() string {
+	lang := u.currentLanguage
+	if lang == "auto" || lang == "" {
+		// Detect language from file
+		path := u.editor.File().Path
+		var firstLine []rune
+		if lines := u.editor.Lines(); len(lines) > 0 {
+			firstLine = lines[0]
+		}
+		lang = syntax.DetectLanguage(path, firstLine)
+	}
+	if lang == "" {
+		return ""
+	}
+	return syntax.GetLineComment(lang)
 }
 
 // notifyAutosaveEdit should be called when the buffer is modified
@@ -663,6 +801,14 @@ func (u *UI) Run() error {
 			u.autosaveManager.Stop()
 		}
 	}()
+
+	// Restore cursor position on file open (only if not in recovery mode)
+	if u.mode == ModeNormal && u.recoveryCandidate == nil {
+		// Compute initial layout for position restoration
+		w, h := u.screen.Size()
+		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar)
+		u.RestoreCursorPosition()
+	}
 
 	for {
 		if u.quitNow {
@@ -936,6 +1082,11 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.ToggleSyntaxHighlighting()
 		return nil
 
+	case e.Key == term.KeyRune && e.Rune == '/' && (e.Modifiers&term.ModCtrl) != 0:
+		// Toggle comment - need to detect language and get comment prefix
+		commentPrefix := u.getCommentPrefix()
+		return core.CmdToggleComment{CommentPrefix: commentPrefix}
+
 	case e.Key == term.KeyRune && e.Rune == 'q' && (e.Modifiers&term.ModCtrl) != 0:
 		u.startQuitFlow()
 		return nil
@@ -1011,7 +1162,11 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return core.CmdBackspace{}
 
 	case e.Key == term.KeyTab && e.Modifiers == 0:
+		// Tab with selection is handled as indent in editor.go
 		return core.CmdTab{}
+
+	case e.Key == term.KeyBackTab:
+		return core.CmdUnindentBlock{}
 
 	case e.Key == term.KeyRune && e.Rune == 'i' && (e.Modifiers&term.ModCtrl) != 0:
 		return core.CmdInsertLiteralTab{}
@@ -1574,12 +1729,16 @@ func (u *UI) executeVimCommand() {
 		if u.editor.Modified() {
 			u.enterMessage("No write since last change (use :q! to override)")
 		} else {
+			// Save cursor position before quitting
+			u.SaveCursorPosition()
 			// Clear autosave on clean quit
 			u.ClearAutosaveForCurrentFile()
 			u.quitNow = true
 		}
 
 	case "q!":
+		// Save cursor position before quitting
+		u.SaveCursorPosition()
 		// Quit without saving (keep autosave for potential recovery)
 		u.quitNow = true
 
@@ -1590,6 +1749,8 @@ func (u *UI) executeVimCommand() {
 			u.enterMessage(res.Message)
 		}
 		if !u.editor.Modified() {
+			// Save cursor position before quitting
+			u.SaveCursorPosition()
 			// Clear autosave on successful save
 			u.ClearAutosaveForCurrentFile()
 			u.quitNow = true

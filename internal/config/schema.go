@@ -36,12 +36,15 @@ type Autosave struct {
 
 // Editor contains editor-specific settings
 type Editor struct {
-	LineNumbers          bool `toml:"line_numbers"`
-	SoftWrap             bool `toml:"soft_wrap"`
-	TabWidth             int  `toml:"tab_width"`
-	SyntaxHighlighting   bool `toml:"syntax_highlighting"`
-	ShowWhitespace       bool `toml:"show_whitespace"`
-	CurrentLineHighlight bool `toml:"current_line_highlight"`
+	LineNumbers               bool `toml:"line_numbers"`
+	SoftWrap                  bool `toml:"soft_wrap"`
+	TabWidth                  int  `toml:"tab_width"`
+	SyntaxHighlighting        bool `toml:"syntax_highlighting"`
+	ShowWhitespace            bool `toml:"show_whitespace"`
+	CurrentLineHighlight      bool `toml:"current_line_highlight"`
+	TrimTrailingWhitespaceOnSave bool `toml:"trim_trailing_whitespace"` // Trim trailing whitespace on save
+	RememberPosition          bool `toml:"remember_position"`          // Remember cursor position in files
+	ShowScrollbar             bool `toml:"show_scrollbar"`             // Show scrollbar on right edge
 }
 
 // UI contains user interface settings
@@ -180,6 +183,8 @@ func Default() *Config {
 			SoftWrap:           false,
 			TabWidth:           DefaultTabWidth,
 			SyntaxHighlighting: true,
+			RememberPosition:   true,
+			ShowScrollbar:      true,
 		},
 		UI: UI{
 			ShowMenubar:   false,

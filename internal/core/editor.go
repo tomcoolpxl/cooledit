@@ -52,8 +52,9 @@ type Editor struct {
 	selectionActive bool
 	selectionAnchor struct{ Line, Col int }
 
-	TabWidth       int // Number of spaces per tab (default: 4)
-	bracketMatcher *BracketMatcher
+	TabWidth                     int  // Number of spaces per tab (default: 4)
+	TrimTrailingWhitespaceOnSave bool // Trim trailing whitespace when saving
+	bracketMatcher               *BracketMatcher
 }
 
 type Result struct {
@@ -170,6 +171,10 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		if !e.Modified() {
 			return Result{Message: "No changes to save"}
 		}
+		// Trim trailing whitespace if enabled
+		if e.TrimTrailingWhitespaceOnSave {
+			e.trimTrailingWhitespace()
+		}
 		if err := fileio.Save(e.file.Path, e.buf.Lines(), e.file.EOL, e.file.Encoding); err != nil {
 			return Result{Message: "Save failed: " + err.Error()}
 		}
@@ -177,6 +182,10 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		return Result{Message: "File saved"}
 
 	case CmdSaveAs:
+		// Trim trailing whitespace if enabled
+		if e.TrimTrailingWhitespaceOnSave {
+			e.trimTrailingWhitespace()
+		}
 		if err := fileio.Save(c.Path, e.buf.Lines(), e.file.EOL, e.file.Encoding); err != nil {
 			return Result{Message: "Save failed: " + err.Error()}
 		}
@@ -725,13 +734,12 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		action.Apply(e)
 
 	case CmdTab:
-		// Insert spaces to next tab stop
+		// If selection is active, indent all selected lines
 		if e.selectionActive {
-			delAction := e.deleteSelection()
-			e.ClearSelection()
-			delAction.Apply(e)
+			return e.indentBlock()
 		}
 
+		// Insert spaces to next tab stop
 		line, col := e.buf.Cursor()
 		tabWidth := e.TabWidth
 		if tabWidth <= 0 {
@@ -754,6 +762,12 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		composite := &CompositeAction{Actions: actions}
 		e.undo.Push(composite)
 		composite.Apply(e)
+
+	case CmdIndentBlock:
+		return e.indentBlock()
+
+	case CmdUnindentBlock:
+		return e.unindentBlock()
 
 	case CmdInsertLiteralTab:
 		// Insert a raw tab character
@@ -820,7 +834,7 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 	case CmdMoveDown:
 		e.handleMove(c.Select, func() { e.buf.MoveDown() })
 	case CmdMoveHome:
-		e.handleMove(c.Select, func() { e.buf.MoveHome() })
+		e.handleMove(c.Select, func() { e.smartMoveHome() })
 	case CmdMoveEnd:
 		e.handleMove(c.Select, func() { e.buf.MoveEnd() })
 
@@ -877,6 +891,9 @@ func (e *Editor) Apply(cmd Command, viewHeight int) Result {
 		e.selectionAnchor.Col = 0
 		e.buf.SetCursor(lastLine, lastCol)
 		return Result{Message: "All text selected"}
+
+	case CmdToggleComment:
+		return e.toggleComment(c.CommentPrefix)
 	}
 
 	return Result{}
@@ -1086,6 +1103,363 @@ func (e *Editor) moveWordRight() {
 		col = len(lines[line])
 	}
 	e.buf.SetCursor(line, col)
+}
+
+// smartMoveHome implements "smart home" behavior:
+// - If cursor is at column 0, move to first non-whitespace character
+// - If cursor is at first non-whitespace, move to column 0
+// - Otherwise, move to first non-whitespace character
+func (e *Editor) smartMoveHome() {
+	lines := e.buf.Lines()
+	line, col := e.buf.Cursor()
+
+	if len(lines) == 0 || line >= len(lines) {
+		e.buf.MoveHome()
+		return
+	}
+
+	currentLine := lines[line]
+
+	// Find first non-whitespace character
+	firstNonWS := 0
+	for i, r := range currentLine {
+		if r != ' ' && r != '\t' {
+			firstNonWS = i
+			break
+		}
+		firstNonWS = i + 1 // Will end up at len(line) if all whitespace
+	}
+
+	// If line is all whitespace or empty, just move to column 0
+	if firstNonWS >= len(currentLine) {
+		e.buf.MoveHome()
+		return
+	}
+
+	// Smart home logic:
+	// If at column 0, go to first non-WS
+	// If at first non-WS, go to column 0
+	// Otherwise, go to first non-WS
+	if col == 0 {
+		e.buf.SetCursor(line, firstNonWS)
+	} else if col == firstNonWS {
+		e.buf.MoveHome()
+	} else {
+		e.buf.SetCursor(line, firstNonWS)
+	}
+}
+
+// indentBlock indents all lines in the current selection (or current line if no selection)
+// by inserting spaces at the beginning of each line.
+func (e *Editor) indentBlock() Result {
+	tabWidth := e.TabWidth
+	if tabWidth <= 0 {
+		tabWidth = config.DefaultTabWidth
+	}
+
+	// Get selection range or current line
+	var startLine, endLine int
+	if e.selectionActive {
+		sl, _, el, _ := e.GetSelectionRange()
+		startLine, endLine = sl, el
+	} else {
+		line, _ := e.buf.Cursor()
+		startLine, endLine = line, line
+	}
+
+	lines := e.buf.Lines()
+	if startLine >= len(lines) {
+		return Result{}
+	}
+	if endLine >= len(lines) {
+		endLine = len(lines) - 1
+	}
+
+	// Create actions for each line
+	var actions []Action
+	for lineNum := startLine; lineNum <= endLine; lineNum++ {
+		// Insert tabWidth spaces at the beginning of each line
+		for i := 0; i < tabWidth; i++ {
+			actions = append(actions, &InsertRuneAction{
+				Rune: ' ',
+				Line: lineNum,
+				Col:  i,
+			})
+		}
+	}
+
+	if len(actions) == 0 {
+		return Result{}
+	}
+
+	composite := &CompositeAction{Actions: actions}
+	e.undo.Push(composite)
+	composite.Apply(e)
+
+	// Update selection to cover indented lines
+	if e.selectionActive {
+		e.selectionAnchor.Line = startLine
+		e.selectionAnchor.Col = 0
+		e.buf.SetCursor(endLine, e.buf.LineLen(endLine))
+	}
+
+	linesAffected := endLine - startLine + 1
+	if linesAffected == 1 {
+		return Result{Message: "Indented 1 line"}
+	}
+	return Result{Message: fmt.Sprintf("Indented %d lines", linesAffected)}
+}
+
+// unindentBlock removes leading whitespace from all lines in the current selection
+// (or current line if no selection), up to tabWidth spaces.
+func (e *Editor) unindentBlock() Result {
+	tabWidth := e.TabWidth
+	if tabWidth <= 0 {
+		tabWidth = config.DefaultTabWidth
+	}
+
+	// Get selection range or current line
+	var startLine, endLine int
+	if e.selectionActive {
+		sl, _, el, _ := e.GetSelectionRange()
+		startLine, endLine = sl, el
+	} else {
+		line, _ := e.buf.Cursor()
+		startLine, endLine = line, line
+	}
+
+	lines := e.buf.Lines()
+	if startLine >= len(lines) {
+		return Result{}
+	}
+	if endLine >= len(lines) {
+		endLine = len(lines) - 1
+	}
+
+	// Create actions for each line - we need to track how many chars to delete
+	var actions []Action
+	for lineNum := startLine; lineNum <= endLine; lineNum++ {
+		if lineNum >= len(lines) {
+			continue
+		}
+		currentLine := lines[lineNum]
+
+		// Count leading whitespace (spaces and tabs) up to tabWidth
+		spacesToRemove := 0
+		for i := 0; i < len(currentLine) && spacesToRemove < tabWidth; i++ {
+			if currentLine[i] == ' ' {
+				spacesToRemove++
+			} else if currentLine[i] == '\t' {
+				// Tab counts as filling to next tab stop, but we remove one char
+				spacesToRemove = tabWidth
+				break
+			} else {
+				break
+			}
+		}
+
+		if spacesToRemove > 0 {
+			// Delete from column 0 to spacesToRemove
+			actions = append(actions, &DeleteSelectionAction{
+				StartLine:   lineNum,
+				StartCol:    0,
+				EndLine:     lineNum,
+				EndCol:      spacesToRemove,
+				DeletedText: string(currentLine[:spacesToRemove]),
+			})
+		}
+	}
+
+	if len(actions) == 0 {
+		return Result{Message: "No indentation to remove"}
+	}
+
+	composite := &CompositeAction{Actions: actions}
+	e.undo.Push(composite)
+	composite.Apply(e)
+
+	// Update selection to cover unindented lines
+	if e.selectionActive {
+		e.selectionAnchor.Line = startLine
+		e.selectionAnchor.Col = 0
+		e.buf.SetCursor(endLine, e.buf.LineLen(endLine))
+	}
+
+	linesAffected := endLine - startLine + 1
+	if linesAffected == 1 {
+		return Result{Message: "Unindented 1 line"}
+	}
+	return Result{Message: fmt.Sprintf("Unindented %d lines", linesAffected)}
+}
+
+// trimTrailingWhitespace removes trailing whitespace from all lines in the buffer.
+// This modifies the buffer directly and is intended to be called before saving.
+// Returns the number of lines that were modified.
+func (e *Editor) trimTrailingWhitespace() int {
+	lines := e.buf.Lines()
+	modified := 0
+
+	for lineNum := 0; lineNum < len(lines); lineNum++ {
+		line := lines[lineNum]
+		if len(line) == 0 {
+			continue
+		}
+
+		// Find the last non-whitespace character
+		lastNonWS := len(line) - 1
+		for lastNonWS >= 0 && (line[lastNonWS] == ' ' || line[lastNonWS] == '\t') {
+			lastNonWS--
+		}
+
+		// If there's trailing whitespace, remove it
+		if lastNonWS < len(line)-1 {
+			// Delete from lastNonWS+1 to end of line
+			e.buf.DeleteRange(lineNum, lastNonWS+1, lineNum, len(line))
+			modified++
+		}
+	}
+
+	return modified
+}
+
+// toggleComment toggles line comments on selected lines or current line.
+// If all lines start with the comment prefix, it removes comments.
+// If any line doesn't have the comment, it adds comments to all lines.
+func (e *Editor) toggleComment(commentPrefix string) Result {
+	if commentPrefix == "" {
+		return Result{Message: "No comment syntax for this language"}
+	}
+
+	// Get selection range or current line
+	var startLine, endLine int
+	if e.selectionActive {
+		sl, _, el, _ := e.GetSelectionRange()
+		startLine, endLine = sl, el
+	} else {
+		line, _ := e.buf.Cursor()
+		startLine, endLine = line, line
+	}
+
+	lines := e.buf.Lines()
+	if startLine >= len(lines) {
+		return Result{}
+	}
+	if endLine >= len(lines) {
+		endLine = len(lines) - 1
+	}
+
+	// Check if all lines are already commented
+	allCommented := true
+	commentPrefixRunes := []rune(commentPrefix)
+	for lineNum := startLine; lineNum <= endLine; lineNum++ {
+		line := lines[lineNum]
+		// Skip empty lines in the check
+		if len(line) == 0 {
+			continue
+		}
+		// Find first non-whitespace
+		firstNonWS := 0
+		for i, r := range line {
+			if r != ' ' && r != '\t' {
+				firstNonWS = i
+				break
+			}
+		}
+		// Check if line starts with comment prefix (after whitespace)
+		if !hasCommentPrefix(line[firstNonWS:], commentPrefixRunes) {
+			allCommented = false
+			break
+		}
+	}
+
+	var actions []Action
+	if allCommented {
+		// Remove comments from all lines
+		for lineNum := startLine; lineNum <= endLine; lineNum++ {
+			line := lines[lineNum]
+			if len(line) == 0 {
+				continue
+			}
+			// Find first non-whitespace
+			firstNonWS := 0
+			for i, r := range line {
+				if r != ' ' && r != '\t' {
+					firstNonWS = i
+					break
+				}
+			}
+			if hasCommentPrefix(line[firstNonWS:], commentPrefixRunes) {
+				// Calculate how many chars to remove (prefix + optional space after)
+				removeLen := len(commentPrefixRunes)
+				if firstNonWS+removeLen < len(line) && line[firstNonWS+removeLen] == ' ' {
+					removeLen++ // Also remove the space after comment
+				}
+				actions = append(actions, &DeleteSelectionAction{
+					StartLine:   lineNum,
+					StartCol:    firstNonWS,
+					EndLine:     lineNum,
+					EndCol:      firstNonWS + removeLen,
+					DeletedText: string(line[firstNonWS : firstNonWS+removeLen]),
+				})
+			}
+		}
+	} else {
+		// Add comments to all lines
+		for lineNum := startLine; lineNum <= endLine; lineNum++ {
+			line := lines[lineNum]
+			// Find first non-whitespace
+			insertCol := 0
+			for i, r := range line {
+				if r != ' ' && r != '\t' {
+					insertCol = i
+					break
+				}
+				insertCol = i + 1
+			}
+			// Insert comment prefix + space
+			commentWithSpace := commentPrefix + " "
+			for i, r := range commentWithSpace {
+				actions = append(actions, &InsertRuneAction{
+					Rune: r,
+					Line: lineNum,
+					Col:  insertCol + i,
+				})
+			}
+		}
+	}
+
+	if len(actions) == 0 {
+		return Result{}
+	}
+
+	composite := &CompositeAction{Actions: actions}
+	e.undo.Push(composite)
+	composite.Apply(e)
+
+	linesAffected := endLine - startLine + 1
+	if allCommented {
+		if linesAffected == 1 {
+			return Result{Message: "Uncommented 1 line"}
+		}
+		return Result{Message: fmt.Sprintf("Uncommented %d lines", linesAffected)}
+	}
+	if linesAffected == 1 {
+		return Result{Message: "Commented 1 line"}
+	}
+	return Result{Message: fmt.Sprintf("Commented %d lines", linesAffected)}
+}
+
+// hasCommentPrefix checks if line starts with the comment prefix.
+func hasCommentPrefix(line []rune, prefix []rune) bool {
+	if len(line) < len(prefix) {
+		return false
+	}
+	for i, r := range prefix {
+		if line[i] != r {
+			return false
+		}
+	}
+	return true
 }
 
 // StartSearchSession starts a new search session with the given query.

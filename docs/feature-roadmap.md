@@ -4,6 +4,23 @@ Prioritized list of nano-inspired features to implement.
 
 ---
 
+## Implementation Status
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Smart Home Key | ✅ Complete | Phase 1 |
+| Indent/Unindent Block | ✅ Complete | Phase 1 |
+| Trim Trailing Whitespace | ✅ Complete | Phase 2 |
+| Comment/Uncomment | ✅ Complete | Phase 2 |
+| Position Log | ✅ Complete | Phase 3 |
+| Scrollbar/Indicator | ✅ Complete | Phase 3 |
+| Verbatim Character Input | ⏳ Pending | Phase 4 |
+| File Browser | ⏳ Pending | Phase 5 |
+| Formatter Integration | ⏳ Pending | Phase 6 |
+| Linter Integration | ⏳ Pending | Phase 7 |
+
+---
+
 ## Priority 1: High Impact, Low Complexity
 
 ### 1. Smart Home Key

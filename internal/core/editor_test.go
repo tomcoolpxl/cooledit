@@ -18,6 +18,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"cooledit/internal/fileio"
@@ -889,5 +890,612 @@ func TestSearchStateAfterFileChange(t *testing.T) {
 	// But preferences should persist
 	if e.SearchState().LastQuery != "hello" {
 		t.Error("expected last query to persist after file change")
+	}
+}
+
+// Tests for Smart Home Key feature
+
+func TestSmartHomeFromMiddle(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    hello" (4 spaces then hello)
+	for _, r := range "    hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Cursor is at end (col 9)
+	line, col := e.Cursor()
+	if col != 9 {
+		t.Fatalf("expected cursor at col 9, got %d", col)
+	}
+
+	// Press Home - should go to first non-whitespace (col 4)
+	e.Apply(CmdMoveHome{}, 10)
+	line, col = e.Cursor()
+	if line != 0 || col != 4 {
+		t.Fatalf("expected cursor at (0, 4), got (%d, %d)", line, col)
+	}
+}
+
+func TestSmartHomeFromFirstNonWS(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    hello" (4 spaces then hello)
+	for _, r := range "    hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Move to first non-whitespace (col 4)
+	e.Apply(CmdMoveHome{}, 10)
+	line, col := e.Cursor()
+	if col != 4 {
+		t.Fatalf("expected cursor at col 4, got %d", col)
+	}
+
+	// Press Home again - should go to column 0
+	e.Apply(CmdMoveHome{}, 10)
+	line, col = e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0, 0), got (%d, %d)", line, col)
+	}
+}
+
+func TestSmartHomeFromCol0(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    hello" (4 spaces then hello)
+	for _, r := range "    hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Move to column 0
+	e.buf.SetCursor(0, 0)
+	line, col := e.Cursor()
+	if col != 0 {
+		t.Fatalf("expected cursor at col 0, got %d", col)
+	}
+
+	// Press Home - should go to first non-whitespace (col 4)
+	e.Apply(CmdMoveHome{}, 10)
+	line, col = e.Cursor()
+	if line != 0 || col != 4 {
+		t.Fatalf("expected cursor at (0, 4), got (%d, %d)", line, col)
+	}
+}
+
+func TestSmartHomeNoIndent(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello" (no leading whitespace)
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Move to middle
+	e.buf.SetCursor(0, 2)
+
+	// Press Home - should go to column 0 (first non-WS is at 0)
+	e.Apply(CmdMoveHome{}, 10)
+	line, col := e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0, 0), got (%d, %d)", line, col)
+	}
+
+	// Press Home again - still at column 0
+	e.Apply(CmdMoveHome{}, 10)
+	line, col = e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0, 0), got (%d, %d)", line, col)
+	}
+}
+
+func TestSmartHomeAllWhitespace(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    " (all spaces)
+	for _, r := range "    " {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Move to column 2
+	e.buf.SetCursor(0, 2)
+
+	// Press Home - should go to column 0 (no non-whitespace)
+	e.Apply(CmdMoveHome{}, 10)
+	line, col := e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0, 0), got (%d, %d)", line, col)
+	}
+}
+
+func TestSmartHomeWithTabs(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "\t\thello" (2 tabs then hello)
+	for _, r := range "\t\thello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Cursor is at end (col 7)
+	line, col := e.Cursor()
+	if col != 7 {
+		t.Fatalf("expected cursor at col 7, got %d", col)
+	}
+
+	// Press Home - should go to first non-whitespace (col 2)
+	e.Apply(CmdMoveHome{}, 10)
+	line, col = e.Cursor()
+	if line != 0 || col != 2 {
+		t.Fatalf("expected cursor at (0, 2), got (%d, %d)", line, col)
+	}
+
+	// Press Home again - should go to column 0
+	e.Apply(CmdMoveHome{}, 10)
+	line, col = e.Cursor()
+	if line != 0 || col != 0 {
+		t.Fatalf("expected cursor at (0, 0), got (%d, %d)", line, col)
+	}
+}
+
+func TestSmartHomeWithSelection(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    hello"
+	for _, r := range "    hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Press Shift+Home - should select to first non-whitespace
+	e.Apply(CmdMoveHome{Select: true}, 10)
+	line, col := e.Cursor()
+	if line != 0 || col != 4 {
+		t.Fatalf("expected cursor at (0, 4), got (%d, %d)", line, col)
+	}
+
+	// Should have selection
+	if !e.HasSelection() {
+		t.Fatal("expected selection to be active")
+	}
+}
+
+// Tests for Indent/Unindent Block feature
+
+func TestIndentBlockSingleLine(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello"
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// No selection, cursor at end
+	// Indent current line (single line, no selection)
+	e.Apply(CmdIndentBlock{}, 10)
+
+	lines := e.Lines()
+	// Line should now have 4 spaces at the beginning
+	expected := "    hello"
+	if string(lines[0]) != expected {
+		t.Fatalf("expected %q, got %q", expected, string(lines[0]))
+	}
+}
+
+func TestIndentBlockWithSelection(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert multiple lines
+	for _, r := range "line1" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "line2" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "line3" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Select lines 0-1 (first two lines)
+	e.buf.SetCursor(0, 0)
+	e.SetSelection(0, 0, 5) // Select from (0,0) with length 5
+
+	// Create a proper selection spanning multiple lines
+	e.selectionActive = true
+	e.selectionAnchor.Line = 0
+	e.selectionAnchor.Col = 0
+	e.buf.SetCursor(1, 5)
+
+	// Indent selected lines
+	e.Apply(CmdIndentBlock{}, 10)
+
+	lines := e.Lines()
+	// Lines 0 and 1 should be indented
+	if !hasPrefix(lines[0], "    ") {
+		t.Fatalf("line 0 should be indented, got %q", string(lines[0]))
+	}
+	if !hasPrefix(lines[1], "    ") {
+		t.Fatalf("line 1 should be indented, got %q", string(lines[1]))
+	}
+	// Line 2 should NOT be indented
+	if hasPrefix(lines[2], "    ") {
+		t.Fatalf("line 2 should NOT be indented, got %q", string(lines[2]))
+	}
+}
+
+func TestUnindentBlockSingleLine(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    hello" (4 spaces then hello)
+	for _, r := range "    hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// No selection
+	e.ClearSelection()
+
+	// Unindent current line
+	e.Apply(CmdUnindentBlock{}, 10)
+
+	lines := e.Lines()
+	// Line should now have no leading spaces
+	expected := "hello"
+	if string(lines[0]) != expected {
+		t.Fatalf("expected %q, got %q", expected, string(lines[0]))
+	}
+}
+
+func TestUnindentBlockPartialSpaces(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "  hello" (2 spaces then hello)
+	for _, r := range "  hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// No selection
+	e.ClearSelection()
+
+	// Unindent current line - should only remove 2 spaces (not 4)
+	e.Apply(CmdUnindentBlock{}, 10)
+
+	lines := e.Lines()
+	// Line should now have no leading spaces
+	expected := "hello"
+	if string(lines[0]) != expected {
+		t.Fatalf("expected %q, got %q", expected, string(lines[0]))
+	}
+}
+
+func TestUnindentBlockNoSpaces(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello" (no leading spaces)
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// No selection
+	e.ClearSelection()
+
+	// Unindent current line - should do nothing
+	result := e.Apply(CmdUnindentBlock{}, 10)
+
+	lines := e.Lines()
+	expected := "hello"
+	if string(lines[0]) != expected {
+		t.Fatalf("expected %q, got %q", expected, string(lines[0]))
+	}
+	if result.Message != "No indentation to remove" {
+		t.Fatalf("expected 'No indentation to remove' message, got %q", result.Message)
+	}
+}
+
+func TestIndentUnindentUndo(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello"
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Indent
+	e.Apply(CmdIndentBlock{}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "    hello" {
+		t.Fatalf("expected '    hello', got %q", string(lines[0]))
+	}
+
+	// Undo
+	e.Apply(CmdUndo{}, 10)
+
+	lines = e.Lines()
+	if string(lines[0]) != "hello" {
+		t.Fatalf("expected 'hello' after undo, got %q", string(lines[0]))
+	}
+}
+
+func TestTabWithSelectionIndents(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello"
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Select all text
+	e.selectionActive = true
+	e.selectionAnchor.Line = 0
+	e.selectionAnchor.Col = 0
+	e.buf.SetCursor(0, 5)
+
+	// Tab should indent the line (not delete and insert spaces)
+	e.Apply(CmdTab{}, 10)
+
+	lines := e.Lines()
+	// Line should be indented, text preserved
+	if string(lines[0]) != "    hello" {
+		t.Fatalf("expected '    hello', got %q", string(lines[0]))
+	}
+}
+
+// Helper function
+func hasPrefix(line []rune, prefix string) bool {
+	if len(line) < len(prefix) {
+		return false
+	}
+	return string(line[:len(prefix)]) == prefix
+}
+
+// Tests for Trim Trailing Whitespace feature
+
+func TestTrimTrailingWhitespaceOnSave(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.txt")
+
+	e := newTestEditor()
+	e.TrimTrailingWhitespaceOnSave = true
+
+	// Insert "hello   " (with trailing spaces)
+	for _, r := range "hello   " {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Save the file
+	e.Apply(CmdSaveAs{Path: path}, 10)
+
+	// Read the saved file
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved file: %v", err)
+	}
+
+	// Should have trailing whitespace trimmed
+	if string(data) != "hello" {
+		t.Fatalf("expected 'hello', got %q", string(data))
+	}
+}
+
+func TestTrimTrailingWhitespaceDisabled(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.txt")
+
+	e := newTestEditor()
+	e.TrimTrailingWhitespaceOnSave = false // Disabled
+
+	// Insert "hello   " (with trailing spaces)
+	for _, r := range "hello   " {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Save the file
+	e.Apply(CmdSaveAs{Path: path}, 10)
+
+	// Read the saved file
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved file: %v", err)
+	}
+
+	// Should NOT have trailing whitespace trimmed
+	if string(data) != "hello   " {
+		t.Fatalf("expected 'hello   ', got %q", string(data))
+	}
+}
+
+func TestTrimTrailingWhitespaceMultipleLines(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.txt")
+
+	e := newTestEditor()
+	e.TrimTrailingWhitespaceOnSave = true
+
+	// Insert multiple lines with trailing whitespace
+	for _, r := range "line1   " {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "line2\t" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "line3" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Save the file
+	e.Apply(CmdSaveAs{Path: path}, 10)
+
+	// Read the saved file - expected result depends on EOL format
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved file: %v", err)
+	}
+
+	// Check that trailing whitespace was trimmed from all lines
+	content := string(data)
+	if strings.Contains(content, "line1   ") {
+		t.Fatalf("line1 should have trailing spaces trimmed")
+	}
+	if strings.Contains(content, "line2\t") {
+		t.Fatalf("line2 should have trailing tab trimmed")
+	}
+}
+
+// Tests for Toggle Comment feature
+
+func TestToggleCommentSingleLine(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello"
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Toggle comment with "//"
+	e.Apply(CmdToggleComment{CommentPrefix: "//"}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "// hello" {
+		t.Fatalf("expected '// hello', got %q", string(lines[0]))
+	}
+}
+
+func TestToggleCommentUncomment(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "// hello" (already commented)
+	for _, r := range "// hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Toggle comment should uncomment
+	e.Apply(CmdToggleComment{CommentPrefix: "//"}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "hello" {
+		t.Fatalf("expected 'hello', got %q", string(lines[0]))
+	}
+}
+
+func TestToggleCommentWithIndent(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "    hello" (indented)
+	for _, r := range "    hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Toggle comment
+	e.Apply(CmdToggleComment{CommentPrefix: "//"}, 10)
+
+	lines := e.Lines()
+	// Comment should be added after the indent
+	if string(lines[0]) != "    // hello" {
+		t.Fatalf("expected '    // hello', got %q", string(lines[0]))
+	}
+}
+
+func TestToggleCommentMultipleLines(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert multiple lines
+	for _, r := range "line1" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "line2" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+	e.Apply(CmdInsertNewline{}, 10)
+	for _, r := range "line3" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Select lines 0-1
+	e.selectionActive = true
+	e.selectionAnchor.Line = 0
+	e.selectionAnchor.Col = 0
+	e.buf.SetCursor(1, 5)
+
+	// Toggle comment
+	e.Apply(CmdToggleComment{CommentPrefix: "#"}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "# line1" {
+		t.Fatalf("line 0: expected '# line1', got %q", string(lines[0]))
+	}
+	if string(lines[1]) != "# line2" {
+		t.Fatalf("line 1: expected '# line2', got %q", string(lines[1]))
+	}
+	// Line 2 should NOT be commented (not in selection)
+	if string(lines[2]) != "line3" {
+		t.Fatalf("line 2: expected 'line3', got %q", string(lines[2]))
+	}
+}
+
+func TestToggleCommentPython(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert Python-style comment
+	for _, r := range "# hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Toggle should uncomment
+	e.Apply(CmdToggleComment{CommentPrefix: "#"}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "hello" {
+		t.Fatalf("expected 'hello', got %q", string(lines[0]))
+	}
+}
+
+func TestToggleCommentNoLanguage(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert text
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Toggle comment with empty prefix (no language support)
+	result := e.Apply(CmdToggleComment{CommentPrefix: ""}, 10)
+
+	// Should return message about no comment syntax
+	if result.Message != "No comment syntax for this language" {
+		t.Fatalf("expected 'No comment syntax for this language', got %q", result.Message)
+	}
+
+	// Text should be unchanged
+	lines := e.Lines()
+	if string(lines[0]) != "hello" {
+		t.Fatalf("expected 'hello', got %q", string(lines[0]))
+	}
+}
+
+func TestToggleCommentUndo(t *testing.T) {
+	e := newTestEditor()
+
+	// Insert "hello"
+	for _, r := range "hello" {
+		e.Apply(CmdInsertRune{Rune: r}, 10)
+	}
+
+	// Toggle comment
+	e.Apply(CmdToggleComment{CommentPrefix: "//"}, 10)
+
+	lines := e.Lines()
+	if string(lines[0]) != "// hello" {
+		t.Fatalf("expected '// hello', got %q", string(lines[0]))
+	}
+
+	// Undo
+	e.Apply(CmdUndo{}, 10)
+
+	lines = e.Lines()
+	if string(lines[0]) != "hello" {
+		t.Fatalf("expected 'hello' after undo, got %q", string(lines[0]))
 	}
 }

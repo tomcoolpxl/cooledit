@@ -31,7 +31,8 @@ func newTestUI(w, h int) (*UI, *FakeScreen) {
 	editor := core.NewEditor(nil)
 	cfg := config.Default()
 	ui := New(screen, editor, cfg)
-	ui.showMenubar = false // Disable by default for tests to match old layout assumptions
+	ui.showMenubar = false   // Disable by default for tests to match old layout assumptions
+	ui.showScrollbar = false // Disable scrollbar for tests to maintain existing test expectations
 	return ui, screen
 }
 

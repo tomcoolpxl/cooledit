@@ -27,6 +27,7 @@ const (
 	KeyInsert
 	KeyEscape
 	KeyTab
+	KeyBackTab // Shift+Tab
 
 	KeyUp
 	KeyDown

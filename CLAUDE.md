@@ -89,6 +89,9 @@ internal/
 - ✅ Non-existent file creation (allows opening files that don't exist yet)
 - ✅ Whitespace visualization toggle (Ctrl+Shift+W) - displays spaces (·), tabs (→), and line endings (↵/¶)
 - ✅ Smart tab rendering (single arrow per tab character, not per expanded space)
+- ✅ Smart Home key (cycles between first non-whitespace and column 0)
+- ✅ Block indent/unindent (Tab/Shift+Tab with selection indents/unindents lines)
+- ✅ Trim trailing whitespace on save (configurable via View menu)
 
 ### Implemented (Milestone 6 - Autosave)
 - ✅ Automatic backup after idle timeout (default: 2 seconds)
@@ -132,6 +135,9 @@ internal/
 - `Ctrl+Shift+W` - Toggle whitespace display
 - `Ctrl+H` - Toggle syntax highlighting
 - `F11` - Toggle status bar (Zen mode)
+- `Home` - Smart home (first non-whitespace, then column 0)
+- `Tab` (with selection) - Indent selected lines
+- `Shift+Tab` - Unindent selected lines (or current line)
 - `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
 - `Ctrl+I` - Insert literal tab character (\t)
 - `Insert` - Toggle Insert/Replace mode

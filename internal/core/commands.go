@@ -47,6 +47,14 @@ type CmdInsertLiteralTab struct{}
 
 func (CmdInsertLiteralTab) isCommand() {}
 
+type CmdIndentBlock struct{}
+
+func (CmdIndentBlock) isCommand() {}
+
+type CmdUnindentBlock struct{}
+
+func (CmdUnindentBlock) isCommand() {}
+
 type CmdDelete struct{}
 
 func (CmdDelete) isCommand() {}
@@ -184,3 +192,9 @@ func (CmdJumpToMatchingBracket) isCommand() {}
 type CmdSelectAll struct{}
 
 func (CmdSelectAll) isCommand() {}
+
+type CmdToggleComment struct {
+	CommentPrefix string // The comment prefix (e.g., "//", "#")
+}
+
+func (CmdToggleComment) isCommand() {}

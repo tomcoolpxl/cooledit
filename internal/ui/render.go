@@ -333,7 +333,13 @@ func (u *UI) drawViewport() {
 		return
 	}
 
-	u.editor.EnsureVisible(vpRect.W, vpRect.H)
+	// Reserve space for scrollbar if enabled
+	scrollbarWidth := 0
+	if u.showScrollbar {
+		scrollbarWidth = 1
+	}
+
+	u.editor.EnsureVisible(vpRect.W-scrollbarWidth, vpRect.H)
 	vp := u.editor.Viewport()
 	lines := u.editor.Lines()
 
@@ -349,7 +355,7 @@ func (u *UI) drawViewport() {
 		gutterWidth = len(fmt.Sprintf("%d", totalLines)) + 1 // +1 for padding
 	}
 
-	availW := vpRect.W - gutterWidth
+	availW := vpRect.W - gutterWidth - scrollbarWidth
 	if availW < 0 {
 		availW = 0
 	}
@@ -358,6 +364,11 @@ func (u *UI) drawViewport() {
 		u.drawViewportWrapped(vpRect, gutterWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
 	} else {
 		u.drawViewportNoWrap(vpRect, gutterWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
+	}
+
+	// Draw scrollbar if enabled
+	if u.showScrollbar && vpRect.H > 0 {
+		u.drawScrollbar(vpRect, len(lines), vp.TopLine)
 	}
 }
 
@@ -1380,6 +1391,92 @@ func (u *UI) clear() {
 			u.screen.SetCell(x, y, ' ', bgStyle)
 		}
 	}
+}
+
+// drawScrollbar draws a scrollbar on the right edge of the viewport
+func (u *UI) drawScrollbar(vpRect Rect, totalLines, topLine int) {
+	if vpRect.H < 1 {
+		return
+	}
+
+	// Scrollbar position is at the rightmost column
+	scrollX := vpRect.X + vpRect.W - 1
+
+	// Calculate the viewport ratio
+	viewportHeight := vpRect.H
+	if totalLines == 0 {
+		totalLines = 1
+	}
+
+	// Calculate thumb position and size
+	// Thumb represents the visible portion of the file
+	thumbSize := viewportHeight
+	if totalLines > viewportHeight {
+		thumbSize = (viewportHeight * viewportHeight) / totalLines
+		if thumbSize < 1 {
+			thumbSize = 1
+		}
+	}
+
+	// Calculate thumb position
+	thumbTop := 0
+	if totalLines > viewportHeight {
+		// Calculate position based on topLine relative to scrollable range
+		scrollRange := totalLines - viewportHeight
+		if scrollRange > 0 {
+			thumbTop = (topLine * (viewportHeight - thumbSize)) / scrollRange
+		}
+	}
+
+	// Ensure thumb stays within bounds
+	if thumbTop+thumbSize > viewportHeight {
+		thumbTop = viewportHeight - thumbSize
+	}
+	if thumbTop < 0 {
+		thumbTop = 0
+	}
+
+	// Get scrollbar colors from theme
+	trackStyle := u.getScrollbarTrackStyle()
+	thumbStyle := u.getScrollbarThumbStyle()
+
+	// Draw the scrollbar
+	for y := 0; y < viewportHeight; y++ {
+		var ch rune
+		var style term.Style
+
+		if y >= thumbTop && y < thumbTop+thumbSize {
+			// Draw thumb (the viewport indicator)
+			ch = '█'
+			style = thumbStyle
+		} else {
+			// Draw track
+			ch = '░'
+			style = trackStyle
+		}
+
+		u.screen.SetCell(scrollX, vpRect.Y+y, ch, style)
+	}
+}
+
+// getScrollbarTrackStyle returns the style for the scrollbar track
+func (u *UI) getScrollbarTrackStyle() term.Style {
+	// Use a dimmed version of the editor background
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: "#444444", Background: term.ColorDefault}
+	}
+	// Use editor background with dimmed foreground
+	return term.Style{Foreground: u.theme.Editor.LineNumbersFg, Background: u.theme.Editor.Bg}
+}
+
+// getScrollbarThumbStyle returns the style for the scrollbar thumb
+func (u *UI) getScrollbarThumbStyle() term.Style {
+	// Use a highlighted version
+	if u.isDefaultTheme() {
+		return term.Style{Foreground: "#888888", Background: term.ColorDefault}
+	}
+	// Use a brighter foreground
+	return term.Style{Foreground: u.theme.Status.Fg, Background: u.theme.Editor.Bg}
 }
 
 // Theme style helpers - use inverse mode for "default" theme, colors for others

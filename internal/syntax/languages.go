@@ -23,82 +23,83 @@ import (
 
 // Language defines a programming language for syntax highlighting.
 type Language struct {
-	Name       string   // Display name (e.g., "Go", "Python")
-	Extensions []string // File extensions (e.g., ".go", ".py")
-	Shebangs   []string // Shebang interpreters (e.g., "python", "bash")
-	ChromaName string   // Chroma lexer name
+	Name        string   // Display name (e.g., "Go", "Python")
+	Extensions  []string // File extensions (e.g., ".go", ".py")
+	Shebangs    []string // Shebang interpreters (e.g., "python", "bash")
+	ChromaName  string   // Chroma lexer name
+	LineComment string   // Line comment prefix (e.g., "//", "#")
 }
 
 // Languages is the curated list of supported languages for syntax highlighting.
 // This covers ~40 languages commonly used in software development and system administration.
 var Languages = []Language{
 	// Programming Languages
-	{"Go", []string{".go"}, nil, "go"},
-	{"Python", []string{".py", ".pyw", ".pyi"}, []string{"python", "python3", "python2"}, "python"},
-	{"JavaScript", []string{".js", ".mjs", ".cjs"}, []string{"node", "nodejs"}, "javascript"},
-	{"TypeScript", []string{".ts", ".tsx", ".mts", ".cts"}, nil, "typescript"},
-	{"Java", []string{".java"}, nil, "java"},
-	{"C", []string{".c", ".h"}, nil, "c"},
-	{"C++", []string{".cpp", ".cc", ".cxx", ".hpp", ".hxx", ".hh"}, nil, "cpp"},
-	{"C#", []string{".cs"}, nil, "csharp"},
-	{"Rust", []string{".rs"}, nil, "rust"},
-	{"PHP", []string{".php", ".php3", ".php4", ".php5"}, []string{"php"}, "php"},
-	{"Ruby", []string{".rb", ".rake", ".gemspec"}, []string{"ruby"}, "ruby"},
-	{"Swift", []string{".swift"}, nil, "swift"},
-	{"Kotlin", []string{".kt", ".kts"}, nil, "kotlin"},
-	{"Scala", []string{".scala", ".sc"}, nil, "scala"},
-	{"Perl", []string{".pl", ".pm", ".t"}, []string{"perl"}, "perl"},
-	{"Lua", []string{".lua"}, []string{"lua"}, "lua"},
-	{"R", []string{".r", ".R"}, []string{"Rscript"}, "r"},
-	{"Dart", []string{".dart"}, nil, "dart"},
-	{"Elixir", []string{".ex", ".exs"}, []string{"elixir"}, "elixir"},
-	{"Haskell", []string{".hs", ".lhs"}, nil, "haskell"},
+	{"Go", []string{".go"}, nil, "go", "//"},
+	{"Python", []string{".py", ".pyw", ".pyi"}, []string{"python", "python3", "python2"}, "python", "#"},
+	{"JavaScript", []string{".js", ".mjs", ".cjs"}, []string{"node", "nodejs"}, "javascript", "//"},
+	{"TypeScript", []string{".ts", ".tsx", ".mts", ".cts"}, nil, "typescript", "//"},
+	{"Java", []string{".java"}, nil, "java", "//"},
+	{"C", []string{".c", ".h"}, nil, "c", "//"},
+	{"C++", []string{".cpp", ".cc", ".cxx", ".hpp", ".hxx", ".hh"}, nil, "cpp", "//"},
+	{"C#", []string{".cs"}, nil, "csharp", "//"},
+	{"Rust", []string{".rs"}, nil, "rust", "//"},
+	{"PHP", []string{".php", ".php3", ".php4", ".php5"}, []string{"php"}, "php", "//"},
+	{"Ruby", []string{".rb", ".rake", ".gemspec"}, []string{"ruby"}, "ruby", "#"},
+	{"Swift", []string{".swift"}, nil, "swift", "//"},
+	{"Kotlin", []string{".kt", ".kts"}, nil, "kotlin", "//"},
+	{"Scala", []string{".scala", ".sc"}, nil, "scala", "//"},
+	{"Perl", []string{".pl", ".pm", ".t"}, []string{"perl"}, "perl", "#"},
+	{"Lua", []string{".lua"}, []string{"lua"}, "lua", "--"},
+	{"R", []string{".r", ".R"}, []string{"Rscript"}, "r", "#"},
+	{"Dart", []string{".dart"}, nil, "dart", "//"},
+	{"Elixir", []string{".ex", ".exs"}, []string{"elixir"}, "elixir", "#"},
+	{"Haskell", []string{".hs", ".lhs"}, nil, "haskell", "--"},
 
 	// Web Technologies
-	{"HTML", []string{".html", ".htm", ".xhtml"}, nil, "html"},
-	{"CSS", []string{".css"}, nil, "css"},
-	{"SCSS", []string{".scss"}, nil, "scss"},
-	{"LESS", []string{".less"}, nil, "less"},
-	{"SQL", []string{".sql"}, nil, "sql"},
-	{"GraphQL", []string{".graphql", ".gql"}, nil, "graphql"},
+	{"HTML", []string{".html", ".htm", ".xhtml"}, nil, "html", ""},
+	{"CSS", []string{".css"}, nil, "css", ""},
+	{"SCSS", []string{".scss"}, nil, "scss", "//"},
+	{"LESS", []string{".less"}, nil, "less", "//"},
+	{"SQL", []string{".sql"}, nil, "sql", "--"},
+	{"GraphQL", []string{".graphql", ".gql"}, nil, "graphql", "#"},
 
 	// Shell and Sysadmin
-	{"Bash", []string{".sh", ".bash", ".zsh"}, []string{"bash", "sh", "zsh", "ash", "dash"}, "bash"},
-	{"PowerShell", []string{".ps1", ".psm1", ".psd1"}, []string{"pwsh", "powershell"}, "powershell"},
-	{"Batch", []string{".bat", ".cmd"}, nil, "batchfile"},
-	{"Fish", []string{".fish"}, []string{"fish"}, "fish"},
+	{"Bash", []string{".sh", ".bash", ".zsh"}, []string{"bash", "sh", "zsh", "ash", "dash"}, "bash", "#"},
+	{"PowerShell", []string{".ps1", ".psm1", ".psd1"}, []string{"pwsh", "powershell"}, "powershell", "#"},
+	{"Batch", []string{".bat", ".cmd"}, nil, "batchfile", "REM "},
+	{"Fish", []string{".fish"}, []string{"fish"}, "fish", "#"},
 
 	// Configuration Files
-	{"YAML", []string{".yaml", ".yml"}, nil, "yaml"},
-	{"JSON", []string{".json", ".jsonc"}, nil, "json"},
-	{"TOML", []string{".toml"}, nil, "toml"},
-	{"INI", []string{".ini", ".cfg", ".conf"}, nil, "ini"},
-	{"XML", []string{".xml", ".xsl", ".xslt", ".xsd", ".svg"}, nil, "xml"},
-	{"Properties", []string{".properties"}, nil, "properties"},
-	{"Registry", []string{".reg"}, nil, "registry"},
-	{"Nginx", []string{".nginx"}, nil, "nginx"},
-	{"Apache", []string{".htaccess"}, nil, "apacheconf"},
+	{"YAML", []string{".yaml", ".yml"}, nil, "yaml", "#"},
+	{"JSON", []string{".json", ".jsonc"}, nil, "json", ""},
+	{"TOML", []string{".toml"}, nil, "toml", "#"},
+	{"INI", []string{".ini", ".cfg", ".conf"}, nil, "ini", ";"},
+	{"XML", []string{".xml", ".xsl", ".xslt", ".xsd", ".svg"}, nil, "xml", ""},
+	{"Properties", []string{".properties"}, nil, "properties", "#"},
+	{"Registry", []string{".reg"}, nil, "registry", ";"},
+	{"Nginx", []string{".nginx"}, nil, "nginx", "#"},
+	{"Apache", []string{".htaccess"}, nil, "apacheconf", "#"},
 
 	// Cloud and DevOps
-	{"Terraform", []string{".tf", ".tfvars"}, nil, "terraform"},
-	{"HCL", []string{".hcl"}, nil, "hcl"},
-	{"Dockerfile", []string{"Dockerfile", ".dockerfile"}, nil, "docker"},
-	{"Docker Compose", []string{"docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"}, nil, "yaml"},
+	{"Terraform", []string{".tf", ".tfvars"}, nil, "terraform", "#"},
+	{"HCL", []string{".hcl"}, nil, "hcl", "#"},
+	{"Dockerfile", []string{"Dockerfile", ".dockerfile"}, nil, "docker", "#"},
+	{"Docker Compose", []string{"docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"}, nil, "yaml", "#"},
 
 	// Build and Project Files
-	{"Makefile", []string{"Makefile", "makefile", "GNUmakefile"}, nil, "makefile"},
-	{"CMake", []string{"CMakeLists.txt", ".cmake"}, nil, "cmake"},
-	{"Gradle", []string{".gradle"}, nil, "groovy"},
+	{"Makefile", []string{"Makefile", "makefile", "GNUmakefile"}, nil, "makefile", "#"},
+	{"CMake", []string{"CMakeLists.txt", ".cmake"}, nil, "cmake", "#"},
+	{"Gradle", []string{".gradle"}, nil, "groovy", "//"},
 
 	// Documentation
-	{"Markdown", []string{".md", ".markdown", ".mdown"}, nil, "markdown"},
-	{"reStructuredText", []string{".rst"}, nil, "rst"},
-	{"LaTeX", []string{".tex", ".latex"}, nil, "latex"},
+	{"Markdown", []string{".md", ".markdown", ".mdown"}, nil, "markdown", ""},
+	{"reStructuredText", []string{".rst"}, nil, "rst", ".."},
+	{"LaTeX", []string{".tex", ".latex"}, nil, "latex", "%"},
 
 	// Data Formats
-	{"CSV", []string{".csv", ".tsv"}, nil, "text"},
-	{"Diff", []string{".diff", ".patch"}, nil, "diff"},
-	{"Protocol Buffers", []string{".proto"}, nil, "protobuf"},
+	{"CSV", []string{".csv", ".tsv"}, nil, "text", ""},
+	{"Diff", []string{".diff", ".patch"}, nil, "diff", ""},
+	{"Protocol Buffers", []string{".proto"}, nil, "protobuf", "//"},
 }
 
 // languageByExt maps file extensions to language names for fast lookup.
@@ -219,6 +220,16 @@ func GetChromaName(languageName string) string {
 	lang := GetLanguage(languageName)
 	if lang != nil {
 		return lang.ChromaName
+	}
+	return ""
+}
+
+// GetLineComment returns the line comment prefix for a given language name.
+// Returns empty string if the language is not found or doesn't support line comments.
+func GetLineComment(languageName string) string {
+	lang := GetLanguage(languageName)
+	if lang != nil {
+		return lang.LineComment
 	}
 	return ""
 }
