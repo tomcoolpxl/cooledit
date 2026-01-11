@@ -983,7 +983,7 @@ func (u *UI) doSearch() {
 			// Move cursor to the match and select it
 			u.editor.SetSelection(match.Line, match.Col, match.Length)
 			// Make sure the match is visible
-			u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
+			u.editor.EnsureVisible(u.layout.Viewport.W, u.layout.Viewport.H)
 		}
 	}
 
@@ -1004,7 +1004,7 @@ func (u *UI) nextSearchMatch() {
 	match := session.GetCurrentMatch()
 	if match != nil {
 		u.editor.SetSelection(match.Line, match.Col, match.Length)
-		u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
+		u.editor.EnsureVisible(u.layout.Viewport.W, u.layout.Viewport.H)
 	}
 	u.screen.PushEvent(term.RedrawEvent{})
 }
@@ -1022,7 +1022,7 @@ func (u *UI) prevSearchMatch() {
 	match := session.GetCurrentMatch()
 	if match != nil {
 		u.editor.SetSelection(match.Line, match.Col, match.Length)
-		u.editor.EnsureVisible(match.Line, u.layout.Viewport.H)
+		u.editor.EnsureVisible(u.layout.Viewport.W, u.layout.Viewport.H)
 	}
 	u.screen.PushEvent(term.RedrawEvent{})
 }
