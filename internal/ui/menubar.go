@@ -108,6 +108,12 @@ func (m *Menubar) initDefaults() {
 					u.showLineNumbers = !u.showLineNumbers
 					u.saveConfig()
 				}},
+				{Label: "Current Line Highlight", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.currentLineHighlight
+				}, Action: func(u *UI) {
+					u.currentLineHighlight = !u.currentLineHighlight
+					u.saveConfig()
+				}},
 				{Label: "Toggle Word Wrap", Accelerator: "Ctrl+W", IsCheckable: true, IsChecked: func(u *UI) bool {
 					return u.softWrap
 				}, Action: func(u *UI) {

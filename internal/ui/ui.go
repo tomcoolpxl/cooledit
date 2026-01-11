@@ -242,10 +242,11 @@ type UI struct {
 	lastSearchQuery      string         // Last executed search query (persists in session)
 
 	// Features
-	showLineNumbers bool
-	showStatusBar   bool
-	softWrap        bool
-	showWhitespace  bool
+	showLineNumbers      bool
+	showStatusBar        bool
+	softWrap             bool
+	showWhitespace       bool
+	currentLineHighlight bool
 
 	// Theme
 	theme *theme.Theme
@@ -282,15 +283,16 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 	editor.TabWidth = cfg.Editor.TabWidth
 
 	u := &UI{
-		screen:             screen,
-		editor:             editor,
-		menubar:            NewMenubar(),
-		mode:               ModeNormal,
-		showMenubar:        false,
-		showStatusBar:      cfg.UI.ShowStatusBar,
-		showWhitespace:     cfg.Editor.ShowWhitespace,
-		insertMode:         true, // Always start in insert mode
-		syntaxHighlighting: cfg.Editor.SyntaxHighlighting,
+		screen:               screen,
+		editor:               editor,
+		menubar:              NewMenubar(),
+		mode:                 ModeNormal,
+		showMenubar:          false,
+		showStatusBar:        cfg.UI.ShowStatusBar,
+		showWhitespace:       cfg.Editor.ShowWhitespace,
+		currentLineHighlight: cfg.Editor.CurrentLineHighlight,
+		insertMode:           true, // Always start in insert mode
+		syntaxHighlighting:   cfg.Editor.SyntaxHighlighting,
 		currentLanguage: func() string {
 			if cfg.UI.Language == "" {
 				return "auto"
@@ -333,6 +335,7 @@ func (u *UI) saveConfig() {
 	u.config.Editor.SoftWrap = u.softWrap
 	u.config.Editor.SyntaxHighlighting = u.syntaxHighlighting
 	u.config.Editor.ShowWhitespace = u.showWhitespace
+	u.config.Editor.CurrentLineHighlight = u.currentLineHighlight
 	u.config.UI.ShowStatusBar = u.showStatusBar
 	// Only save "auto" state to config, not specific languages
 	if u.currentLanguage == "auto" || u.currentLanguage == "" {

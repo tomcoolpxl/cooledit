@@ -362,11 +362,21 @@ func (u *UI) drawViewport() {
 }
 
 func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
+	cursorLine, _ := u.editor.Cursor()
+	// Check if current line highlight is enabled and has a valid color (not ColorDefault)
+	currentLineBgEnabled := u.currentLineHighlight && u.theme.Editor.CurrentLineBg != term.ColorDefault
+	
 	for sy := 0; sy < vpRect.H; sy++ {
 		docY := vp.TopLine + sy
+		isCurrentLine := (docY == cursorLine) && currentLineBgEnabled
 
 		// Draw Gutter
 		gutterStyle := u.getLineNumberStyle()
+		if isCurrentLine {
+			// Apply current line background to gutter
+			gutterStyle.Background = u.theme.Editor.CurrentLineBg
+		}
+		
 		if u.showLineNumbers {
 			if docY < len(lines) {
 				numStr := fmt.Sprintf("%d", docY+1) // 1-based
@@ -403,6 +413,10 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 		drawX := vpRect.X + gutterWidth
 
 		editorStyle := u.getEditorStyle()
+		if isCurrentLine {
+			// Override background for current line
+			editorStyle.Background = u.theme.Editor.CurrentLineBg
+		}
 		selectionStyle := u.getSelectionStyle()
 
 		// Draw from LeftCol in display space
@@ -462,6 +476,10 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			// Apply syntax highlighting
 			if syntaxStyle := u.getSyntaxStyle(docY, runeIdx, line); syntaxStyle != nil {
 				style = *syntaxStyle
+				// Preserve current line background if enabled
+				if isCurrentLine {
+					style.Background = u.theme.Editor.CurrentLineBg
+				}
 			}
 
 			// Apply search match highlighting (overrides syntax)
@@ -512,6 +530,21 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 					marker = '⏎' // CRLF (Windows) - Return symbol
 				}
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, marker, editorStyle)
+			}
+		}
+		
+		// Fill remaining space with current line background if enabled
+		if isCurrentLine {
+			startCol := expandedLen - vp.LeftCol
+			if startCol < 0 {
+				startCol = 0
+			}
+			for sx := startCol; sx < availW; sx++ {
+				// Don't overwrite already drawn content
+				if expandedLen > 0 && sx < expandedLen-vp.LeftCol {
+					continue
+				}
+				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', editorStyle)
 			}
 		}
 	}
@@ -618,14 +651,26 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 	}
 
 	// Draw wrapped lines starting from vp.TopLine
+	cursorLine, _ := u.editor.Cursor()
 	gutterStyle := u.getLineNumberStyle()
 	editorStyle := u.getEditorStyle()
 	selectionStyle := u.getSelectionStyle()
 
 	for sy := 0; sy < vpRect.H; sy++ {
 		wrappedIdx := vp.TopLine + sy
+		
+		// Determine if this is the current line for highlighting
+		isCurrentLine := false
+		if wrappedIdx >= 0 && wrappedIdx < len(wrapped) {
+			isCurrentLine = (wrapped[wrappedIdx].lineNum == cursorLine) && u.currentLineHighlight
+		}
 
 		// Draw Gutter - show line number for first wrap of each line
+		currentGutterStyle := gutterStyle
+		if isCurrentLine {
+			currentGutterStyle.Background = u.theme.Editor.CurrentLineBg
+		}
+		
 		if u.showLineNumbers {
 			shouldShowNum := false
 			lineNum := 0
@@ -641,16 +686,16 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				numStr := fmt.Sprintf("%d", lineNum+1) // 1-based
 				padding := gutterWidth - len(numStr) - 1
 				for i := 0; i < padding; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', currentGutterStyle)
 				}
 				for i, r := range numStr {
-					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, gutterStyle)
+					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, currentGutterStyle)
 				}
-				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', gutterStyle)
+				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', currentGutterStyle)
 			} else {
 				// Empty gutter
 				for i := 0; i < gutterWidth; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
+					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', currentGutterStyle)
 				}
 			}
 		}
@@ -661,6 +706,12 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 		wLine := wrapped[wrappedIdx]
 		drawX := vpRect.X + gutterWidth
+		
+		// Apply current line background if needed
+		currentEditorStyle := editorStyle
+		if isCurrentLine {
+			currentEditorStyle.Background = u.theme.Editor.CurrentLineBg
+		}
 
 		// Draw the wrapped line segment (already expanded)
 		for sx, r := range wLine.content {
@@ -695,12 +746,16 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				}
 			}
 
-			style := editorStyle
+			style := currentEditorStyle
 
 			// Apply syntax highlighting
 			if docY >= 0 && docY < len(lines) {
 				if syntaxStyle := u.getSyntaxStyle(docY, runeIdx, lines[docY]); syntaxStyle != nil {
 					style = *syntaxStyle
+					// Preserve current line background if enabled
+					if isCurrentLine {
+						style.Background = u.theme.Editor.CurrentLineBg
+					}
 				}
 			}
 
@@ -730,6 +785,14 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				if endX < availW {
 					u.screen.SetCell(drawX+endX, vpRect.Y+sy, ' ', selectionStyle)
 				}
+			}
+		}
+		
+		// Fill remaining space with current line background if enabled
+		if isCurrentLine {
+			contentLen := len(wLine.content)
+			for sx := contentLen; sx < availW; sx++ {
+				u.screen.SetCell(drawX+sx, vpRect.Y+sy, ' ', currentEditorStyle)
 			}
 		}
 	}

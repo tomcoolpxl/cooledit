@@ -43,6 +43,7 @@ type EditorColors struct {
 	CursorColor      term.Color // Cursor color (terminal support varies)
 	BracketMatchBg   term.Color // Background for matched bracket pair
 	BracketUnmatchBg term.Color // Background for unmatched bracket (error)
+	CurrentLineBg    term.Color // Background for current line highlight
 }
 
 // SearchColors defines colors for search/find/replace

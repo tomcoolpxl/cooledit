@@ -79,6 +79,7 @@ func defaultTheme() *Theme {
 			CursorColor:      "#00FF00",
 			BracketMatchBg:   term.ColorCyan,
 			BracketUnmatchBg: term.ColorRed,
+			CurrentLineBg:    term.ColorDefault, // Cannot derive - feature disabled on default theme
 		},
 		Search: SearchColors{
 			MatchFg:        term.ColorDefault,
@@ -159,6 +160,7 @@ func darkTheme() *Theme {
 			CursorColor:      "#FFD700",
 			BracketMatchBg:   "#3A3A3A",
 			BracketUnmatchBg: "#5C2020",
+			CurrentLineBg:    "#2A2A2A",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -239,6 +241,7 @@ func lightTheme() *Theme {
 			CursorColor:      "#FFFFFF",
 			BracketMatchBg:   "#E0E0E0",
 			BracketUnmatchBg: "#FFCCCC",
+			CurrentLineBg:    "#F0F0F0",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -319,6 +322,7 @@ func monokaiTheme() *Theme {
 			CursorColor:      "#F92672",
 			BracketMatchBg:   "#49483E",
 			BracketUnmatchBg: "#6E2020",
+			CurrentLineBg:    "#3E3D32",
 		},
 		Search: SearchColors{
 			MatchFg:        "#272822",
@@ -399,6 +403,7 @@ func solarizedDarkTheme() *Theme {
 			CursorColor:      "#268BD2",
 			BracketMatchBg:   "#073642",
 			BracketUnmatchBg: "#6E2020",
+			CurrentLineBg:    "#073642",
 		},
 		Search: SearchColors{
 			MatchFg:        "#002B36",
@@ -479,6 +484,7 @@ func solarizedLightTheme() *Theme {
 			CursorColor:      "#FDF6E3",
 			BracketMatchBg:   "#EEE8D5",
 			BracketUnmatchBg: "#FFCCCC",
+			CurrentLineBg:    "#EEE8D5",
 		},
 		Search: SearchColors{
 			MatchFg:        "#FDF6E3",
@@ -559,6 +565,7 @@ func gruvboxDarkTheme() *Theme {
 			CursorColor:      "#FE8019",
 			BracketMatchBg:   "#3C3836",
 			BracketUnmatchBg: "#9D0006",
+			CurrentLineBg:    "#3C3836",
 		},
 		Search: SearchColors{
 			MatchFg:        "#282828",
@@ -639,6 +646,7 @@ func gruvboxLightTheme() *Theme {
 			CursorColor:      "#458588",
 			BracketMatchBg:   "#EBDBB2",
 			BracketUnmatchBg: "#9D0006",
+			CurrentLineBg:    "#EBDBB2",
 		},
 		Search: SearchColors{
 			MatchFg:        "#FBF1C7",
@@ -719,6 +727,7 @@ func draculaTheme() *Theme {
 			CursorColor:      "#FF79C6",
 			BracketMatchBg:   "#44475A",
 			BracketUnmatchBg: "#FF5555",
+			CurrentLineBg:    "#44475A",
 		},
 		Search: SearchColors{
 			MatchFg:        "#282A36",
@@ -799,6 +808,7 @@ func nordTheme() *Theme {
 			CursorColor:      "#88C0D0",
 			BracketMatchBg:   "#3B4252",
 			BracketUnmatchBg: "#BF616A",
+			CurrentLineBg:    "#3B4252",
 		},
 		Search: SearchColors{
 			MatchFg:        "#2E3440",
@@ -879,6 +889,7 @@ func dosTheme() *Theme {
 			CursorColor:      "#FFFF00",
 			BracketMatchBg:   "#0000AA",
 			BracketUnmatchBg: "#AA0000",
+			CurrentLineBg:    "#0000CC",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -959,6 +970,7 @@ func ibmGreenTheme() *Theme {
 			CursorColor:      "#00FF00",
 			BracketMatchBg:   "#003300",
 			BracketUnmatchBg: "#330000",
+			CurrentLineBg:    "#0A1A0A",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -1039,6 +1051,7 @@ func ibmAmberTheme() *Theme {
 			CursorColor:      "#FFAA00",
 			BracketMatchBg:   "#332200",
 			BracketUnmatchBg: "#330000",
+			CurrentLineBg:    "#1A1000",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",
@@ -1120,6 +1133,7 @@ func cyberpunkTheme() *Theme {
 			CursorColor:      "#00FF41", // Matrix green cursor
 			BracketMatchBg:   "#1A1A2E",
 			BracketUnmatchBg: "#FF0055",
+			CurrentLineBg:    "#151934",
 		},
 		Search: SearchColors{
 			MatchFg:        "#000000",

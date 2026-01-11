@@ -36,11 +36,12 @@ type Autosave struct {
 
 // Editor contains editor-specific settings
 type Editor struct {
-	LineNumbers        bool `toml:"line_numbers"`
-	SoftWrap           bool `toml:"soft_wrap"`
-	TabWidth           int  `toml:"tab_width"`
-	SyntaxHighlighting bool `toml:"syntax_highlighting"`
-	ShowWhitespace     bool `toml:"show_whitespace"`
+	LineNumbers          bool `toml:"line_numbers"`
+	SoftWrap             bool `toml:"soft_wrap"`
+	TabWidth             int  `toml:"tab_width"`
+	SyntaxHighlighting   bool `toml:"syntax_highlighting"`
+	ShowWhitespace       bool `toml:"show_whitespace"`
+	CurrentLineHighlight bool `toml:"current_line_highlight"`
 }
 
 // UI contains user interface settings
@@ -81,6 +82,7 @@ type EditorThemeSpec struct {
 	CursorColor      string `toml:"cursor_color"`
 	BracketMatchBg   string `toml:"bracket_match_bg"`
 	BracketUnmatchBg string `toml:"bracket_unmatch_bg"`
+	CurrentLineBg    string `toml:"current_line_bg"`
 }
 
 type SearchThemeSpec struct {
