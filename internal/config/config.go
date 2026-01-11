@@ -110,4 +110,13 @@ func applyDefaults(cfg *Config) {
 		cfg.UI.CursorShape = defaults.UI.CursorShape
 		cfg.UI.CursorBlink = defaults.UI.CursorBlink
 	}
+
+	// Apply Autosave defaults
+	// Note: Enabled defaults to true, so we check if timing values are 0
+	if cfg.Autosave.IdleTimeout == 0 {
+		cfg.Autosave.IdleTimeout = defaults.Autosave.IdleTimeout
+	}
+	if cfg.Autosave.MinInterval == 0 {
+		cfg.Autosave.MinInterval = defaults.Autosave.MinInterval
+	}
 }

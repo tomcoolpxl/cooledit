@@ -24,6 +24,7 @@
 cmd/cooledit/          - Entry point
 internal/
   app/                 - Application lifecycle
+  autosave/            - Autosave and recovery system
   config/              - Configuration management
   core/                - Editor core logic
     buffer/            - Text buffer implementation
@@ -88,6 +89,16 @@ internal/
 - ✅ Non-existent file creation (allows opening files that don't exist yet)
 - ✅ Whitespace visualization toggle (Ctrl+Shift+W) - displays spaces (·), tabs (→), and line endings (↵/¶)
 - ✅ Smart tab rendering (single arrow per tab character, not per expanded space)
+
+### Implemented (Milestone 6 - Autosave)
+- ✅ Automatic backup after idle timeout (default: 2 seconds)
+- ✅ Minimum interval between autosaves (default: 30 seconds)
+- ✅ Cross-platform autosave directory (Windows: %APPDATA%, Linux: ~/.local/share, macOS: ~/Library/Application Support)
+- ✅ Recovery prompt on startup when autosave exists: [R]ecover, [O]pen original, [D]iscard
+- ✅ Autosave cleared on explicit save (Ctrl+S)
+- ✅ Autosave kept when quitting without saving (for future recovery)
+- ✅ View menu toggle for enabling/disabling autosave
+- ✅ Configurable via config file (enabled, idle_timeout, min_interval)
 
 ### Planned (Remaining)
 - ⏳ Add --config CLI flag for alternate config file location
@@ -288,12 +299,32 @@ internal/
 - **Markup**: Markdown, reStructuredText, LaTeX, Diff
 - **Cloud/DevOps**: Terraform, HCL
 
+### Autosave System
+- **Enabled by default**: Can be toggled via View → Autosave menu
+- **Idle-based trigger**: Autosave occurs after 2 seconds of no edits (configurable)
+- **Minimum interval**: At least 30 seconds between autosaves (configurable)
+- **Storage location**:
+  - Windows: `%APPDATA%\cooledit\autosave\`
+  - Linux: `~/.local/share/cooledit/autosave/`
+  - macOS: `~/Library/Application Support/cooledit/autosave/`
+- **File naming**: Uses FNV-1a hash of original path for safe cross-platform filenames
+- **Metadata**: Each autosave has a `.meta` file with original path, encoding, EOL, timestamp
+- **Recovery prompt**: On startup, if autosave exists for target file:
+  - `[R]ecover backup` - Load autosave content, mark as modified
+  - `[O]pen original` - Load original file, keep autosave for later
+  - `[D]iscard backup` - Delete autosave, load original file
+- **Lifecycle rules**:
+  - Created: After idle timeout when buffer is modified
+  - Deleted: On explicit save (Ctrl+S) or clean quit
+  - Kept: On quit without saving (for future recovery)
+- **Unnamed buffers**: Not supported (autosave requires a file path)
+
 ## Testing Strategy
 
 - Unit tests for core components (buffer, editor, search, undo)
 - UI tests with fake screen implementation
 - Coverage tracking in place
-- **120+ tests covering**:
+- **140+ tests covering**:
   - Non-overlapping search matches (TestFindNextNoOverlapping, TestFindNextTwoNonOverlapping)
   - Replace All starting from file beginning (TestReplaceAllFromBeginning)
   - Text highlighting during search (TestSearchHighlightsText)
@@ -311,6 +342,7 @@ internal/
   - Status bar replace indicator (TestStatusBarReplaceModeIndicator)
   - Menu navigation and rendering (including menu scrolling on small screens)
   - Syntax highlighting (20 tests: token types, language detection, caching, Chroma integration)
+  - Autosave system (28 tests: storage, manager, recovery, lifecycle)
 
 ### Technical Details
 
@@ -412,6 +444,11 @@ language = ""            # Manual language override (empty = auto-detect)
 
 [search]
 case_sensitive = true # Case-sensitive search by default
+
+[autosave]
+enabled = true        # Enable autosave (default: true)
+idle_timeout = 2      # Seconds of idle before autosave (default: 2)
+min_interval = 30     # Minimum seconds between autosaves (default: 30)
 
 # Theme definitions (colors support: named, hex #RRGGBB, or "default")
 [themes.default.editor]
@@ -520,7 +557,9 @@ Project is fully functional with all core features complete:
 - ✅ Syntax highlighting with Chroma library (50+ languages)
 - ✅ Language auto-detection and manual selection
 - ✅ Theme-integrated syntax colors
-- ✅ Comprehensive test coverage (120+ tests, all passing)
+- ✅ Autosave with idle-based trigger and recovery prompt
+- ✅ Cross-platform autosave storage with metadata
+- ✅ Comprehensive test coverage (140+ tests, all passing)
 
 Focus areas:
 - Additional features as requested

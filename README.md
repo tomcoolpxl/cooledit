@@ -20,6 +20,7 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Auto-indentation (preserves leading whitespace on Enter)
 - Zen mode (F11 to hide status bar)
 - Bracket matching and navigation (Ctrl+B)
+- Autosave with automatic recovery on startup
 
 ## Installation
 
@@ -147,6 +148,11 @@ cursor_shape = "block"  # Options: block, underline, bar
 [search]
 case_sensitive = false
 whole_word = false
+
+[autosave]
+enabled = true
+idle_timeout = 2    # seconds before autosave
+min_interval = 30   # minimum seconds between autosaves
 ```
 
 ## Themes
@@ -210,6 +216,28 @@ Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 - Line ending auto-detection (LF, CRLF)
 - Original encoding and line endings preserved on save
 - Files are loaded entirely into memory
+
+## Autosave
+
+Cooledit automatically saves backup copies of your work to prevent data loss.
+
+### How it Works
+- Autosave triggers after 2 seconds of inactivity (configurable)
+- Backups are stored in a dedicated directory:
+  - Windows: `%APPDATA%\cooledit\autosave\`
+  - Linux: `~/.local/share/cooledit/autosave/`
+  - macOS: `~/Library/Application Support/cooledit/autosave/`
+
+### Recovery
+If cooledit finds an autosave backup when opening a file, it shows a recovery prompt:
+- **[R]ecover** - Load the autosave content (marks file as modified)
+- **[O]pen original** - Load the original file (keeps autosave for later)
+- **[D]iscard** - Delete the autosave and load original file
+
+### Lifecycle
+- Autosave is **cleared** when you save with Ctrl+S
+- Autosave is **kept** if you quit without saving (for future recovery)
+- Toggle autosave via View → Autosave menu
 
 ## Building
 

@@ -131,6 +131,11 @@ func (m *Menubar) initDefaults() {
 				}, Action: func(u *UI) {
 					u.ToggleSyntaxHighlighting()
 				}},
+				{Label: "Autosave", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.IsAutosaveEnabled()
+				}, Action: func(u *UI) {
+					u.ToggleAutosave()
+				}},
 				{IsSeparator: true},
 				cursorBlinkItem,
 			}, append(cursorItems, []MenuItem{

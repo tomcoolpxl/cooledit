@@ -16,6 +16,7 @@
 package app
 
 import (
+	"cooledit/internal/autosave"
 	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/fileio"
@@ -37,10 +38,25 @@ func RunWithScreen(path string, lineNumbers bool, cfg *config.Config, screen ter
 
 	editor := core.NewEditor(&ui.SystemClipboard{})
 
-	if path != "" {
+	// Check for autosave recovery before loading the file
+	hasRecovery := false
+	if path != "" && cfg.Autosave.Enabled {
+		hasRecovery = autosave.HasRecoveryFor(path)
+	}
+
+	if path != "" && !hasRecovery {
+		// Normal file loading - no recovery needed
 		fd, err := fileio.Open(path)
 		if err != nil {
 			// If file doesn't exist, set it up as a new file to be created
+			editor.SetNewFile(path)
+		} else {
+			editor.LoadFile(fd)
+		}
+	} else if path != "" && hasRecovery {
+		// Load the file first (we'll offer recovery after)
+		fd, err := fileio.Open(path)
+		if err != nil {
 			editor.SetNewFile(path)
 		} else {
 			editor.LoadFile(fd)
@@ -49,5 +65,11 @@ func RunWithScreen(path string, lineNumbers bool, cfg *config.Config, screen ter
 
 	u := ui.New(screen, editor, cfg)
 	u.SetOptions(lineNumbers, cfg.Editor.SoftWrap)
+
+	// If recovery is available, enter recovery mode before running
+	if hasRecovery {
+		u.CheckForRecovery(path)
+	}
+
 	return u.Run()
 }

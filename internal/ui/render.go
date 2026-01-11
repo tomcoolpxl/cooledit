@@ -105,6 +105,12 @@ func (u *UI) draw() {
 		return
 	}
 
+	if u.mode == ModeRecovery {
+		u.drawRecoveryPrompt(w, h)
+		u.screen.Show()
+		return
+	}
+
 	u.drawMenubar()
 	u.drawViewport()
 	u.drawStatusBar()
@@ -1546,4 +1552,97 @@ func (u *UI) getSearchMatchStyle(docY, runeIdx int) *term.Style {
 	}
 
 	return nil
+}
+
+// drawRecoveryPrompt draws the autosave recovery prompt
+func (u *UI) drawRecoveryPrompt(w, h int) {
+	candidate := u.recoveryCandidate
+	if candidate == nil {
+		return
+	}
+
+	// Build the prompt lines
+	lines := []string{
+		"",
+		"  Recover unsaved changes?",
+		"",
+	}
+
+	// Add file path (truncate if too long)
+	path := candidate.Meta.OriginalPath
+	maxPathLen := w - 6
+	if len(path) > maxPathLen && maxPathLen > 3 {
+		path = "..." + path[len(path)-maxPathLen+3:]
+	}
+	lines = append(lines, "  An autosave backup was found for:")
+	lines = append(lines, "  "+path)
+	lines = append(lines, "")
+
+	// Add timestamps
+	autosaveTime := candidate.Meta.Timestamp.Format("2006-01-02 15:04:05")
+	lines = append(lines, "  Autosave from: "+autosaveTime)
+
+	if candidate.OriginalExists {
+		originalTime := candidate.OriginalModTime.Format("2006-01-02 15:04:05")
+		lines = append(lines, "  Original file: "+originalTime)
+
+		if candidate.OriginalNewer {
+			lines = append(lines, "")
+			lines = append(lines, "  Warning: Original file is newer than autosave!")
+		}
+	} else {
+		lines = append(lines, "  Original file: (does not exist)")
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, "")
+	lines = append(lines, "  [R]ecover backup  [O]pen original  [D]iscard backup")
+	lines = append(lines, "")
+
+	style := u.getHelpStyle()
+	titleStyle := u.getHelpTitleStyle()
+
+	// Center vertically if space allows
+	startY := 0
+	if h > len(lines) {
+		startY = (h - len(lines)) / 2
+	}
+
+	for i, line := range lines {
+		y := startY + i
+		if y >= h {
+			break
+		}
+
+		s := style
+		// Title line uses title style
+		if i == 1 {
+			s = titleStyle
+		}
+
+		// Draw line
+		for x, r := range line {
+			if x >= w {
+				break
+			}
+			u.screen.SetCell(x, y, r, s)
+		}
+
+		// Fill rest of line with spaces
+		for x := len(line); x < w; x++ {
+			u.screen.SetCell(x, y, ' ', style)
+		}
+	}
+
+	// Fill remaining lines with background
+	for y := startY + len(lines); y < h; y++ {
+		for x := 0; x < w; x++ {
+			u.screen.SetCell(x, y, ' ', style)
+		}
+	}
+	for y := 0; y < startY; y++ {
+		for x := 0; x < w; x++ {
+			u.screen.SetCell(x, y, ' ', style)
+		}
+	}
 }

@@ -36,6 +36,8 @@ const (
 
 func (u *UI) startQuitFlow() {
 	if !u.editor.Modified() {
+		// Clear autosave on clean quit (no unsaved changes)
+		u.ClearAutosaveForCurrentFile()
 		u.quitNow = true
 		return
 	}
@@ -114,6 +116,8 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 					u.enterMessage(res.Message)
 				}
 				if !u.editor.Modified() {
+					// Clear autosave on successful save
+					u.ClearAutosaveForCurrentFile()
 					u.quitNow = true
 				}
 				return true
@@ -151,6 +155,10 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 			if res.Message != "" {
 				u.enterMessage(res.Message)
 			}
+			if !u.editor.Modified() {
+				// Clear autosave on successful save
+				u.ClearAutosaveForCurrentFile()
+			}
 			if u.quitAfterSave && !u.editor.Modified() {
 				u.quitNow = true
 			}
@@ -183,6 +191,10 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 				res := u.editor.Apply(core.CmdSaveAs{Path: path}, 0)
 				if res.Message != "" {
 					u.enterMessage(res.Message)
+				}
+				if !u.editor.Modified() {
+					// Clear autosave on successful save
+					u.ClearAutosaveForCurrentFile()
 				}
 				if quitAfter && !u.editor.Modified() {
 					u.quitNow = true
@@ -253,6 +265,7 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 					Find:    u.lastFindTerm,
 					Replace: replaceTerm,
 				}, u.layout.Viewport.H)
+				u.notifyAutosaveEdit()
 				u.mode = ModeNormal
 				u.enterMessage(res.Message)
 			} else {
@@ -261,6 +274,7 @@ func (u *UI) handlePromptKey(e term.KeyEvent) bool {
 					Find:    u.lastFindTerm,
 					Replace: replaceTerm,
 				}, u.layout.Viewport.H)
+				u.notifyAutosaveEdit()
 				if res.Message != "" && (res.Message[:9] == "Not found" || res.Message == "No matches found") {
 					u.mode = ModeNormal
 					u.enterMessage(res.Message)

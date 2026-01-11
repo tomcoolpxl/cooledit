@@ -20,10 +20,18 @@ const DefaultTabWidth = 4
 
 // Config represents the application configuration
 type Config struct {
-	Editor Editor               `toml:"editor"`
-	UI     UI                   `toml:"ui"`
-	Search Search               `toml:"search"`
-	Themes map[string]ThemeSpec `toml:"themes"`
+	Editor   Editor               `toml:"editor"`
+	UI       UI                   `toml:"ui"`
+	Search   Search               `toml:"search"`
+	Autosave Autosave             `toml:"autosave"`
+	Themes   map[string]ThemeSpec `toml:"themes"`
+}
+
+// Autosave contains autosave settings
+type Autosave struct {
+	Enabled     bool `toml:"enabled"`      // Enable autosave (default: true)
+	IdleTimeout int  `toml:"idle_timeout"` // Seconds of idle before autosave (default: 2)
+	MinInterval int  `toml:"min_interval"` // Minimum seconds between autosaves (default: 30)
 }
 
 // Editor contains editor-specific settings
@@ -156,6 +164,12 @@ type SyntaxThemeSpec struct {
 	PunctuationBg string `toml:"punctuation_bg"`
 }
 
+// Default autosave timing values
+const (
+	DefaultAutosaveIdleTimeout = 2  // seconds
+	DefaultAutosaveMinInterval = 30 // seconds
+)
+
 // Default returns a Config with default values
 func Default() *Config {
 	return &Config{
@@ -174,6 +188,11 @@ func Default() *Config {
 		},
 		Search: Search{
 			CaseSensitive: true,
+		},
+		Autosave: Autosave{
+			Enabled:     true,
+			IdleTimeout: DefaultAutosaveIdleTimeout,
+			MinInterval: DefaultAutosaveMinInterval,
 		},
 		Themes: make(map[string]ThemeSpec),
 	}
