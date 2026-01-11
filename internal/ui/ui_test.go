@@ -1438,3 +1438,221 @@ func TestMenuSelectedStyleDistinction(t *testing.T) {
 		}
 	}
 }
+
+// Tests for Verbatim Character Input feature
+
+func TestVerbatimHexModeEnter(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim hex mode with Ctrl+Shift+U
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'u', Modifiers: term.ModCtrl | term.ModShift})
+
+	if ui.mode != ModeVerbatimHex {
+		t.Errorf("Expected ModeVerbatimHex, got %v", ui.mode)
+	}
+
+	if ui.verbatimInput != nil && len(ui.verbatimInput) != 0 {
+		t.Error("Verbatim input should be empty initially")
+	}
+}
+
+func TestVerbatimDecModeEnter(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim decimal mode with Ctrl+Shift+D
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'd', Modifiers: term.ModCtrl | term.ModShift})
+
+	if ui.mode != ModeVerbatimDec {
+		t.Errorf("Expected ModeVerbatimDec, got %v", ui.mode)
+	}
+}
+
+func TestVerbatimHexInput(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim hex mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'u', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type hex digits "41" (ASCII 'A')
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '4'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '1'})
+
+	if string(ui.verbatimInput) != "41" {
+		t.Errorf("Expected verbatim input '41', got '%s'", string(ui.verbatimInput))
+	}
+
+	// Press Enter to insert
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+
+	// Should be back in normal mode
+	if ui.mode != ModeNormal {
+		t.Errorf("Expected ModeNormal after Enter, got %v", ui.mode)
+	}
+
+	// Check that 'A' was inserted
+	lines := ui.editor.Lines()
+	if len(lines) == 0 || string(lines[0]) != "A" {
+		t.Errorf("Expected 'A' to be inserted, got %q", string(lines[0]))
+	}
+}
+
+func TestVerbatimDecInput(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim decimal mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'd', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type decimal digits "65" (ASCII 'A')
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '6'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '5'})
+
+	if string(ui.verbatimInput) != "65" {
+		t.Errorf("Expected verbatim input '65', got '%s'", string(ui.verbatimInput))
+	}
+
+	// Press Enter to insert
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+
+	// Check that 'A' was inserted
+	lines := ui.editor.Lines()
+	if len(lines) == 0 || string(lines[0]) != "A" {
+		t.Errorf("Expected 'A' to be inserted, got %q", string(lines[0]))
+	}
+}
+
+func TestVerbatimHexRejectsInvalidDigits(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim hex mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'u', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type valid hex digits
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'a'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'F'})
+
+	// Try to type invalid digits (should be ignored)
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'g'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'z'})
+
+	// Should only have the valid hex digits
+	if string(ui.verbatimInput) != "aF" {
+		t.Errorf("Expected verbatim input 'aF', got '%s'", string(ui.verbatimInput))
+	}
+}
+
+func TestVerbatimDecRejectsLetters(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim decimal mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'd', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type valid decimal digits
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '1'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '2'})
+
+	// Try to type letters (should be ignored)
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'a'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'b'})
+
+	// Should only have the decimal digits
+	if string(ui.verbatimInput) != "12" {
+		t.Errorf("Expected verbatim input '12', got '%s'", string(ui.verbatimInput))
+	}
+}
+
+func TestVerbatimEscapeCancels(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim hex mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'u', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type some digits
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '4'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '1'})
+
+	// Press Escape to cancel
+	dispatch(ui, term.KeyEvent{Key: term.KeyEscape})
+
+	// Should be back in normal mode
+	if ui.mode != ModeNormal {
+		t.Errorf("Expected ModeNormal after Escape, got %v", ui.mode)
+	}
+
+	// Input should be cleared
+	if ui.verbatimInput != nil && len(ui.verbatimInput) != 0 {
+		t.Error("Verbatim input should be cleared after Escape")
+	}
+
+	// Nothing should be inserted
+	lines := ui.editor.Lines()
+	if len(lines) > 0 && len(lines[0]) > 0 {
+		t.Errorf("Expected empty buffer after cancel, got %q", string(lines[0]))
+	}
+}
+
+func TestVerbatimBackspace(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim hex mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'u', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type some digits
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '4'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '1'})
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: '2'})
+
+	// Backspace once
+	dispatch(ui, term.KeyEvent{Key: term.KeyBackspace})
+
+	// Should have "41" left
+	if string(ui.verbatimInput) != "41" {
+		t.Errorf("Expected verbatim input '41' after backspace, got '%s'", string(ui.verbatimInput))
+	}
+}
+
+func TestVerbatimUnicodeEmoji(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Enter verbatim hex mode
+	dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: 'u', Modifiers: term.ModCtrl | term.ModShift})
+
+	// Type hex for smiley emoji U+1F600
+	for _, r := range "1F600" {
+		dispatch(ui, term.KeyEvent{Key: term.KeyRune, Rune: r})
+	}
+
+	// Press Enter to insert
+	dispatch(ui, term.KeyEvent{Key: term.KeyEnter})
+
+	// Check that the emoji was inserted
+	lines := ui.editor.Lines()
+	if len(lines) == 0 || string(lines[0]) != "😀" {
+		t.Errorf("Expected '😀' to be inserted, got %q", string(lines[0]))
+	}
+}
+
+func TestIsHexDigit(t *testing.T) {
+	tests := []struct {
+		r    rune
+		want bool
+	}{
+		{'0', true},
+		{'9', true},
+		{'a', true},
+		{'f', true},
+		{'A', true},
+		{'F', true},
+		{'g', false},
+		{'G', false},
+		{'z', false},
+		{' ', false},
+		{'-', false},
+	}
+
+	for _, tt := range tests {
+		got := isHexDigit(tt.r)
+		if got != tt.want {
+			t.Errorf("isHexDigit(%q) = %v, want %v", tt.r, got, tt.want)
+		}
+	}
+}

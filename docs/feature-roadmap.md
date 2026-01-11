@@ -14,7 +14,7 @@ Prioritized list of nano-inspired features to implement.
 | Comment/Uncomment | ✅ Complete | Phase 2 |
 | Position Log | ✅ Complete | Phase 3 |
 | Scrollbar/Indicator | ✅ Complete | Phase 3 |
-| Verbatim Character Input | ⏳ Pending | Phase 4 |
+| Verbatim Character Input | ✅ Complete | Phase 4 |
 | File Browser | ⏳ Pending | Phase 5 |
 | Formatter Integration | ⏳ Pending | Phase 6 |
 | Linter Integration | ⏳ Pending | Phase 7 |

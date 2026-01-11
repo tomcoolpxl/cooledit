@@ -16,6 +16,7 @@
 package ui
 
 import (
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -184,9 +185,11 @@ const (
 	ModeHelp
 	ModeAbout
 	ModeMenu
-	ModeSearch // Unified incremental search mode
+	ModeSearch      // Unified incremental search mode
 	ModeVimCommand
-	ModeRecovery // Autosave recovery prompt
+	ModeRecovery    // Autosave recovery prompt
+	ModeVerbatimHex // Unicode hex input (Ctrl+Shift+U)
+	ModeVerbatimDec // Decimal input (Ctrl+Shift+D)
 )
 
 type UI struct {
@@ -232,6 +235,9 @@ type UI struct {
 
 	// Vim command mode
 	vimCommand []rune
+
+	// Verbatim character input mode
+	verbatimInput []rune // Accumulated hex/decimal digits
 
 	// Unified search mode (ModeSearch)
 	// Session state: These persist for the duration of the editor session
@@ -874,6 +880,12 @@ func (u *UI) Run() error {
 				}
 			}
 
+			if u.mode == ModeVerbatimHex || u.mode == ModeVerbatimDec {
+				if u.handleVerbatimKey(e) {
+					continue
+				}
+			}
+
 			if u.mode == ModeMenu {
 				if u.handleMenuKey(e) {
 					continue
@@ -1080,6 +1092,18 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 
 	case e.Key == term.KeyRune && e.Rune == 'h' && (e.Modifiers&term.ModCtrl) != 0:
 		u.ToggleSyntaxHighlighting()
+		return nil
+
+	case e.Key == term.KeyRune && e.Rune == 'u' && (e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
+		// Ctrl+Shift+U: Enter Unicode hex input mode
+		u.mode = ModeVerbatimHex
+		u.verbatimInput = nil
+		return nil
+
+	case e.Key == term.KeyRune && e.Rune == 'd' && (e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
+		// Ctrl+Shift+D: Enter decimal input mode
+		u.mode = ModeVerbatimDec
+		u.verbatimInput = nil
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == '/' && (e.Modifiers&term.ModCtrl) != 0:
@@ -1759,6 +1783,80 @@ func (u *UI) executeVimCommand() {
 	default:
 		u.enterMessage("Unknown command: :" + cmd)
 	}
+}
+
+// handleVerbatimKey handles key events in verbatim input mode (hex or decimal)
+func (u *UI) handleVerbatimKey(e term.KeyEvent) bool {
+	switch e.Key {
+	case term.KeyEscape:
+		u.mode = ModeNormal
+		u.verbatimInput = nil
+		return true
+
+	case term.KeyBackspace:
+		if len(u.verbatimInput) > 0 {
+			u.verbatimInput = u.verbatimInput[:len(u.verbatimInput)-1]
+		}
+		return true
+
+	case term.KeyEnter:
+		u.executeVerbatimInput()
+		return true
+
+	case term.KeyRune:
+		// Validate input based on mode
+		if u.mode == ModeVerbatimHex {
+			// Only accept hex digits (0-9, a-f, A-F)
+			if isHexDigit(e.Rune) {
+				u.verbatimInput = append(u.verbatimInput, e.Rune)
+			}
+		} else if u.mode == ModeVerbatimDec {
+			// Only accept decimal digits (0-9)
+			if e.Rune >= '0' && e.Rune <= '9' {
+				u.verbatimInput = append(u.verbatimInput, e.Rune)
+			}
+		}
+		return true
+	}
+	return false
+}
+
+// isHexDigit returns true if the rune is a valid hexadecimal digit
+func isHexDigit(r rune) bool {
+	return (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+}
+
+// executeVerbatimInput converts the accumulated digits to a rune and inserts it
+func (u *UI) executeVerbatimInput() {
+	if len(u.verbatimInput) == 0 {
+		u.mode = ModeNormal
+		u.verbatimInput = nil
+		return
+	}
+
+	input := string(u.verbatimInput)
+	var codePoint int64
+	var err error
+
+	if u.mode == ModeVerbatimHex {
+		// Parse as hexadecimal
+		_, err = fmt.Sscanf(input, "%x", &codePoint)
+	} else {
+		// Parse as decimal
+		_, err = fmt.Sscanf(input, "%d", &codePoint)
+	}
+
+	u.mode = ModeNormal
+	u.verbatimInput = nil
+
+	if err != nil || codePoint < 0 || codePoint > 0x10FFFF {
+		u.enterMessage("Invalid code point")
+		return
+	}
+
+	// Insert the character
+	r := rune(codePoint)
+	u.editor.Apply(core.CmdInsertRune{Rune: r}, u.layout.Viewport.H)
 }
 
 // updateBracketMatch updates the bracket match state based on the current cursor position

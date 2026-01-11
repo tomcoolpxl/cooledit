@@ -30,6 +30,7 @@ internal/
     buffer/            - Text buffer implementation
     text/              - Text processing utilities
   fileio/              - File operations, encoding, EOL handling
+  positionlog/         - Cursor position persistence across sessions
   syntax/              - Syntax highlighting with Chroma
   term/                - Terminal backend abstraction
     tcell/             - Tcell implementation
@@ -92,6 +93,10 @@ internal/
 - ✅ Smart Home key (cycles between first non-whitespace and column 0)
 - ✅ Block indent/unindent (Tab/Shift+Tab with selection indents/unindents lines)
 - ✅ Trim trailing whitespace on save (configurable via View menu)
+- ✅ Comment/Uncomment toggle (Ctrl+/) - language-aware line commenting
+- ✅ Position Log - remembers cursor position in recently edited files, restores on reopen
+- ✅ Scrollbar/Indicator - visual scrollbar on right edge showing viewport position
+- ✅ Verbatim Character Input - insert Unicode characters by code point (Ctrl+Shift+U for hex, Ctrl+Shift+D for decimal)
 
 ### Implemented (Milestone 6 - Autosave)
 - ✅ Automatic backup after idle timeout (default: 2 seconds)
@@ -134,12 +139,15 @@ internal/
 - `Ctrl+W` - Toggle word wrap
 - `Ctrl+Shift+W` - Toggle whitespace display
 - `Ctrl+H` - Toggle syntax highlighting
+- `Ctrl+/` - Toggle comment on line or selection
 - `F11` - Toggle status bar (Zen mode)
 - `Home` - Smart home (first non-whitespace, then column 0)
 - `Tab` (with selection) - Indent selected lines
 - `Shift+Tab` - Unindent selected lines (or current line)
 - `Tab` - Insert spaces to next tab stop (configurable width, default: 4)
 - `Ctrl+I` - Insert literal tab character (\t)
+- `Ctrl+Shift+U` - Verbatim Unicode hex input (e.g., type "2665" for ♥)
+- `Ctrl+Shift+D` - Verbatim Unicode decimal input (e.g., type "9829" for ♥)
 - `Insert` - Toggle Insert/Replace mode
 - `F1` - Help overlay (adaptive two-column/single-column layout)
 - `F10` / `Esc` - Toggle menubar
@@ -172,11 +180,15 @@ internal/
 - **Automatic scrolling**: On small screens, menus scroll automatically with ↑/↓ indicators
 - View menu includes:
   - Toggle Line Numbers (checkmark when enabled)
+  - Current Line Highlight toggle (checkmark when enabled)
   - Toggle Word Wrap (checkmark when enabled)
   - Show Whitespace (checkmark when enabled)
   - Toggle Status Bar (checkmark when enabled)
   - Syntax Highlighting toggle (checkmark when enabled)
-  - Current Line Highlight toggle (checkmark when enabled)
+  - Autosave toggle (checkmark when enabled)
+  - Trim Trailing Whitespace on Save (checkmark when enabled)
+  - Remember Cursor Position (checkmark when enabled)
+  - Show Scrollbar (checkmark when enabled)
   - **Separator line**
   - Cursor Blink toggle (checkmark when enabled)
   - Cursor shapes (block, underline, bar with checkmark for active shape)
@@ -336,7 +348,7 @@ internal/
 - Unit tests for core components (buffer, editor, search, undo)
 - UI tests with fake screen implementation
 - Coverage tracking in place
-- **140+ tests covering**:
+- **170+ tests covering**:
   - Non-overlapping search matches (TestFindNextNoOverlapping, TestFindNextTwoNonOverlapping)
   - Replace All starting from file beginning (TestReplaceAllFromBeginning)
   - Text highlighting during search (TestSearchHighlightsText)
@@ -440,11 +452,15 @@ Each element has `fg` (foreground) and `bg` (background) properties.
 **Settings:**
 ```toml
 [editor]
-line_numbers = false        # Show line numbers column
-soft_wrap = false           # Enable word wrap
-tab_width = 4               # Spaces per tab
-syntax_highlighting = true  # Enable syntax highlighting (default: true)
-show_whitespace = false     # Show whitespace characters (default: false)
+line_numbers = false                    # Show line numbers column
+soft_wrap = false                       # Enable word wrap
+tab_width = 4                           # Spaces per tab
+syntax_highlighting = true              # Enable syntax highlighting (default: true)
+show_whitespace = false                 # Show whitespace characters (default: false)
+current_line_highlight = false          # Highlight current line (default: false)
+trim_trailing_whitespace = false        # Trim trailing whitespace on save (default: false)
+remember_position = true                # Remember cursor position across sessions (default: true)
+show_scrollbar = false                  # Show scrollbar indicator (default: false)
 
 [ui]
 show_menubar = false     # Show menubar by default
@@ -571,7 +587,11 @@ Project is fully functional with all core features complete:
 - ✅ Theme-integrated syntax colors
 - ✅ Autosave with idle-based trigger and recovery prompt
 - ✅ Cross-platform autosave storage with metadata
-- ✅ Comprehensive test coverage (140+ tests, all passing)
+- ✅ Comment/Uncomment with Ctrl+/ (language-aware)
+- ✅ Position log for cursor position persistence across sessions
+- ✅ Scrollbar indicator for viewport position
+- ✅ Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
+- ✅ Comprehensive test coverage (170+ tests, all passing)
 
 Focus areas:
 - Additional features as requested

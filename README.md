@@ -22,6 +22,13 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Bracket matching and navigation (Ctrl+B)
 - Current line highlight (toggle via View menu)
 - Autosave with automatic recovery on startup
+- Smart Home key (cycles between first non-whitespace and column 0)
+- Block indent/unindent (Tab/Shift+Tab with selection)
+- Comment/Uncomment toggle (Ctrl+/) - language-aware
+- Trim trailing whitespace on save (configurable)
+- Position log - remembers cursor position across sessions
+- Scrollbar indicator showing viewport position
+- Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
 
 ## Installation
 
@@ -84,9 +91,13 @@ cooledit --help
 - `Ctrl+C` - Copy (current line if no selection)
 - `Ctrl+V` - Paste
 - `Ctrl+A` - Select all
+- `Ctrl+/` - Toggle comment on line or selection
 - `Insert` - Toggle insert/replace mode
-- `Tab` - Insert spaces to next tab stop
+- `Tab` - Insert spaces to next tab stop (or indent selection)
+- `Shift+Tab` - Unindent line or selection
 - `Ctrl+I` - Insert literal tab character
+- `Ctrl+Shift+U` - Insert Unicode character by hex code point
+- `Ctrl+Shift+D` - Insert Unicode character by decimal code point
 - `Backspace` - Delete one character
 
 ### Search
@@ -105,7 +116,8 @@ cooledit --help
 - `Arrow keys` - Move cursor
 - `Shift+Arrow keys` - Select text
 - `Ctrl+Left` / `Ctrl+Right` - Jump by word
-- `Home` / `End` - Line start/end
+- `Home` - Smart home (first non-whitespace, then column 0)
+- `End` - Line end
 - `Ctrl+Home` - File start
 - `Ctrl+End` - File end
 - `Page Up` / `Page Down` - Scroll by page
@@ -115,10 +127,11 @@ cooledit --help
 - `Ctrl+L` - Toggle line numbers
 - `Ctrl+W` - Toggle word wrap
 - `Ctrl+Shift+W` - Toggle whitespace display
+- `Ctrl+H` - Toggle syntax highlighting
 - `F11` - Toggle status bar (Zen mode)
 - `F10` or `Esc` - Toggle menu
 - `F1` - Show keyboard shortcuts help
-- Current line highlight available via View menu
+- Additional toggles via View menu: current line highlight, scrollbar, trim whitespace on save, remember cursor position
 
 ### Menu Shortcuts (when menu is open)
 Press the underlined letter to activate menu items:
@@ -140,13 +153,19 @@ Example configuration:
 line_numbers = false
 soft_wrap = false
 tab_width = 4
-current_line_highlight = false  # Highlight current line with different background
+syntax_highlighting = true
+show_whitespace = false
+current_line_highlight = false      # Highlight current line with different background
+trim_trailing_whitespace = false    # Trim trailing whitespace on save
+remember_position = true            # Remember cursor position across sessions
+show_scrollbar = false              # Show scrollbar indicator
 
 [ui]
 show_menubar = false
 show_statusbar = true
 theme = "default"
 cursor_shape = "block"  # Options: block, underline, bar
+cursor_blink = true
 
 [search]
 case_sensitive = false

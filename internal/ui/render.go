@@ -975,6 +975,74 @@ func (u *UI) drawSearchStatus(rect Rect, style term.Style) {
 	}
 }
 
+// drawVerbatimStatus renders the status bar for verbatim character input mode
+func (u *UI) drawVerbatimStatus(rect Rect, style term.Style) {
+	// Background
+	for x := 0; x < rect.W; x++ {
+		u.screen.SetCell(rect.X+x, rect.Y, ' ', style)
+	}
+
+	// Build the prompt based on mode
+	var prompt string
+	var preview string
+	input := string(u.verbatimInput)
+
+	if u.mode == ModeVerbatimHex {
+		prompt = fmt.Sprintf("Unicode (hex): U+%s", input)
+		// Show preview of the character if valid
+		if len(input) > 0 {
+			var codePoint int64
+			if _, err := fmt.Sscanf(input, "%x", &codePoint); err == nil && codePoint >= 0 && codePoint <= 0x10FFFF {
+				preview = fmt.Sprintf(" → '%c'", rune(codePoint))
+			}
+		}
+	} else {
+		prompt = fmt.Sprintf("Unicode (decimal): %s", input)
+		// Show preview of the character if valid
+		if len(input) > 0 {
+			var codePoint int64
+			if _, err := fmt.Sscanf(input, "%d", &codePoint); err == nil && codePoint >= 0 && codePoint <= 0x10FFFF {
+				preview = fmt.Sprintf(" → '%c'", rune(codePoint))
+			}
+		}
+	}
+
+	left := prompt + preview
+
+	// Right side: help text
+	right := "Enter: Insert  Esc: Cancel"
+
+	// Priority 1: Draw right section
+	startRight := rect.W - len(right)
+	if startRight < 0 {
+		startRight = 0
+	}
+	for i, r := range right {
+		x := startRight + i
+		if x >= 0 && x < rect.W {
+			u.screen.SetCell(rect.X+x, rect.Y, r, style)
+		}
+	}
+
+	// Priority 2: Draw left section (truncate if needed)
+	maxLeft := startRight - 2
+	if maxLeft < 0 {
+		maxLeft = 0
+	}
+	for i, r := range left {
+		if i >= maxLeft {
+			break
+		}
+		u.screen.SetCell(rect.X+i, rect.Y, r, style)
+	}
+
+	// Show cursor after the input
+	cursorPos := len(prompt)
+	if cursorPos < rect.W {
+		u.screen.ShowCursor(rect.X+cursorPos, rect.Y)
+	}
+}
+
 func (u *UI) drawStatusBar() {
 	rect := u.layout.StatusBar
 	if rect.H < 1 {
@@ -1007,6 +1075,12 @@ func (u *UI) drawStatusBar() {
 	// Enhanced status bar for search mode (unified incremental search)
 	if u.mode == ModeSearch {
 		u.drawSearchStatus(rect, style)
+		return
+	}
+
+	// Status bar for verbatim input mode
+	if u.mode == ModeVerbatimHex || u.mode == ModeVerbatimDec {
+		u.drawVerbatimStatus(rect, style)
 		return
 	}
 
