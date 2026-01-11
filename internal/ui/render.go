@@ -365,7 +365,7 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 	cursorLine, _ := u.editor.Cursor()
 	// Check if current line highlight is enabled and has a valid color (not ColorDefault)
 	currentLineBgEnabled := u.currentLineHighlight && u.theme.Editor.CurrentLineBg != term.ColorDefault
-	
+
 	for sy := 0; sy < vpRect.H; sy++ {
 		docY := vp.TopLine + sy
 		isCurrentLine := (docY == cursorLine) && currentLineBgEnabled
@@ -376,7 +376,7 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			// Apply current line background to gutter
 			gutterStyle.Background = u.theme.Editor.CurrentLineBg
 		}
-		
+
 		if u.showLineNumbers {
 			if docY < len(lines) {
 				numStr := fmt.Sprintf("%d", docY+1) // 1-based
@@ -532,7 +532,7 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 				u.screen.SetCell(drawX+sx, vpRect.Y+sy, marker, editorStyle)
 			}
 		}
-		
+
 		// Fill remaining space with current line background if enabled
 		if isCurrentLine {
 			startCol := expandedLen - vp.LeftCol
@@ -658,7 +658,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 	for sy := 0; sy < vpRect.H; sy++ {
 		wrappedIdx := vp.TopLine + sy
-		
+
 		// Determine if this is the current line for highlighting
 		isCurrentLine := false
 		if wrappedIdx >= 0 && wrappedIdx < len(wrapped) {
@@ -670,7 +670,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 		if isCurrentLine {
 			currentGutterStyle.Background = u.theme.Editor.CurrentLineBg
 		}
-		
+
 		if u.showLineNumbers {
 			shouldShowNum := false
 			lineNum := 0
@@ -706,7 +706,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 		wLine := wrapped[wrappedIdx]
 		drawX := vpRect.X + gutterWidth
-		
+
 		// Apply current line background if needed
 		currentEditorStyle := editorStyle
 		if isCurrentLine {
@@ -787,7 +787,7 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 				}
 			}
 		}
-		
+
 		// Fill remaining space with current line background if enabled
 		if isCurrentLine {
 			contentLen := len(wLine.content)
