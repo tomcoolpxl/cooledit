@@ -1343,9 +1343,6 @@ func (u *UI) getSelectionStyle() term.Style {
 }
 
 func (u *UI) getLineNumberStyle() term.Style {
-	if u.isDefaultTheme() {
-		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
-	}
 	return term.Style{Foreground: u.theme.Editor.LineNumbersFg, Background: u.theme.Editor.LineNumbersBg}
 }
 
