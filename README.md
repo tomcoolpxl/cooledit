@@ -20,6 +20,7 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Auto-indentation (preserves leading whitespace on Enter)
 - Zen mode (F11 to hide status bar)
 - Bracket matching and navigation (Ctrl+B)
+- Current line highlight (toggle via View menu)
 - Autosave with automatic recovery on startup
 
 ## Installation
@@ -117,6 +118,7 @@ cooledit --help
 - `F11` - Toggle status bar (Zen mode)
 - `F10` or `Esc` - Toggle menu
 - `F1` - Show keyboard shortcuts help
+- Current line highlight available via View menu
 
 ### Menu Shortcuts (when menu is open)
 Press the underlined letter to activate menu items:
@@ -138,6 +140,7 @@ Example configuration:
 line_numbers = false
 soft_wrap = false
 tab_width = 4
+current_line_highlight = false  # Highlight current line with different background
 
 [ui]
 show_menubar = false

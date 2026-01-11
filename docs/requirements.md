@@ -177,6 +177,7 @@ Menus to include:
   * `editor.line_numbers` - Show line numbers column
   * `editor.soft_wrap` - Enable word wrap
   * `editor.tab_width` - Spaces per tab
+  * `editor.current_line_highlight` - Highlight current line with different background
   * `ui.show_menubar` - Show menubar by default
   * `ui.theme` - Active theme name (default: "default")
   * `search.case_sensitive` - Case-sensitive search preference (persists across editor sessions)
@@ -190,9 +191,10 @@ Menus to include:
 
 **5.7 Theme System (Planned)**
 
-* 10 built-in themes (hardcoded, no external dependencies):
+* 14 built-in themes (hardcoded, no external dependencies):
   1. default, 2. dark, 3. light, 4. monokai, 5. solarized-dark,
-  6. solarized-light, 7. gruvbox-dark, 8. gruvbox-light, 9. dracula, 10. nord
+  6. solarized-light, 7. gruvbox-dark, 8. gruvbox-light, 9. dracula, 10. nord,
+  11. dos, 12. ibm-green, 13. ibm-amber, 14. cyberpunk
 * Custom themes can be defined in config file
 * Built-in themes always available without config file
 * UI menu support: View → Themes submenu to switch themes
@@ -265,7 +267,7 @@ Menus to include:
 
 Each element has `fg` (foreground) and `bg` (background) properties:
 
-* **editor**: Normal text, selection, line numbers
+* **editor**: Normal text, selection, line numbers, current line background
 * **search**: Search matches, current match highlight
 * **statusbar**: Background, text, filename, modified indicator, position, mode indicator, mini-help
 * **menubar**: Background, text, selected item, dropdown, accelerators
@@ -275,7 +277,7 @@ Each element has `fg` (foreground) and `bg` (background) properties:
 
 **9.2 Built-in Themes**
 
-10 hardcoded themes (no external dependencies required):
+14 hardcoded themes (no external dependencies required):
 
 1. `default` - Terminal defaults with inverse video (current behavior)
 2. `dark` - Classic dark background with light text
@@ -287,6 +289,10 @@ Each element has `fg` (foreground) and `bg` (background) properties:
 8. `gruvbox-light` - Retro groove colors, warm light background
 9. `dracula` - Dark purple/pink theme, easy on the eyes
 10. `nord` - Arctic bluish theme inspired by northern lights
+11. `dos` - Classic DOS Edit blue background
+12. `ibm-green` - Classic green phosphor monitor
+13. `ibm-amber` - Classic amber phosphor monitor
+14. `cyberpunk` - Neon theme with hot pink and cyan
 
 **Theme Selection:**
 * View → Themes menu shows all available themes

@@ -93,7 +93,7 @@ func TestParseColorInvalid(t *testing.T) {
 	}
 }
 
-// TestBuiltinThemesExist verifies all 13 built-in themes exist
+// TestBuiltinThemesExist verifies all 14 built-in themes exist
 func TestBuiltinThemesExist(t *testing.T) {
 	expectedThemes := []string{
 		"default", "dark", "light", "monokai",

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-01-11
 
 ### Added
+- Current line highlight feature (toggle via View menu, off by default)
+- Per-theme hardcoded CurrentLineBg colors for all 14 themes
 - Autosave system with idle-based trigger (2 second default)
 - Automatic recovery prompt on startup when autosave exists
 - Recovery options: Recover backup, Open original, Discard backup

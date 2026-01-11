@@ -259,13 +259,14 @@ cooledit/
 ### Milestone 3 (Complete)
 * Menubar (Auto-hide).
 
-### Milestone 4 (Planned - Next Phase)
-* Theme/Color system with 10 built-in themes + custom themes from config.
+### Milestone 4 (Complete)
+* Theme/Color system with 14 built-in themes + custom themes from config.
 * All UI elements have configurable foreground/background colors.
 * UI menu support (View → Themes) to switch themes interactively.
 * Automatic terminal capability detection and graceful degradation.
 * CLI flag `--config <path>` to override config file location.
-* Built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord.
+* Built-in themes: default, dark, light, monokai, solarized-dark/light, gruvbox-dark/light, dracula, nord, dos, ibm-green, ibm-amber, cyberpunk.
+* Current line highlight (toggle via View menu, off by default).
 
 ### Future (Optional)
 * Keybinding customization (config-file-only).

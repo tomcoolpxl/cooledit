@@ -1208,10 +1208,6 @@ func (u *UI) drawHelp(w, h int) {
 		"  VIEW",
 		"    Ctrl+L        Line numbers",
 		"    Ctrl+W        Word wrap",
-		"    View menu     Cursor shapes",
-		"",
-		"  THEMES",
-		"    View menu     13 built-in themes",
 	}
 
 	footer := "  Press any key to close"

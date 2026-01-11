@@ -100,6 +100,11 @@ internal/
 - ✅ View menu toggle for enabling/disabling autosave
 - ✅ Configurable via config file (enabled, idle_timeout, min_interval)
 
+### Implemented (Additional UI Features)
+- ✅ Current line highlight (toggle via View menu, off by default)
+- ✅ Per-theme hardcoded CurrentLineBg colors for all 14 themes
+- ✅ Highlight spans full line width including gutter/line numbers
+
 ### Planned (Remaining)
 - ⏳ Add --config CLI flag for alternate config file location
 - ⏳ Add tests for theme system (ParseColor, theme loading, switching)
@@ -165,6 +170,7 @@ internal/
   - Show Whitespace (checkmark when enabled)
   - Toggle Status Bar (checkmark when enabled)
   - Syntax Highlighting toggle (checkmark when enabled)
+  - Current Line Highlight toggle (checkmark when enabled)
   - **Separator line**
   - Cursor Blink toggle (checkmark when enabled)
   - Cursor shapes (block, underline, bar with checkmark for active shape)
