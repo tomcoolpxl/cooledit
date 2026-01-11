@@ -1417,7 +1417,9 @@ func (u *UI) getMenuStyle() term.Style {
 
 func (u *UI) getMenuSelectedStyle() term.Style {
 	if u.isDefaultTheme() {
-		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+		// Use subtle dark grey background for selected menu items to distinguish from editor background
+		// Almost the same as editor background but with just enough contrast to be visible
+		return term.Style{Foreground: term.ColorDefault, Background: "#3A3A3A"}
 	}
 	return term.Style{Foreground: u.theme.Menu.SelectedFg, Background: u.theme.Menu.SelectedBg}
 }
@@ -1431,7 +1433,9 @@ func (u *UI) getDropdownStyle() term.Style {
 
 func (u *UI) getDropdownSelectedStyle() term.Style {
 	if u.isDefaultTheme() {
-		return term.Style{Foreground: term.ColorDefault, Background: term.ColorDefault}
+		// Use subtle dark grey background for selected dropdown items to distinguish from editor background
+		// Almost the same as editor background but with just enough contrast to be visible
+		return term.Style{Foreground: term.ColorDefault, Background: "#3A3A3A"}
 	}
 	return term.Style{Foreground: u.theme.Menu.DropdownSelFg, Background: u.theme.Menu.DropdownSelBg}
 }

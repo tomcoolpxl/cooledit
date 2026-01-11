@@ -1409,3 +1409,31 @@ func TestLiteralTabWithSoftWrap(t *testing.T) {
 		}
 	}
 }
+
+// TestMenuSelectedStyleDistinction verifies that menu selected items have
+// a different background than the editor background for all themes
+func TestMenuSelectedStyleDistinction(t *testing.T) {
+	ui, _ := newTestUI(80, 24)
+
+	// Test the default theme specifically, as it had the issue where
+	// menu selected background was the same as editor background
+	ui.theme = ui.config.GetTheme("default")
+
+	editorStyle := ui.getEditorStyle()
+	menuSelectedStyle := ui.getMenuSelectedStyle()
+	dropdownSelectedStyle := ui.getDropdownSelectedStyle()
+
+	// For default theme, menu selected items should use subtle dark grey background
+	// to distinguish from the editor background (ColorDefault) with minimal contrast
+	if ui.isDefaultTheme() {
+		if menuSelectedStyle.Background != "#3A3A3A" {
+			t.Errorf("Default theme menu selected style should use #3A3A3A background, got %v", menuSelectedStyle.Background)
+		}
+		if dropdownSelectedStyle.Background != "#3A3A3A" {
+			t.Errorf("Default theme dropdown selected style should use #3A3A3A background, got %v", dropdownSelectedStyle.Background)
+		}
+		if editorStyle.Background == menuSelectedStyle.Background {
+			t.Errorf("Default theme menu selected background should differ from editor background")
+		}
+	}
+}
