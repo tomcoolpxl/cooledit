@@ -74,7 +74,7 @@ func defaultTheme() *Theme {
 			Bg:               term.ColorDefault,
 			SelectionFg:      term.ColorDefault,
 			SelectionBg:      term.ColorDefault,
-			LineNumbersFg:    term.ColorDefault,
+			LineNumbersFg:    term.ColorDarkGray,
 			LineNumbersBg:    term.ColorDefault,
 			CursorColor:      "#00FF00",
 			BracketMatchBg:   term.ColorCyan,
