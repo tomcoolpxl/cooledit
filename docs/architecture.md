@@ -252,6 +252,11 @@ cooledit/
     formatter/
       formatter.go        // External formatter integration
       executor.go         // Command execution with timeout
+
+    linter/
+      linter.go           // External linter integration
+      parser.go           // Output parsing (default, gcc, govet, json formats)
+      types.go            // Diagnostic, Severity, Config types
 ```
 
 ---
@@ -300,7 +305,15 @@ cooledit/
 * Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal).
 * External formatter integration (Ctrl+Shift+F) with 20+ built-in language defaults.
 
+### Milestone 8 (Complete) - Linter Integration
+* External linter integration (Ctrl+Shift+L) with 10 built-in language defaults.
+* Diagnostic navigation with F8 (next) and Shift+F8 (previous).
+* Gutter markers showing diagnostic severity (✗ error, ⚠ warning, ℹ info, • hint).
+* Status bar shows diagnostic message when cursor is on affected line.
+* Diagnostics automatically cleared when buffer is modified.
+* Custom linter configuration in TOML config file.
+* Diagnostic colors in all 14 themes.
+
 ### Future (Optional)
 * Keybinding customization (config-file-only).
 * File browser for open/save operations.
-* Linter integration.

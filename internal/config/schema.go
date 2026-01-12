@@ -20,16 +20,23 @@ const DefaultTabWidth = 4
 
 // Config represents the application configuration
 type Config struct {
-	Editor     Editor                       `toml:"editor"`
-	UI         UI                           `toml:"ui"`
-	Search     Search                       `toml:"search"`
-	Autosave   Autosave                     `toml:"autosave"`
-	Themes     map[string]ThemeSpec         `toml:"themes"`
+	Editor     Editor                         `toml:"editor"`
+	UI         UI                             `toml:"ui"`
+	Search     Search                         `toml:"search"`
+	Autosave   Autosave                       `toml:"autosave"`
+	Themes     map[string]ThemeSpec           `toml:"themes"`
 	Formatters map[string]FormatterConfigSpec `toml:"formatters"`
+	Linters    map[string]LinterConfigSpec    `toml:"linters"`
 }
 
 // FormatterConfigSpec defines a formatter configuration in the config file
 type FormatterConfigSpec struct {
+	Command string   `toml:"command"`
+	Args    []string `toml:"args"`
+}
+
+// LinterConfigSpec defines a linter configuration in the config file
+type LinterConfigSpec struct {
 	Command string   `toml:"command"`
 	Args    []string `toml:"args"`
 }
@@ -43,15 +50,16 @@ type Autosave struct {
 
 // Editor contains editor-specific settings
 type Editor struct {
-	LineNumbers               bool `toml:"line_numbers"`
-	SoftWrap                  bool `toml:"soft_wrap"`
-	TabWidth                  int  `toml:"tab_width"`
-	SyntaxHighlighting        bool `toml:"syntax_highlighting"`
-	ShowWhitespace            bool `toml:"show_whitespace"`
-	CurrentLineHighlight      bool `toml:"current_line_highlight"`
+	LineNumbers                  bool `toml:"line_numbers"`
+	SoftWrap                     bool `toml:"soft_wrap"`
+	TabWidth                     int  `toml:"tab_width"`
+	SyntaxHighlighting           bool `toml:"syntax_highlighting"`
+	ShowWhitespace               bool `toml:"show_whitespace"`
+	CurrentLineHighlight         bool `toml:"current_line_highlight"`
 	TrimTrailingWhitespaceOnSave bool `toml:"trim_trailing_whitespace"` // Trim trailing whitespace on save
-	RememberPosition          bool `toml:"remember_position"`          // Remember cursor position in files
-	ShowScrollbar             bool `toml:"show_scrollbar"`             // Show scrollbar on right edge
+	RememberPosition             bool `toml:"remember_position"`        // Remember cursor position in files
+	ShowScrollbar                bool `toml:"show_scrollbar"`           // Show scrollbar on right edge
+	ShowDiagnostics              bool `toml:"show_diagnostics"`         // Show linter diagnostics in gutter
 }
 
 // UI contains user interface settings
@@ -192,6 +200,7 @@ func Default() *Config {
 			SyntaxHighlighting: true,
 			RememberPosition:   true,
 			ShowScrollbar:      true,
+			ShowDiagnostics:    true,
 		},
 		UI: UI{
 			ShowMenubar:   false,
@@ -210,5 +219,6 @@ func Default() *Config {
 		},
 		Themes:     make(map[string]ThemeSpec),
 		Formatters: make(map[string]FormatterConfigSpec),
+		Linters:    make(map[string]LinterConfigSpec),
 	}
 }

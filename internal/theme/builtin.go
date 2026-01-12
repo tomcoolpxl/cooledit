@@ -143,6 +143,16 @@ func defaultTheme() *Theme {
 			BuiltinFg:     term.ColorCyan,
 			PunctuationFg: term.ColorDefault,
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   term.ColorWhite,
+			ErrorBg:   term.ColorRed,
+			WarningFg: term.ColorBlack,
+			WarningBg: term.ColorYellow,
+			InfoFg:    term.ColorWhite,
+			InfoBg:    term.ColorBlue,
+			HintFg:    term.ColorWhite,
+			HintBg:    term.ColorCyan,
+		},
 	}
 }
 
@@ -223,6 +233,16 @@ func darkTheme() *Theme {
 			PreprocFg:     "#C586C0", // Purple
 			BuiltinFg:     "#4EC9B0", // Teal
 			PunctuationFg: "#D4D4D4", // Light gray
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#FFFFFF",
+			ErrorBg:   "#F44747",
+			WarningFg: "#000000",
+			WarningBg: "#CCA700",
+			InfoFg:    "#FFFFFF",
+			InfoBg:    "#3794FF",
+			HintFg:    "#FFFFFF",
+			HintBg:    "#89D185",
 		},
 	}
 }
@@ -305,6 +325,16 @@ func lightTheme() *Theme {
 			BuiltinFg:     "#267F99", // Teal
 			PunctuationFg: "#000000", // Black
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#FFFFFF",
+			ErrorBg:   "#E51400",
+			WarningFg: "#000000",
+			WarningBg:  "#F9A825",
+			InfoFg:    "#FFFFFF",
+			InfoBg:    "#1976D2",
+			HintFg:    "#FFFFFF",
+			HintBg:    "#388E3C",
+		},
 	}
 }
 
@@ -385,6 +415,16 @@ func monokaiTheme() *Theme {
 			PreprocFg:     "#F92672", // Pink
 			BuiltinFg:     "#66D9EF", // Cyan
 			PunctuationFg: "#F8F8F2", // White
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#272822",
+			ErrorBg:   "#F92672",
+			WarningFg: "#272822",
+			WarningBg: "#E6DB74",
+			InfoFg:    "#272822",
+			InfoBg:    "#66D9EF",
+			HintFg:    "#272822",
+			HintBg:    "#A6E22E",
 		},
 	}
 }
@@ -467,6 +507,16 @@ func solarizedDarkTheme() *Theme {
 			BuiltinFg:     "#268BD2", // Blue
 			PunctuationFg: "#839496", // Base0
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#002B36",
+			ErrorBg:   "#DC322F",
+			WarningFg: "#002B36",
+			WarningBg: "#B58900",
+			InfoFg:    "#002B36",
+			InfoBg:    "#268BD2",
+			HintFg:    "#002B36",
+			HintBg:    "#2AA198",
+		},
 	}
 }
 
@@ -547,6 +597,16 @@ func solarizedLightTheme() *Theme {
 			PreprocFg:     "#CB4B16", // Orange
 			BuiltinFg:     "#268BD2", // Blue
 			PunctuationFg: "#657B83", // Base00
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#FDF6E3",
+			ErrorBg:   "#DC322F",
+			WarningFg: "#FDF6E3",
+			WarningBg: "#B58900",
+			InfoFg:    "#FDF6E3",
+			InfoBg:    "#268BD2",
+			HintFg:    "#FDF6E3",
+			HintBg:    "#2AA198",
 		},
 	}
 }
@@ -629,6 +689,16 @@ func gruvboxDarkTheme() *Theme {
 			BuiltinFg:     "#83A598", // Aqua
 			PunctuationFg: "#EBDBB2", // Cream
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#282828",
+			ErrorBg:   "#FB4934",
+			WarningFg: "#282828",
+			WarningBg: "#FABD2F",
+			InfoFg:    "#282828",
+			InfoBg:    "#83A598",
+			HintFg:    "#282828",
+			HintBg:    "#8EC07C",
+		},
 	}
 }
 
@@ -709,6 +779,16 @@ func gruvboxLightTheme() *Theme {
 			PreprocFg:     "#AF3A03", // Orange
 			BuiltinFg:     "#076678", // Aqua
 			PunctuationFg: "#3C3836", // Dark
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#FBF1C7",
+			ErrorBg:   "#9D0006",
+			WarningFg: "#FBF1C7",
+			WarningBg: "#B57614",
+			InfoFg:    "#FBF1C7",
+			InfoBg:    "#076678",
+			HintFg:    "#FBF1C7",
+			HintBg:    "#427B58",
 		},
 	}
 }
@@ -791,6 +871,16 @@ func draculaTheme() *Theme {
 			BuiltinFg:     "#8BE9FD", // Cyan
 			PunctuationFg: "#F8F8F2", // White
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#282A36",
+			ErrorBg:   "#FF5555",
+			WarningFg: "#282A36",
+			WarningBg: "#F1FA8C",
+			InfoFg:    "#282A36",
+			InfoBg:    "#8BE9FD",
+			HintFg:    "#282A36",
+			HintBg:    "#50FA7B",
+		},
 	}
 }
 
@@ -871,6 +961,16 @@ func nordTheme() *Theme {
 			PreprocFg:     "#D08770", // Orange
 			BuiltinFg:     "#8FBCBB", // Teal
 			PunctuationFg: "#ECEFF4", // White
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#2E3440",
+			ErrorBg:   "#BF616A",
+			WarningFg: "#2E3440",
+			WarningBg: "#EBCB8B",
+			InfoFg:    "#2E3440",
+			InfoBg:    "#81A1C1",
+			HintFg:    "#2E3440",
+			HintBg:    "#A3BE8C",
 		},
 	}
 }
@@ -953,6 +1053,16 @@ func dosTheme() *Theme {
 			BuiltinFg:     "#00AAAA", // Cyan
 			PunctuationFg: "#FFFFFF", // White
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#FFFFFF",
+			ErrorBg:   "#AA0000",
+			WarningFg: "#000000",
+			WarningBg: "#FFFF00",
+			InfoFg:    "#FFFFFF",
+			InfoBg:    "#0000AA",
+			HintFg:    "#000000",
+			HintBg:    "#00FFFF",
+		},
 	}
 }
 
@@ -1033,6 +1143,16 @@ func ibmGreenTheme() *Theme {
 			PreprocFg:     "#00AA00", // Darker green
 			BuiltinFg:     "#00BB00", // Medium green
 			PunctuationFg: "#00FF00", // Bright green
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#000000",
+			ErrorBg:   "#FF0000",
+			WarningFg: "#000000",
+			WarningBg: "#FFFF00",
+			InfoFg:    "#000000",
+			InfoBg:    "#00FF00",
+			HintFg:    "#000000",
+			HintBg:    "#00AA00",
 		},
 	}
 }
@@ -1115,6 +1235,16 @@ func ibmAmberTheme() *Theme {
 			BuiltinFg:     "#CC8800", // Medium amber
 			PunctuationFg: "#FFAA00", // Bright amber
 		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#000000",
+			ErrorBg:   "#FF0000",
+			WarningFg: "#000000",
+			WarningBg: "#FFFF00",
+			InfoFg:    "#000000",
+			InfoBg:    "#FFAA00",
+			HintFg:    "#000000",
+			HintBg:    "#AA7700",
+		},
 	}
 }
 
@@ -1195,6 +1325,16 @@ func cyberpunkTheme() *Theme {
 			PreprocFg:     "#FFD700", // Gold
 			BuiltinFg:     "#00FFFF", // Cyan
 			PunctuationFg: "#00FFFF", // Cyan
+		},
+		Diagnostic: DiagnosticColors{
+			ErrorFg:   "#0D0D0D",
+			ErrorBg:   "#FF0055",
+			WarningFg: "#0D0D0D",
+			WarningBg: "#FFFF00",
+			InfoFg:    "#0D0D0D",
+			InfoBg:    "#00FFFF",
+			HintFg:    "#0D0D0D",
+			HintBg:    "#BD00FF",
 		},
 	}
 }

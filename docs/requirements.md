@@ -142,7 +142,13 @@ Menus to include:
 * `Ctrl+Shift+F` Format document with external formatter
 * `Ctrl+/` Toggle comment on line or selection
 
-**4.7 Display**
+**4.7 Code Linting**
+
+* `Ctrl+Shift+L` Run linter on current file
+* `F8` Jump to next diagnostic
+* `Shift+F8` Jump to previous diagnostic
+
+**4.8 Display**
 
 * `F1` Help overlay
 * `F10` Toggle Menubar focus
@@ -420,10 +426,18 @@ Not in initial scope but candidates:
 * Verbatim Unicode input.
 * External formatter integration (Ctrl+Shift+F).
 
+**Milestone 8 (Complete)**
+
+* External linter integration (Ctrl+Shift+L) with 10 built-in language defaults.
+* Diagnostic navigation (F8/Shift+F8).
+* Gutter markers showing diagnostic severity.
+* Status bar shows diagnostic message on affected lines.
+* Diagnostics cleared on buffer modification.
+
 **Future (Optional)**
 
 * Keybinding customization (config-file-only).
-* File browser, linter integration.
+* File browser.
 
 
 

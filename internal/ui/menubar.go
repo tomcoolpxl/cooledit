@@ -89,6 +89,9 @@ func (m *Menubar) initDefaults() {
 				{Label: "Go to Line", Accelerator: "Ctrl+G", ShortcutKey: 'g', Action: func(u *UI) { u.enterGoToLine() }},
 				{IsSeparator: true},
 				{Label: "Format Document", Accelerator: "Ctrl+Shift+F", ShortcutKey: 'f', Action: func(u *UI) { u.formatDocument() }},
+				{Label: "Run Linter", Accelerator: "Ctrl+Shift+L", ShortcutKey: 'l', Action: func(u *UI) { u.runLinter() }},
+				{Label: "Next Diagnostic", Accelerator: "F8", ShortcutKey: 'n', Action: func(u *UI) { u.nextDiagnostic() }},
+				{Label: "Previous Diagnostic", Accelerator: "Shift+F8", ShortcutKey: 'v', Action: func(u *UI) { u.prevDiagnostic() }},
 			},
 		},
 		{

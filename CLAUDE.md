@@ -31,6 +31,7 @@ internal/
     text/              - Text processing utilities
   fileio/              - File operations, encoding, EOL handling
   formatter/           - External formatter integration
+  linter/              - External linter integration
   positionlog/         - Cursor position persistence across sessions
   syntax/              - Syntax highlighting with Chroma
   term/                - Terminal backend abstraction
@@ -99,6 +100,7 @@ internal/
 - ✅ Scrollbar/Indicator - visual scrollbar on right edge showing viewport position
 - ✅ Verbatim Character Input - insert Unicode characters by code point (Ctrl+Shift+U for hex, Ctrl+Shift+D for decimal)
 - ✅ Formatter Integration - external formatter support (Ctrl+Shift+F) with built-in defaults for 20+ languages
+- ✅ Linter Integration - external linter support (Ctrl+Shift+L) with built-in defaults for 10 languages
 
 ### Implemented (Milestone 6 - Autosave)
 - ✅ Automatic backup after idle timeout (default: 2 seconds)
@@ -151,6 +153,9 @@ internal/
 - `Ctrl+Shift+U` - Verbatim Unicode hex input (e.g., type "2665" for ♥)
 - `Ctrl+Shift+D` - Verbatim Unicode decimal input (e.g., type "9829" for ♥)
 - `Ctrl+Shift+F` - Format document with external formatter
+- `Ctrl+Shift+L` - Run linter on current file
+- `F8` - Jump to next diagnostic
+- `Shift+F8` - Jump to previous diagnostic
 - `Insert` - Toggle Insert/Replace mode
 - `F1` - Help overlay (adaptive two-column/single-column layout)
 - `F10` / `Esc` - Toggle menubar
@@ -346,12 +351,25 @@ internal/
   - Kept: On quit without saving (for future recovery)
 - **Unnamed buffers**: Not supported (autosave requires a file path)
 
+### Linter Integration
+- **Manual trigger only**: Ctrl+Shift+L runs linter (no auto-lint on save)
+- **10 built-in language defaults**: Go (go vet), Python (ruff), JavaScript/TypeScript (eslint), Rust (cargo check), C/C++ (gcc/g++), Shell (shellcheck), YAML (yamllint), JSON (jsonlint)
+- **Custom linter configuration**: Override defaults via `[linters.language]` in config file
+- **Diagnostic display**:
+  - Gutter markers: `✗` (error), `⚠` (warning), `ℹ` (info), `•` (hint)
+  - Status bar shows diagnostic message when cursor is on affected line
+  - Theme-based diagnostic colors in all 14 themes
+- **Navigation**: F8 (next diagnostic), Shift+F8 (previous diagnostic)
+- **Auto-clear**: Diagnostics cleared automatically when buffer is modified
+- **Temp file handling**: Unsaved buffers use temp file for linting
+- **Output parsing**: Default format (file:line:col: message), GCC format, go vet format
+
 ## Testing Strategy
 
 - Unit tests for core components (buffer, editor, search, undo)
 - UI tests with fake screen implementation
 - Coverage tracking in place
-- **170+ tests covering**:
+- **185+ tests covering**:
   - Non-overlapping search matches (TestFindNextNoOverlapping, TestFindNextTwoNonOverlapping)
   - Replace All starting from file beginning (TestReplaceAllFromBeginning)
   - Text highlighting during search (TestSearchHighlightsText)
@@ -370,6 +388,7 @@ internal/
   - Menu navigation and rendering (including menu scrolling on small screens)
   - Syntax highlighting (20 tests: token types, language detection, caching, Chroma integration)
   - Autosave system (28 tests: storage, manager, recovery, lifecycle)
+  - Linter integration (15 tests: built-in configs, output parsing, real go vet execution)
 
 ### Technical Details
 
@@ -434,6 +453,7 @@ Each element has `fg` (foreground) and `bg` (background) properties.
 - **help**: `fg`, `bg`, `title_fg`, `title_bg`, `footer_fg`
 - **message**: `info_fg`, `info_bg`, `warning_fg`, `warning_bg`, `error_fg`, `error_bg`
 - **syntax**: `keyword_fg/bg`, `string_fg/bg`, `comment_fg/bg`, `number_fg/bg`, `operator_fg/bg`, `function_fg/bg`, `type_fg/bg`, `variable_fg/bg`, `constant_fg/bg`, `preproc_fg/bg`, `builtin_fg/bg`, `punctuation_fg/bg`
+- **diagnostic**: `error_fg`, `error_bg`, `warning_fg`, `warning_bg`, `info_fg`, `info_bg`, `hint_fg`, `hint_bg`
 
 **Color Format:**
 - Named colors: `"black"`, `"red"`, `"green"`, `"blue"`, `"white"`, etc.
@@ -595,7 +615,9 @@ Project is fully functional with all core features complete:
 - ✅ Scrollbar indicator for viewport position
 - ✅ Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
 - ✅ External formatter integration (Ctrl+Shift+F) with 20+ built-in language defaults
-- ✅ Comprehensive test coverage (170+ tests, all passing)
+- ✅ External linter integration (Ctrl+Shift+L) with 10 built-in language defaults
+- ✅ Diagnostic navigation (F8/Shift+F8) with gutter markers and status bar display
+- ✅ Comprehensive test coverage (185+ tests, all passing)
 
 Focus areas:
 - Additional features as requested

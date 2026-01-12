@@ -26,6 +26,7 @@ import (
 	"cooledit/internal/core"
 	"cooledit/internal/fileio"
 	"cooledit/internal/formatter"
+	"cooledit/internal/linter"
 	"cooledit/internal/positionlog"
 	"cooledit/internal/syntax"
 	"cooledit/internal/term"
@@ -277,6 +278,11 @@ type UI struct {
 	// Autosave
 	autosaveManager   *autosave.Manager
 	recoveryCandidate *autosave.RecoveryCandidate // Set during recovery prompt
+
+	// Linter diagnostics
+	diagnostics          []linter.Diagnostic // Current linter diagnostics
+	showDiagnostics      bool                // Whether to show diagnostic markers
+	currentDiagnosticIdx int                 // Index of current diagnostic for navigation
 }
 
 // BracketMatchState holds the current bracket match information for highlighting
@@ -313,10 +319,11 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 			}
 			return cfg.UI.Language
 		}(),
-		config:         cfg,
-		theme:          cfg.GetCurrentTheme(),
-		bracketMatcher: core.NewBracketMatcher(),
-		searchHistory:  NewSearchHistory(20), // Remember last 20 searches
+		config:          cfg,
+		theme:           cfg.GetCurrentTheme(),
+		bracketMatcher:  core.NewBracketMatcher(),
+		searchHistory:   NewSearchHistory(20), // Remember last 20 searches
+		showDiagnostics: cfg.Editor.ShowDiagnostics,
 	}
 
 	// Initialize syntax highlighting
@@ -1082,7 +1089,7 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		u.insertMode = !u.insertMode
 		return nil
 
-	case e.Key == term.KeyRune && e.Rune == 'l' && (e.Modifiers&term.ModCtrl) != 0:
+	case e.Key == term.KeyRune && e.Rune == 'l' && e.Modifiers == term.ModCtrl:
 		u.showLineNumbers = !u.showLineNumbers
 		u.saveConfig()
 		return nil
@@ -1178,6 +1185,18 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 			return core.CmdFindPrev{}
 		}
 		return core.CmdFindNext{}
+
+	case e.Key == term.KeyF8:
+		if e.Modifiers == term.ModShift {
+			u.prevDiagnostic()
+		} else {
+			u.nextDiagnostic()
+		}
+		return nil
+
+	case e.Key == term.KeyRune && e.Rune == 'l' && (e.Modifiers&(term.ModCtrl|term.ModShift)) == (term.ModCtrl|term.ModShift):
+		u.runLinter()
+		return nil
 
 	case e.Key == term.KeyRune && e.Modifiers == 0:
 		if u.insertMode {
@@ -1314,6 +1333,171 @@ func (u *UI) formatDocument() {
 	if result.Message != "" {
 		u.enterMessage(result.Message)
 	}
+}
+
+// runLinter runs the linter for the current file and populates diagnostics.
+func (u *UI) runLinter() {
+	// Get current language
+	language := u.currentLanguage
+	if language == "" || language == "auto" {
+		// Try to detect language from file
+		file := u.editor.File()
+		if file.Path != "" {
+			lines := u.editor.Lines()
+			var firstLine []rune
+			if len(lines) > 0 {
+				firstLine = lines[0]
+			}
+			language = syntax.DetectLanguage(file.Path, firstLine)
+		}
+	}
+
+	if language == "" {
+		u.enterMessage("Cannot lint: no language detected")
+		return
+	}
+
+	// Convert user config linters to linter.Config map
+	var userLinters map[string]linter.Config
+	if len(u.config.Linters) > 0 {
+		userLinters = make(map[string]linter.Config)
+		for lang, cfg := range u.config.Linters {
+			userLinters[lang] = linter.Config{
+				Command: cfg.Command,
+				Args:    cfg.Args,
+			}
+		}
+	}
+
+	// Get linter for this language
+	cfg := linter.GetLinter(language, userLinters)
+	if cfg == nil {
+		u.enterMessage(fmt.Sprintf("No linter configured for %s", language))
+		return
+	}
+
+	// Get buffer content
+	lines := u.editor.Lines()
+	var content strings.Builder
+	for i, line := range lines {
+		content.WriteString(string(line))
+		if i < len(lines)-1 {
+			content.WriteString("\n")
+		}
+	}
+
+	// Get filename for linters that need it
+	filename := u.editor.File().Path
+	if filename == "" {
+		filename = "untitled.txt"
+	}
+
+	// Execute linter
+	result, err := linter.Lint(cfg, filename, content.String(), language)
+	if err != nil {
+		// Show error in status bar
+		errMsg := err.Error()
+		if len(errMsg) > 60 {
+			errMsg = errMsg[:57] + "..."
+		}
+		u.enterMessage(errMsg)
+		return
+	}
+
+	// Store diagnostics
+	u.diagnostics = result.Diagnostics
+	u.currentDiagnosticIdx = -1
+
+	// Show result
+	if len(u.diagnostics) == 0 {
+		u.enterMessage("✓ No issues found")
+	} else {
+		errorCount := 0
+		warningCount := 0
+		for _, d := range u.diagnostics {
+			if d.Severity == linter.SeverityError {
+				errorCount++
+			} else if d.Severity == linter.SeverityWarning {
+				warningCount++
+			}
+		}
+		if errorCount > 0 && warningCount > 0 {
+			u.enterMessage(fmt.Sprintf("Found %d error(s), %d warning(s)", errorCount, warningCount))
+		} else if errorCount > 0 {
+			u.enterMessage(fmt.Sprintf("Found %d error(s)", errorCount))
+		} else if warningCount > 0 {
+			u.enterMessage(fmt.Sprintf("Found %d warning(s)", warningCount))
+		} else {
+			u.enterMessage(fmt.Sprintf("Found %d issue(s)", len(u.diagnostics)))
+		}
+	}
+}
+
+// nextDiagnostic jumps to the next diagnostic (F8).
+func (u *UI) nextDiagnostic() {
+	if len(u.diagnostics) == 0 {
+		u.enterMessage("No diagnostics")
+		return
+	}
+
+	// Move to next diagnostic
+	u.currentDiagnosticIdx++
+	if u.currentDiagnosticIdx >= len(u.diagnostics) {
+		u.currentDiagnosticIdx = 0 // Wrap around
+	}
+
+	// Jump to diagnostic location
+	d := u.diagnostics[u.currentDiagnosticIdx]
+	u.editor.Apply(core.CmdClick{Line: d.Line, Col: d.Col}, u.layout.Viewport.H)
+
+	// Show diagnostic message
+	u.enterMessage(fmt.Sprintf("[%d/%d] %s", u.currentDiagnosticIdx+1, len(u.diagnostics), d.Message))
+}
+
+// prevDiagnostic jumps to the previous diagnostic (Shift+F8).
+func (u *UI) prevDiagnostic() {
+	if len(u.diagnostics) == 0 {
+		u.enterMessage("No diagnostics")
+		return
+	}
+
+	// Move to previous diagnostic
+	u.currentDiagnosticIdx--
+	if u.currentDiagnosticIdx < 0 {
+		u.currentDiagnosticIdx = len(u.diagnostics) - 1 // Wrap around
+	}
+
+	// Jump to diagnostic location
+	d := u.diagnostics[u.currentDiagnosticIdx]
+	u.editor.Apply(core.CmdClick{Line: d.Line, Col: d.Col}, u.layout.Viewport.H)
+
+	// Show diagnostic message
+	u.enterMessage(fmt.Sprintf("[%d/%d] %s", u.currentDiagnosticIdx+1, len(u.diagnostics), d.Message))
+}
+
+// clearDiagnostics clears all linter diagnostics.
+// Called when the buffer is modified to remove stale diagnostics.
+func (u *UI) clearDiagnostics() {
+	u.diagnostics = nil
+	u.currentDiagnosticIdx = -1
+}
+
+// getDiagnosticForLine returns the highest severity diagnostic for a given line, or nil if none.
+func (u *UI) getDiagnosticForLine(line int) *linter.Diagnostic {
+	if len(u.diagnostics) == 0 {
+		return nil
+	}
+
+	var highest *linter.Diagnostic
+	for i := range u.diagnostics {
+		d := &u.diagnostics[i]
+		if d.Line == line {
+			if highest == nil || d.Severity < highest.Severity {
+				highest = d
+			}
+		}
+	}
+	return highest
 }
 
 // enterSearch enters the unified search mode (ModeSearch).

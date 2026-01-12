@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-12
+
+### Added
+- External linter integration (Ctrl+Shift+L) with 10 built-in language defaults
+- Diagnostic navigation with F8 (next) and Shift+F8 (previous)
+- Gutter markers showing diagnostic severity (✗ error, ⚠ warning, ℹ info, • hint)
+- Status bar shows diagnostic message when cursor is on affected line
+- Diagnostics automatically cleared when buffer is modified
+- Custom linter configuration in TOML config file
+- Menu items: Edit → Run Linter, Next Diagnostic, Previous Diagnostic
+- Diagnostic colors in all 14 themes
+
+### Changed
+- Test count increased to 185+
+
 ## [0.4.0] - 2026-01-11
 
 ### Added

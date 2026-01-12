@@ -30,6 +30,7 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - Scrollbar indicator showing viewport position
 - Verbatim Unicode character input (Ctrl+Shift+U hex, Ctrl+Shift+D decimal)
 - External formatter integration (Ctrl+Shift+F) with built-in support for 20+ languages
+- External linter integration (Ctrl+Shift+L) with diagnostics navigation (F8/Shift+F8)
 
 ## Installation
 
@@ -100,6 +101,9 @@ cooledit --help
 - `Ctrl+Shift+U` - Insert Unicode character by hex code point
 - `Ctrl+Shift+D` - Insert Unicode character by decimal code point
 - `Ctrl+Shift+F` - Format document with external formatter
+- `Ctrl+Shift+L` - Run linter on current file
+- `F8` - Jump to next diagnostic
+- `Shift+F8` - Jump to previous diagnostic
 - `Backspace` - Delete one character
 
 ### Search
@@ -306,6 +310,59 @@ args = ["--stdin-input-file", ".hs"]
 - 5-second timeout prevents hangs
 - Error messages shown in status bar
 - Works with any command that reads from stdin and writes to stdout
+
+## Code Linting
+
+Press `Ctrl+Shift+L` or use Edit → Run Linter to check the current file for errors and warnings.
+
+### Built-in Linter Support
+
+Cooledit includes default linters for many languages:
+
+| Language | Linter | Language | Linter |
+|----------|--------|----------|--------|
+| Go | `go vet` | Python | `ruff` |
+| JavaScript | `eslint` | TypeScript | `eslint` |
+| Rust | `cargo check` | C | `gcc -fsyntax-only` |
+| C++ | `g++ -fsyntax-only` | Shell/Bash | `shellcheck` |
+| YAML | `yamllint` | JSON | `jsonlint` |
+
+### Diagnostics Display
+
+- **Gutter markers**: Shows severity in the line number column
+  - `✗` - Error (red)
+  - `⚠` - Warning (yellow)
+  - `ℹ` - Info (blue)
+  - `•` - Hint
+- **Status bar**: Shows diagnostic message when cursor is on affected line
+- **Navigation**: Use `F8` / `Shift+F8` to jump between diagnostics
+
+### Custom Linters
+
+Override or add linters in your config file:
+
+```toml
+# Use golangci-lint instead of go vet for Go
+[linters.go]
+command = "golangci-lint"
+args = ["run", "--fast"]
+
+# Use pylint instead of ruff for Python
+[linters.python]
+command = "pylint"
+args = ["--output-format=parseable"]
+
+# Add linter for a language without built-in support
+[linters.ruby]
+command = "rubocop"
+args = ["--format", "emacs"]
+```
+
+### Features
+- Diagnostics cleared automatically when you edit the file
+- 10-second timeout prevents hangs
+- Error messages shown in status bar
+- Works with any command that outputs `file:line:col: message` format
 
 ## Building
 

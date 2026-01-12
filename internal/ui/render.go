@@ -20,6 +20,7 @@ import (
 
 	"cooledit/internal/config"
 	"cooledit/internal/core"
+	"cooledit/internal/linter"
 	"cooledit/internal/syntax"
 	"cooledit/internal/term"
 )
@@ -347,12 +348,18 @@ func (u *UI) drawViewport() {
 	hasSelection := u.editor.HasSelection()
 
 	gutterWidth := 0
+	diagnosticColWidth := 0
+	if u.showDiagnostics && len(u.diagnostics) > 0 {
+		diagnosticColWidth = 1 // One column for diagnostic marker
+	}
 	if u.showLineNumbers {
 		totalLines := len(lines)
 		if totalLines == 0 {
 			totalLines = 1
 		}
-		gutterWidth = len(fmt.Sprintf("%d", totalLines)) + 1 // +1 for padding
+		gutterWidth = len(fmt.Sprintf("%d", totalLines)) + 1 + diagnosticColWidth // +1 for padding + diagnostic marker
+	} else if diagnosticColWidth > 0 {
+		gutterWidth = diagnosticColWidth
 	}
 
 	availW := vpRect.W - gutterWidth - scrollbarWidth
@@ -361,9 +368,9 @@ func (u *UI) drawViewport() {
 	}
 
 	if u.softWrap {
-		u.drawViewportWrapped(vpRect, gutterWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
+		u.drawViewportWrapped(vpRect, gutterWidth, diagnosticColWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
 	} else {
-		u.drawViewportNoWrap(vpRect, gutterWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
+		u.drawViewportNoWrap(vpRect, gutterWidth, diagnosticColWidth, availW, lines, vp, sl, sc, el, ec, hasSelection)
 	}
 
 	// Draw scrollbar if enabled
@@ -372,7 +379,7 @@ func (u *UI) drawViewport() {
 	}
 }
 
-func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
+func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, diagnosticColWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
 	cursorLine, _ := u.editor.Cursor()
 	// Check if current line highlight is enabled and has a valid color (not ColorDefault)
 	currentLineBgEnabled := u.currentLineHighlight && u.theme.Editor.CurrentLineBg != term.ColorDefault
@@ -388,22 +395,35 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 			gutterStyle.Background = u.theme.Editor.CurrentLineBg
 		}
 
+		// Draw diagnostic marker first (if present)
+		xOffset := 0
+		if diagnosticColWidth > 0 {
+			if diag := u.getDiagnosticForLine(docY); diag != nil {
+				marker, markerStyle := u.getDiagnosticMarker(diag.Severity)
+				u.screen.SetCell(vpRect.X, vpRect.Y+sy, marker, markerStyle)
+			} else {
+				u.screen.SetCell(vpRect.X, vpRect.Y+sy, ' ', gutterStyle)
+			}
+			xOffset = diagnosticColWidth
+		}
+
 		if u.showLineNumbers {
+			lineNumWidth := gutterWidth - diagnosticColWidth
 			if docY < len(lines) {
 				numStr := fmt.Sprintf("%d", docY+1) // 1-based
 				// Right align
-				padding := gutterWidth - len(numStr) - 1
+				padding := lineNumWidth - len(numStr) - 1
 				for i := 0; i < padding; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
+					u.screen.SetCell(vpRect.X+xOffset+i, vpRect.Y+sy, ' ', gutterStyle)
 				}
 				for i, r := range numStr {
-					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, gutterStyle)
+					u.screen.SetCell(vpRect.X+xOffset+padding+i, vpRect.Y+sy, r, gutterStyle)
 				}
-				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', gutterStyle)
+				u.screen.SetCell(vpRect.X+xOffset+lineNumWidth-1, vpRect.Y+sy, ' ', gutterStyle)
 			} else {
 				// Empty gutter
-				for i := 0; i < gutterWidth; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', gutterStyle)
+				for i := 0; i < lineNumWidth; i++ {
+					u.screen.SetCell(vpRect.X+xOffset+i, vpRect.Y+sy, ' ', gutterStyle)
 				}
 			}
 		}
@@ -584,7 +604,7 @@ func (u *UI) drawViewportNoWrap(vpRect Rect, gutterWidth, availW int, lines [][]
 }
 
 // drawViewportWrapped renders the viewport with soft wrap enabled
-func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
+func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, diagnosticColWidth, availW int, lines [][]rune, vp core.Viewport, sl, sc, el, ec int, hasSelection bool) {
 	if availW <= 0 {
 		return
 	}
@@ -672,8 +692,10 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 		// Determine if this is the current line for highlighting
 		isCurrentLine := false
+		docLineNum := -1
 		if wrappedIdx >= 0 && wrappedIdx < len(wrapped) {
-			isCurrentLine = (wrapped[wrappedIdx].lineNum == cursorLine) && u.currentLineHighlight
+			docLineNum = wrapped[wrappedIdx].lineNum
+			isCurrentLine = (docLineNum == cursorLine) && u.currentLineHighlight
 		}
 
 		// Draw Gutter - show line number for first wrap of each line
@@ -682,7 +704,31 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 			currentGutterStyle.Background = u.theme.Editor.CurrentLineBg
 		}
 
+		// Draw diagnostic marker first (if present and this is the first wrap of the line)
+		xOffset := 0
+		if diagnosticColWidth > 0 {
+			shouldShowMarker := false
+			if wrappedIdx >= 0 && wrappedIdx < len(wrapped) {
+				// Only show marker on first wrapped segment of a line
+				if wrappedIdx == 0 || wrapped[wrappedIdx-1].lineNum != docLineNum {
+					shouldShowMarker = true
+				}
+			}
+			if shouldShowMarker {
+				if diag := u.getDiagnosticForLine(docLineNum); diag != nil {
+					marker, markerStyle := u.getDiagnosticMarker(diag.Severity)
+					u.screen.SetCell(vpRect.X, vpRect.Y+sy, marker, markerStyle)
+				} else {
+					u.screen.SetCell(vpRect.X, vpRect.Y+sy, ' ', currentGutterStyle)
+				}
+			} else {
+				u.screen.SetCell(vpRect.X, vpRect.Y+sy, ' ', currentGutterStyle)
+			}
+			xOffset = diagnosticColWidth
+		}
+
 		if u.showLineNumbers {
+			lineNumWidth := gutterWidth - diagnosticColWidth
 			shouldShowNum := false
 			lineNum := 0
 			if wrappedIdx >= 0 && wrappedIdx < len(wrapped) {
@@ -695,18 +741,18 @@ func (u *UI) drawViewportWrapped(vpRect Rect, gutterWidth, availW int, lines [][
 
 			if shouldShowNum {
 				numStr := fmt.Sprintf("%d", lineNum+1) // 1-based
-				padding := gutterWidth - len(numStr) - 1
+				padding := lineNumWidth - len(numStr) - 1
 				for i := 0; i < padding; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', currentGutterStyle)
+					u.screen.SetCell(vpRect.X+xOffset+i, vpRect.Y+sy, ' ', currentGutterStyle)
 				}
 				for i, r := range numStr {
-					u.screen.SetCell(vpRect.X+padding+i, vpRect.Y+sy, r, currentGutterStyle)
+					u.screen.SetCell(vpRect.X+xOffset+padding+i, vpRect.Y+sy, r, currentGutterStyle)
 				}
-				u.screen.SetCell(vpRect.X+gutterWidth-1, vpRect.Y+sy, ' ', currentGutterStyle)
+				u.screen.SetCell(vpRect.X+xOffset+lineNumWidth-1, vpRect.Y+sy, ' ', currentGutterStyle)
 			} else {
 				// Empty gutter
-				for i := 0; i < gutterWidth; i++ {
-					u.screen.SetCell(vpRect.X+i, vpRect.Y+sy, ' ', currentGutterStyle)
+				for i := 0; i < lineNumWidth; i++ {
+					u.screen.SetCell(vpRect.X+xOffset+i, vpRect.Y+sy, ' ', currentGutterStyle)
 				}
 			}
 		}
@@ -1138,61 +1184,96 @@ func (u *UI) drawStatusBar() {
 		u.screen.SetCell(rect.X+i, rect.Y, r, style)
 	}
 
-	// Priority 3: Draw centered mini-help
-	// Build mini-help with priority from left to right
-	miniHelp := []string{
-		"F1 Help",
-		"Esc/F10 Menu",
-		"Ctrl+Q Quit",
-		"Ctrl+S Save",
-		"Ctrl+F Find/Replace",
-	}
-
+	// Priority 3: Draw centered content
 	// Calculate available space for center section
 	availStart := leftEnd + 2
 	availEnd := startRight - 2
 	availWidth := availEnd - availStart
 
 	if availWidth > 0 {
-		// Build help string with available space
-		var helpParts []string
-		helpLen := 0
-		for _, part := range miniHelp {
-			newLen := helpLen
-			if len(helpParts) > 0 {
-				newLen += 3 // "  " separator
-			}
-			newLen += len(part)
-
-			if newLen <= availWidth {
-				helpParts = append(helpParts, part)
-				helpLen = newLen
-			} else {
-				break
-			}
-		}
-
-		if len(helpParts) > 0 {
-			// Join with separators
-			helpText := ""
-			for i, part := range helpParts {
-				if i > 0 {
-					helpText += "  "
-				}
-				helpText += part
+		// Check if cursor is on a line with a diagnostic
+		if diag := u.getDiagnosticForLine(cy); diag != nil && u.showDiagnostics {
+			// Show diagnostic message in center
+			var prefix string
+			switch diag.Severity {
+			case linter.SeverityError:
+				prefix = "✗ "
+			case linter.SeverityWarning:
+				prefix = "⚠ "
+			case linter.SeverityInfo:
+				prefix = "ℹ "
+			default:
+				prefix = "• "
 			}
 
-			// Center the help text
-			centerX := availStart + (availWidth-len(helpText))/2
+			diagText := prefix + diag.Message
+			if len(diagText) > availWidth {
+				diagText = diagText[:availWidth-3] + "..."
+			}
+
+			// Center the diagnostic text
+			centerX := availStart + (availWidth-len(diagText))/2
 			if centerX < availStart {
 				centerX = availStart
 			}
 
-			// Draw centered help
-			for i, r := range helpText {
+			for i, r := range diagText {
 				x := centerX + i
 				if x >= availStart && x < availEnd {
 					u.screen.SetCell(rect.X+x, rect.Y, r, style)
+				}
+			}
+		} else {
+			// Draw centered mini-help
+			// Build mini-help with priority from left to right
+			miniHelp := []string{
+				"F1 Help",
+				"Esc/F10 Menu",
+				"Ctrl+Q Quit",
+				"Ctrl+S Save",
+				"Ctrl+F Find/Replace",
+			}
+
+			// Build help string with available space
+			var helpParts []string
+			helpLen := 0
+			for _, part := range miniHelp {
+				newLen := helpLen
+				if len(helpParts) > 0 {
+					newLen += 3 // "  " separator
+				}
+				newLen += len(part)
+
+				if newLen <= availWidth {
+					helpParts = append(helpParts, part)
+					helpLen = newLen
+				} else {
+					break
+				}
+			}
+
+			if len(helpParts) > 0 {
+				// Join with separators
+				helpText := ""
+				for i, part := range helpParts {
+					if i > 0 {
+						helpText += "  "
+					}
+					helpText += part
+				}
+
+				// Center the help text
+				centerX := availStart + (availWidth-len(helpText))/2
+				if centerX < availStart {
+					centerX = availStart
+				}
+
+				// Draw centered help
+				for i, r := range helpText {
+					x := centerX + i
+					if x >= availStart && x < availEnd {
+						u.screen.SetCell(rect.X+x, rect.Y, r, style)
+					}
 				}
 			}
 		}
@@ -1872,4 +1953,35 @@ func (u *UI) drawRecoveryPrompt(w, h int) {
 			u.screen.SetCell(x, y, ' ', style)
 		}
 	}
+}
+
+// getDiagnosticMarker returns the marker character and style for a diagnostic severity
+func (u *UI) getDiagnosticMarker(severity linter.Severity) (rune, term.Style) {
+	var marker rune
+	var fg, bg term.Color
+
+	switch severity {
+	case linter.SeverityError:
+		marker = '✗'
+		fg = u.theme.Diagnostic.ErrorFg
+		bg = u.theme.Diagnostic.ErrorBg
+	case linter.SeverityWarning:
+		marker = '⚠'
+		fg = u.theme.Diagnostic.WarningFg
+		bg = u.theme.Diagnostic.WarningBg
+	case linter.SeverityInfo:
+		marker = 'ℹ'
+		fg = u.theme.Diagnostic.InfoFg
+		bg = u.theme.Diagnostic.InfoBg
+	case linter.SeverityHint:
+		marker = '•'
+		fg = u.theme.Diagnostic.HintFg
+		bg = u.theme.Diagnostic.HintBg
+	default:
+		marker = '?'
+		fg = u.theme.Diagnostic.InfoFg
+		bg = u.theme.Diagnostic.InfoBg
+	}
+
+	return marker, term.Style{Foreground: fg, Background: bg}
 }
