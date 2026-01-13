@@ -446,8 +446,4 @@ If you share the relevant files (or even just the key types and methods), this d
 Important integration warning (not a summary): your existing shortcut list already uses `Ctrl+B` for bracket matching/jump. That is a direct conflict with the file tree toggle requirement. You need to introduce a new binding for one of them, otherwise the implementation cannot be consistent.
 
 EXTRA NOTES:
-Ctrl+B should be file browser, brackets matching should be something else shortcut.
-
-Fileview colors (fg, bg, selection fg/bg, expand character fg, ...) should be included in theme and existing themes should get consistent colors.
-
-Menu, statusbar mini help section and F1 help screen should display Ctrl+B
+Ctrl+B should be file browser, brackets matching should be something else shortcut. Fileview colors (fg, bg, selection fg/bg, expand character fg, ...) should be included in theme and existing themes should get consistent colors. Menu, statusbar mini help section and F1 help screen should display Ctrl+B
