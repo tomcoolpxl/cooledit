@@ -113,6 +113,11 @@ func (m *Menubar) initDefaults() {
 					u.showLineNumbers = !u.showLineNumbers
 					u.saveConfig()
 				}},
+				{Label: "File Browser", Accelerator: "Ctrl+B", IsCheckable: true, IsChecked: func(u *UI) bool {
+					return u.fileTree != nil && u.fileTree.IsVisible()
+				}, Action: func(u *UI) {
+					u.toggleFileTree()
+				}},
 				{Label: "Current Line Highlight", IsCheckable: true, IsChecked: func(u *UI) bool {
 					return u.currentLineHighlight
 				}, Action: func(u *UI) {
