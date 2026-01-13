@@ -601,10 +601,8 @@ func (u *UI) initFileTreeRoot() {
 // openFileFromTree opens a file selected from the file tree
 func (u *UI) openFileFromTree(path string) {
 	// Check for unsaved changes
-	if u.editor.IsModified() {
-		// Store pending path and show save confirmation
-		u.pendingPath = path
-		u.enterQuitConfirm()
+	if u.editor.Modified() {
+		u.enterMessage("Save changes first (Ctrl+S) or discard (Ctrl+Q, n)")
 		return
 	}
 
@@ -618,6 +616,9 @@ func (u *UI) openFileFromTree(path string) {
 	// Save current cursor position before switching
 	u.SaveCursorPosition()
 
+	// Clear autosave for old file before loading new one
+	u.ClearAutosaveForCurrentFile()
+
 	// Clear diagnostics
 	u.diagnostics = nil
 	u.currentDiagnosticIdx = 0
@@ -625,16 +626,11 @@ func (u *UI) openFileFromTree(path string) {
 	u.editor.LoadFile(fd)
 
 	// Update syntax highlighting
-	u.detectLanguage()
+	u.initSyntaxHighlighter()
 
 	// Update file tree
 	if u.fileTree != nil {
 		u.fileTree.SetOpenFile(path)
-	}
-
-	// Clear autosave for old file
-	if u.autosaveManager != nil {
-		u.autosaveManager.Clear()
 	}
 
 	// Restore cursor position for new file

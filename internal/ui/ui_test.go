@@ -37,7 +37,11 @@ func newTestUI(w, h int) (*UI, *FakeScreen) {
 }
 
 func updateTestLayout(ui *UI, w, h int) {
-	ui.layout = ComputeLayout(w, h, ui.mode, ui.showMenubar, true)
+	treeWidth := 0
+	if ui.fileTree != nil && ui.fileTree.IsVisible() {
+		treeWidth = ui.fileTree.Width()
+	}
+	ui.layout = ComputeLayout(w, h, ui.mode, ui.showMenubar, true, treeWidth)
 }
 
 func draw(ui *UI) {
