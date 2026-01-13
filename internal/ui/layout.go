@@ -23,16 +23,18 @@ type Layout struct {
 	Width, Height int
 
 	Menubar   Rect
+	FileTree  Rect
 	Viewport  Rect
 	Prompt    Rect
 	StatusBar Rect
 }
 
-func ComputeLayout(w, h int, mode UIMode, hasMenubar, hasStatusBar bool) Layout {
+func ComputeLayout(w, h int, mode UIMode, hasMenubar, hasStatusBar bool, treeWidth int) Layout {
 	l := Layout{Width: w, Height: h}
 
 	y := 0
 	remH := h
+	viewportX := 0
 
 	// Menubar
 	if hasMenubar {
@@ -56,11 +58,17 @@ func ComputeLayout(w, h int, mode UIMode, hasMenubar, hasStatusBar bool) Layout 
 		remH--
 	}
 
+	// File Tree (left side panel)
+	if treeWidth > 0 && remH > 0 {
+		l.FileTree = Rect{0, y, treeWidth, remH}
+		viewportX = treeWidth
+	}
+
 	// Viewport takes remaining space
 	if remH < 0 {
 		remH = 0
 	}
-	l.Viewport = Rect{0, y, w, remH}
+	l.Viewport = Rect{viewportX, y, w - viewportX, remH}
 
 	return l
 }

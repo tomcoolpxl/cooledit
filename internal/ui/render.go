@@ -113,6 +113,7 @@ func (u *UI) draw() {
 	}
 
 	u.drawMenubar()
+	u.drawFileTree()
 	u.drawViewport()
 	u.drawStatusBar()
 	u.drawPrompt() // Draws prompt or message if active

@@ -31,6 +31,7 @@ import (
 	"cooledit/internal/syntax"
 	"cooledit/internal/term"
 	"cooledit/internal/theme"
+	"cooledit/internal/ui/filetree"
 )
 
 // SearchHistory maintains a history of search queries for navigation.
@@ -285,8 +286,8 @@ type UI struct {
 	currentDiagnosticIdx int                 // Index of current diagnostic for navigation
 
 	// File tree
-	fileTreeVisible bool // Whether file tree panel is visible
-	fileTreeFocus   bool // Whether file tree has focus
+	fileTree      *filetree.FileTree // File tree component
+	fileTreeFocus bool               // Whether file tree has focus
 }
 
 // BracketMatchState holds the current bracket match information for highlighting
@@ -335,6 +336,9 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 
 	// Initialize autosave manager
 	u.initAutosave()
+
+	// Initialize file tree
+	u.fileTree = filetree.New(30) // 30 character width
 
 	return u
 }
@@ -547,13 +551,94 @@ func (u *UI) ToggleScrollbar() {
 
 // toggleFileTree toggles the file tree panel visibility
 func (u *UI) toggleFileTree() {
-	if u.fileTreeVisible {
-		u.fileTreeVisible = false
+	if u.fileTree == nil {
+		return
+	}
+	if u.fileTree.IsVisible() {
+		u.fileTree.SetVisible(false)
 		u.fileTreeFocus = false
 	} else {
-		u.fileTreeVisible = true
+		// Initialize file tree root if not set
+		if u.fileTree.RootPath() == "" {
+			u.initFileTreeRoot()
+		}
+		u.fileTree.SetVisible(true)
 		u.fileTreeFocus = true
 	}
+}
+
+// getFileTreeWidth returns the file tree width if visible, 0 otherwise
+func (u *UI) getFileTreeWidth() int {
+	if u.fileTree != nil && u.fileTree.IsVisible() {
+		return u.fileTree.Width()
+	}
+	return 0
+}
+
+// initFileTreeRoot initializes the file tree root based on current file
+func (u *UI) initFileTreeRoot() {
+	if u.fileTree == nil {
+		return
+	}
+
+	filePath := u.editor.File().Path
+	if filePath != "" {
+		// Use parent directory of current file as root
+		dir := filepath.Dir(filePath)
+		absDir, err := filepath.Abs(dir)
+		if err != nil {
+			absDir = dir
+		}
+		u.fileTree.SetRoot(absDir, filepath.Base(absDir))
+		u.fileTree.SetOpenFile(filePath)
+	} else {
+		// No file open - use current working directory
+		// (CWD would need to be passed from app, for now use ".")
+		u.fileTree.SetRoot(".", ".")
+	}
+}
+
+// openFileFromTree opens a file selected from the file tree
+func (u *UI) openFileFromTree(path string) {
+	// Check for unsaved changes
+	if u.editor.IsModified() {
+		// Store pending path and show save confirmation
+		u.pendingPath = path
+		u.enterQuitConfirm()
+		return
+	}
+
+	// Load the file
+	fd, err := fileio.Open(path)
+	if err != nil {
+		u.enterMessage(fmt.Sprintf("Error opening file: %v", err))
+		return
+	}
+
+	// Save current cursor position before switching
+	u.SaveCursorPosition()
+
+	// Clear diagnostics
+	u.diagnostics = nil
+	u.currentDiagnosticIdx = 0
+
+	u.editor.LoadFile(fd)
+
+	// Update syntax highlighting
+	u.detectLanguage()
+
+	// Update file tree
+	if u.fileTree != nil {
+		u.fileTree.SetOpenFile(path)
+	}
+
+	// Clear autosave for old file
+	if u.autosaveManager != nil {
+		u.autosaveManager.Clear()
+	}
+
+	// Restore cursor position for new file
+	u.RestoreCursorPosition()
 }
 
 // SaveCursorPosition saves the current cursor position for the current file
@@ -836,7 +921,7 @@ func (u *UI) Run() error {
 	if u.mode == ModeNormal && u.recoveryCandidate == nil {
 		// Compute initial layout for position restoration
 		w, h := u.screen.Size()
-		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar)
+		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar, u.getFileTreeWidth())
 		u.RestoreCursorPosition()
 	}
 
@@ -852,7 +937,7 @@ func (u *UI) Run() error {
 			u.mode = ModeNormal
 		}
 
-		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar)
+		u.layout = ComputeLayout(w, h, u.mode, u.showMenubar, u.showStatusBar, u.getFileTreeWidth())
 
 		// Update bracket match state before drawing
 		u.updateBracketMatch()
@@ -916,7 +1001,26 @@ func (u *UI) Run() error {
 				}
 				// Don't pass unhandled keys to editor when menu is active
 				continue
-				continue
+			}
+
+			// Handle file tree input when it has focus
+			if u.fileTree != nil && u.fileTree.IsVisible() && u.fileTreeFocus && u.mode == ModeNormal {
+				// Escape opens menu (not handled by file tree)
+				if e.Key != term.KeyEscape {
+					result := u.fileTree.HandleKey(e.Key, e.Rune, e.Modifiers)
+					switch result.Action {
+					case filetree.ActionClosePanel:
+						u.fileTree.SetVisible(false)
+						u.fileTreeFocus = false
+						continue
+					case filetree.ActionOpenFile:
+						u.openFileFromTree(result.Path)
+						continue
+					case filetree.ActionNone:
+						// Key was handled by tree (navigation, expand/collapse)
+						continue
+					}
+				}
 			}
 
 			if e.Key == term.KeyEscape {
