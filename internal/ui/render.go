@@ -136,6 +136,19 @@ func (u *UI) drawSmallScreenWarning(w, h int) {
 	}
 }
 
+func (u *UI) drawFileTree() {
+	if u.fileTree == nil || !u.fileTree.IsVisible() {
+		return
+	}
+
+	rect := u.layout.FileTree
+	if rect.W < 1 || rect.H < 1 {
+		return
+	}
+
+	u.fileTree.Render(u.screen, rect.X, rect.Y, rect.H, &u.theme.Fileview, u.isDefaultTheme())
+}
+
 func (u *UI) drawMenubar() {
 	rect := u.layout.Menubar
 	if rect.H < 1 {
