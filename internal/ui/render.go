@@ -1232,6 +1232,7 @@ func (u *UI) drawStatusBar() {
 				"Ctrl+Q Quit",
 				"Ctrl+S Save",
 				"Ctrl+F Find/Replace",
+				"Ctrl+B Browser",
 			}
 
 			// Build help string with available space
@@ -1365,7 +1366,8 @@ func (u *UI) drawHelp(w, h int) {
 		"  NAVIGATION",
 		"    Arrows        Move cursor",
 		"    Ctrl+Arrows   Jump word",
-		"    Ctrl+B        Jump bracket",
+		"    Ctrl+]        Jump bracket",
+		"    Ctrl+B        File browser",
 		"    Home/End      Line start/end",
 		"    Ctrl+Home     File start",
 		"    Ctrl+End      File end",

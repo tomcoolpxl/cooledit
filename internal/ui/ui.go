@@ -283,6 +283,10 @@ type UI struct {
 	diagnostics          []linter.Diagnostic // Current linter diagnostics
 	showDiagnostics      bool                // Whether to show diagnostic markers
 	currentDiagnosticIdx int                 // Index of current diagnostic for navigation
+
+	// File tree
+	fileTreeVisible bool // Whether file tree panel is visible
+	fileTreeFocus   bool // Whether file tree has focus
 }
 
 // BracketMatchState holds the current bracket match information for highlighting
@@ -538,6 +542,17 @@ func (u *UI) ToggleScrollbar() {
 		u.enterMessage("Scrollbar enabled")
 	} else {
 		u.enterMessage("Scrollbar disabled")
+	}
+}
+
+// toggleFileTree toggles the file tree panel visibility
+func (u *UI) toggleFileTree() {
+	if u.fileTreeVisible {
+		u.fileTreeVisible = false
+		u.fileTreeFocus = false
+	} else {
+		u.fileTreeVisible = true
+		u.fileTreeFocus = true
 	}
 }
 
@@ -1178,6 +1193,10 @@ func (u *UI) translateKey(e term.KeyEvent) core.Command {
 		return nil
 
 	case e.Key == term.KeyRune && e.Rune == 'b' && (e.Modifiers&term.ModCtrl) != 0:
+		u.toggleFileTree()
+		return nil
+
+	case e.Key == term.KeyRune && e.Rune == ']' && (e.Modifiers&term.ModCtrl) != 0:
 		return core.CmdJumpToMatchingBracket{}
 
 	case e.Key == term.KeyF3:

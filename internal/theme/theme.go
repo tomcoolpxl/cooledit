@@ -31,6 +31,7 @@ type Theme struct {
 	Msg        MessageColors
 	Syntax     SyntaxColors
 	Diagnostic DiagnosticColors
+	Fileview   FileviewColors
 }
 
 // EditorColors defines colors for the text editing area
@@ -145,6 +146,19 @@ type DiagnosticColors struct {
 	InfoBg    term.Color // Info marker background
 	HintFg    term.Color // Hint marker foreground
 	HintBg    term.Color // Hint marker background
+}
+
+// FileviewColors defines colors for the file tree panel
+type FileviewColors struct {
+	Fg          term.Color // Default text foreground
+	Bg          term.Color // Panel background
+	HeaderFg    term.Color // Root directory header text
+	HeaderBg    term.Color // Header background
+	SelectionFg term.Color // Selected item foreground
+	SelectionBg term.Color // Selected item background
+	DirFg       term.Color // Directory name color
+	SymlinkFg   term.Color // Symlink indicator color
+	ExpandFg    term.Color // > and v expand indicators
 }
 
 // GetStyle returns a term.Style with the given foreground and background colors

@@ -88,7 +88,7 @@ internal/
 
 ### Implemented (Additional Features)
 - ✅ Word navigation with Ctrl+Left/Right arrow keys
-- ✅ Bracket matching and jumping with Ctrl+B
+- ✅ Bracket matching and jumping with Ctrl+]
 - ✅ Non-existent file creation (allows opening files that don't exist yet)
 - ✅ Whitespace visualization toggle (Ctrl+Shift+W) - displays spaces (·), tabs (→), and line endings (↵/¶)
 - ✅ Smart tab rendering (single arrow per tab character, not per expanded space)
@@ -138,7 +138,8 @@ internal/
 - `F3` / `Shift+F3` - Find Next/Previous
 - `Ctrl+G` - Go to Line (always available)
 - `Ctrl+Left` / `Ctrl+Right` - Jump by word
-- `Ctrl+B` - Jump to matching bracket
+- `Ctrl+]` - Jump to matching bracket
+- `Ctrl+B` - Toggle file browser
 - `Ctrl+L` - Toggle line numbers
 - `Ctrl+W` - Toggle word wrap
 - `Ctrl+Shift+W` - Toggle whitespace display

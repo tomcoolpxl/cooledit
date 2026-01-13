@@ -153,6 +153,17 @@ func defaultTheme() *Theme {
 			HintFg:    term.ColorWhite,
 			HintBg:    term.ColorCyan,
 		},
+		Fileview: FileviewColors{
+			Fg:          term.ColorDefault,
+			Bg:          term.ColorDefault,
+			HeaderFg:    term.ColorDefault,
+			HeaderBg:    term.ColorDefault,
+			SelectionFg: term.ColorDefault,
+			SelectionBg: term.ColorDefault,
+			DirFg:       term.ColorDefault,
+			SymlinkFg:   term.ColorCyan,
+			ExpandFg:    term.ColorDefault,
+		},
 	}
 }
 
@@ -243,6 +254,17 @@ func darkTheme() *Theme {
 			InfoBg:    "#3794FF",
 			HintFg:    "#FFFFFF",
 			HintBg:    "#89D185",
+		},
+		Fileview: FileviewColors{
+			Fg:          "#D4D4D4",
+			Bg:          "#1E1E1E",
+			HeaderFg:    "#FFFFFF",
+			HeaderBg:    "#2D2D2D",
+			SelectionFg: "#FFFFFF",
+			SelectionBg: "#264F78",
+			DirFg:       "#569CD6",
+			SymlinkFg:   "#CE9178",
+			ExpandFg:    "#808080",
 		},
 	}
 }
@@ -335,6 +357,17 @@ func lightTheme() *Theme {
 			HintFg:    "#FFFFFF",
 			HintBg:    "#388E3C",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#000000",
+			Bg:          "#F3F3F3",
+			HeaderFg:    "#000000",
+			HeaderBg:    "#E0E0E0",
+			SelectionFg: "#000000",
+			SelectionBg: "#ADD6FF",
+			DirFg:       "#0000FF",
+			SymlinkFg:   "#795E26",
+			ExpandFg:    "#808080",
+		},
 	}
 }
 
@@ -425,6 +458,17 @@ func monokaiTheme() *Theme {
 			InfoBg:    "#66D9EF",
 			HintFg:    "#272822",
 			HintBg:    "#A6E22E",
+		},
+		Fileview: FileviewColors{
+			Fg:          "#F8F8F2",
+			Bg:          "#272822",
+			HeaderFg:    "#F8F8F2",
+			HeaderBg:    "#3E3D32",
+			SelectionFg: "#F8F8F2",
+			SelectionBg: "#49483E",
+			DirFg:       "#66D9EF",
+			SymlinkFg:   "#AE81FF",
+			ExpandFg:    "#75715E",
 		},
 	}
 }
@@ -517,6 +561,17 @@ func solarizedDarkTheme() *Theme {
 			HintFg:    "#002B36",
 			HintBg:    "#2AA198",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#839496",
+			Bg:          "#002B36",
+			HeaderFg:    "#93A1A1",
+			HeaderBg:    "#073642",
+			SelectionFg: "#FDF6E3",
+			SelectionBg: "#073642",
+			DirFg:       "#268BD2",
+			SymlinkFg:   "#2AA198",
+			ExpandFg:    "#586E75",
+		},
 	}
 }
 
@@ -607,6 +662,17 @@ func solarizedLightTheme() *Theme {
 			InfoBg:    "#268BD2",
 			HintFg:    "#FDF6E3",
 			HintBg:    "#2AA198",
+		},
+		Fileview: FileviewColors{
+			Fg:          "#657B83",
+			Bg:          "#FDF6E3",
+			HeaderFg:    "#586E75",
+			HeaderBg:    "#EEE8D5",
+			SelectionFg: "#002B36",
+			SelectionBg: "#EEE8D5",
+			DirFg:       "#268BD2",
+			SymlinkFg:   "#2AA198",
+			ExpandFg:    "#93A1A1",
 		},
 	}
 }
@@ -699,6 +765,17 @@ func gruvboxDarkTheme() *Theme {
 			HintFg:    "#282828",
 			HintBg:    "#8EC07C",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#EBDBB2",
+			Bg:          "#282828",
+			HeaderFg:    "#FBF1C7",
+			HeaderBg:    "#3C3836",
+			SelectionFg: "#EBDBB2",
+			SelectionBg: "#3C3836",
+			DirFg:       "#83A598",
+			SymlinkFg:   "#D3869B",
+			ExpandFg:    "#928374",
+		},
 	}
 }
 
@@ -789,6 +866,17 @@ func gruvboxLightTheme() *Theme {
 			InfoBg:    "#076678",
 			HintFg:    "#FBF1C7",
 			HintBg:    "#427B58",
+		},
+		Fileview: FileviewColors{
+			Fg:          "#3C3836",
+			Bg:          "#FBF1C7",
+			HeaderFg:    "#282828",
+			HeaderBg:    "#EBDBB2",
+			SelectionFg: "#3C3836",
+			SelectionBg: "#EBDBB2",
+			DirFg:       "#076678",
+			SymlinkFg:   "#8F3F71",
+			ExpandFg:    "#928374",
 		},
 	}
 }
@@ -881,6 +969,17 @@ func draculaTheme() *Theme {
 			HintFg:    "#282A36",
 			HintBg:    "#50FA7B",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#F8F8F2",
+			Bg:          "#282A36",
+			HeaderFg:    "#F8F8F2",
+			HeaderBg:    "#44475A",
+			SelectionFg: "#F8F8F2",
+			SelectionBg: "#44475A",
+			DirFg:       "#8BE9FD",
+			SymlinkFg:   "#BD93F9",
+			ExpandFg:    "#6272A4",
+		},
 	}
 }
 
@@ -971,6 +1070,17 @@ func nordTheme() *Theme {
 			InfoBg:    "#81A1C1",
 			HintFg:    "#2E3440",
 			HintBg:    "#A3BE8C",
+		},
+		Fileview: FileviewColors{
+			Fg:          "#D8DEE9",
+			Bg:          "#2E3440",
+			HeaderFg:    "#ECEFF4",
+			HeaderBg:    "#3B4252",
+			SelectionFg: "#ECEFF4",
+			SelectionBg: "#3B4252",
+			DirFg:       "#88C0D0",
+			SymlinkFg:   "#B48EAD",
+			ExpandFg:    "#4C566A",
 		},
 	}
 }
@@ -1063,6 +1173,17 @@ func dosTheme() *Theme {
 			HintFg:    "#000000",
 			HintBg:    "#00FFFF",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#FFFFFF",
+			Bg:          "#0000AA",
+			HeaderFg:    "#FFFFFF",
+			HeaderBg:    "#000080",
+			SelectionFg: "#000000",
+			SelectionBg: "#00AAAA",
+			DirFg:       "#FFFF55",
+			SymlinkFg:   "#AA00AA",
+			ExpandFg:    "#AAAAAA",
+		},
 	}
 }
 
@@ -1154,6 +1275,17 @@ func ibmGreenTheme() *Theme {
 			HintFg:    "#000000",
 			HintBg:    "#00AA00",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#33FF33",
+			Bg:          "#000000",
+			HeaderFg:    "#66FF66",
+			HeaderBg:    "#003300",
+			SelectionFg: "#000000",
+			SelectionBg: "#005500",
+			DirFg:       "#66FF66",
+			SymlinkFg:   "#00CC00",
+			ExpandFg:    "#009900",
+		},
 	}
 }
 
@@ -1244,6 +1376,17 @@ func ibmAmberTheme() *Theme {
 			InfoBg:    "#FFAA00",
 			HintFg:    "#000000",
 			HintBg:    "#AA7700",
+		},
+		Fileview: FileviewColors{
+			Fg:          "#FFB000",
+			Bg:          "#000000",
+			HeaderFg:    "#FFC000",
+			HeaderBg:    "#331A00",
+			SelectionFg: "#000000",
+			SelectionBg: "#553300",
+			DirFg:       "#FFC000",
+			SymlinkFg:   "#CC8800",
+			ExpandFg:    "#996600",
 		},
 	}
 }
