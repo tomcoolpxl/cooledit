@@ -1479,5 +1479,16 @@ func cyberpunkTheme() *Theme {
 			HintFg:    "#0D0D0D",
 			HintBg:    "#BD00FF",
 		},
+		Fileview: FileviewColors{
+			Fg:          "#0FF0FC",
+			Bg:          "#0D0D0D",
+			HeaderFg:    "#00FFFF",
+			HeaderBg:    "#1A1A2E",
+			SelectionFg: "#0D0D0D",
+			SelectionBg: "#1A1A2E",
+			DirFg:       "#FF2A6D",
+			SymlinkFg:   "#BD00FF",
+			ExpandFg:    "#05D9E8",
+		},
 	}
 }
