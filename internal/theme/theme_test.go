@@ -375,3 +375,137 @@ func TestDosThemeClassicColors(t *testing.T) {
 		t.Errorf("DOS theme should have white foreground, got %q", dos.Editor.Fg)
 	}
 }
+
+// TestParseColorAllNamed verifies all eight named colors resolve correctly.
+func TestParseColorAllNamed(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected term.Color
+	}{
+		{"black", term.ColorBlack},
+		{"red", term.ColorRed},
+		{"green", term.ColorGreen},
+		{"yellow", term.ColorYellow},
+		{"blue", term.ColorBlue},
+		{"magenta", term.ColorMagenta},
+		{"cyan", term.ColorCyan},
+		{"white", term.ColorWhite},
+	}
+	for _, c := range cases {
+		if got := ParseColor(c.input); got != c.expected {
+			t.Errorf("ParseColor(%q) = %q, want %q", c.input, got, c.expected)
+		}
+	}
+}
+
+// TestParseColorHexInvalidLength verifies that hex strings not exactly 7 chars
+// (including the '#') are passed through rather than treated as hex.
+func TestParseColorHexInvalidLength(t *testing.T) {
+	cases := []string{"#FFF", "#FFFFFFF", "#FF00", "##FF0000"}
+	for _, s := range cases {
+		got := ParseColor(s)
+		// Should be passed through as-is (custom color)
+		if got != term.Color(s) {
+			t.Errorf("ParseColor(%q) = %q, want pass-through %q", s, got, s)
+		}
+	}
+}
+
+// TestParseColorHexWithoutHash verifies strings without '#' are not treated as hex.
+func TestParseColorHexWithoutHash(t *testing.T) {
+	got := ParseColor("FF0000")
+	// Not a known name, not a valid hex with '#' → passed through
+	if got != term.Color("FF0000") {
+		t.Errorf("ParseColor(FF0000) = %q, want pass-through", got)
+	}
+}
+
+// TestAllThemesHaveSyntaxKeywordColors verifies every non-default theme defines
+// syntax keyword colors (the most commonly used syntax token).
+func TestAllThemesHaveSyntaxKeywordColors(t *testing.T) {
+	for name, th := range BuiltinThemes {
+		if name == "default" {
+			continue // default theme uses terminal defaults
+		}
+		if th.Syntax.KeywordFg == "" {
+			t.Errorf("theme %q: Syntax.KeywordFg is empty", name)
+		}
+	}
+}
+
+// TestAllThemesHaveSyntaxCommentColors verifies every non-default theme defines
+// comment colors (typically muted/italic).
+func TestAllThemesHaveSyntaxCommentColors(t *testing.T) {
+	for name, th := range BuiltinThemes {
+		if name == "default" {
+			continue
+		}
+		if th.Syntax.CommentFg == "" {
+			t.Errorf("theme %q: Syntax.CommentFg is empty", name)
+		}
+	}
+}
+
+// TestAllThemesHaveSyntaxStringColors verifies every non-default theme defines
+// string literal colors.
+func TestAllThemesHaveSyntaxStringColors(t *testing.T) {
+	for name, th := range BuiltinThemes {
+		if name == "default" {
+			continue
+		}
+		if th.Syntax.StringFg == "" {
+			t.Errorf("theme %q: Syntax.StringFg is empty", name)
+		}
+	}
+}
+
+// TestGetStyleWithDefault verifies GetStyle works with ColorDefault values.
+func TestGetStyleWithDefault(t *testing.T) {
+	style := GetStyle(term.ColorDefault, term.ColorDefault)
+	if style.Foreground != term.ColorDefault {
+		t.Errorf("Foreground = %q, want ColorDefault", style.Foreground)
+	}
+	if style.Background != term.ColorDefault {
+		t.Errorf("Background = %q, want ColorDefault", style.Background)
+	}
+	if style.Inverse {
+		t.Error("Inverse should be false")
+	}
+}
+
+// TestLoadThemeAllBuiltins verifies LoadTheme returns the correct theme for
+// every built-in name (not a fallback).
+func TestLoadThemeAllBuiltins(t *testing.T) {
+	for name := range BuiltinThemes {
+		got := LoadTheme(name, nil)
+		if got == nil {
+			t.Errorf("LoadTheme(%q) returned nil", name)
+			continue
+		}
+		if got.Name != name {
+			t.Errorf("LoadTheme(%q).Name = %q (got default fallback)", name, got.Name)
+		}
+	}
+}
+
+// TestGetAvailableThemesWithCustomEntries verifies custom entries appear in list.
+func TestGetAvailableThemesWithCustomEntries(t *testing.T) {
+	custom := map[string]ConfigThemeSpec{
+		"alpha": nil,
+		"beta":  nil,
+	}
+	themes := GetAvailableThemes(custom)
+	if len(themes) != 16 {
+		t.Errorf("len = %d, want 16", len(themes))
+	}
+	found := map[string]bool{}
+	for _, name := range themes {
+		found[name] = true
+	}
+	if !found["alpha"] {
+		t.Error("'alpha' missing from available themes")
+	}
+	if !found["beta"] {
+		t.Error("'beta' missing from available themes")
+	}
+}

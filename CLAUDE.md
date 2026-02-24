@@ -119,7 +119,7 @@ internal/
 
 ### Planned (Remaining)
 - ✅ Add --config CLI flag for alternate config file location
-- ⏳ Add tests for theme system (ParseColor, theme loading, switching)
+- ✅ Add tests for theme system (ParseColor, theme loading, switching)
 
 ### Future/Optional
 - Keybinding customization (config-file-only, no UI)
