@@ -27,7 +27,7 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-const version = "0.1.0"
+var version = "dev" // overridden at build time via -ldflags
 
 func main() {
 	// Define flags

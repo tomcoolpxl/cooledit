@@ -34,21 +34,43 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 
 ## Installation
 
-### Pre-built Binaries
+### Linux / macOS
 
-Download from releases page.
-
-### Build from Source
-
-Requires Go 1.25.5 or higher:
-
-```bash
-git clone https://github.com/tomcoolpxl/cooledit
-cd cooledit
-go build ./cmd/cooledit
+```sh
+curl -fsSL https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
 ```
 
-Binary will be in current directory. Move it to your PATH.
+Install a specific version:
+
+```sh
+COOLEDIT_VERSION=v0.8.0 curl -fsSL \
+  https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
+```
+
+The script installs to `~/.local/bin` (non-root) or `/usr/local/bin` (root) and
+verifies the SHA256 checksum automatically.
+
+### Windows
+
+```
+winget install cooledit.cooledit
+```
+
+### Manual download
+
+Download the archive for your platform from the
+[Releases page](https://github.com/tomcoolpxl/cooledit/releases), extract, and
+place the `cooledit` binary somewhere on your `PATH`.
+
+### Build from source
+
+Requires Go 1.25 or later:
+
+```sh
+git clone https://github.com/tomcoolpxl/cooledit
+cd cooledit
+go build -o cooledit ./cmd/cooledit
+```
 
 ## Usage
 
@@ -127,7 +149,8 @@ cooledit --help
 - `Ctrl+Home` - File start
 - `Ctrl+End` - File end
 - `Page Up` / `Page Down` - Scroll by page
-- `Ctrl+B` - Jump to matching bracket
+- `Ctrl+]` - Jump to matching bracket
+- `Ctrl+B` - Toggle file browser
 
 ### View
 - `Ctrl+L` - Toggle line numbers

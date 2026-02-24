@@ -38,6 +38,7 @@ internal/
     tcell/             - Tcell implementation
   theme/               - Theme system and color management
   ui/                  - User interface components
+    filetree/          - File tree browser component
     keymap/            - Keyboard bindings
 ```
 
@@ -117,9 +118,28 @@ internal/
 - ✅ Per-theme hardcoded CurrentLineBg colors for all 14 themes
 - ✅ Highlight spans full line width including gutter/line numbers
 
-### Planned (Remaining)
-- ✅ Add --config CLI flag for alternate config file location
-- ✅ Add tests for theme system (ParseColor, theme loading, switching)
+### Implemented (File Tree Browser)
+- ✅ Toggleable side panel with `Ctrl+B` (Ctrl+] now used for bracket matching)
+- ✅ Directory-first, alphabetical listing including hidden files
+- ✅ Lazy directory expansion (`>` collapsed, `v` expanded), nested directories
+- ✅ Symlinks shown distinctly with `@` suffix
+- ✅ Enter opens file / toggles directory; Left collapses; Right expands
+- ✅ Underline on currently open file; selection independent from underline
+- ✅ Selection persists when toggling panel off and on (path-based, not index-based)
+- ✅ Root determined at launch: parent dir of file, dir arg, or CWD
+- ✅ File tree root does not change on Save As — reflects launch context
+- ✅ Focus management: tree → Esc opens menu (not close tree); menu close returns to tree
+- ✅ View menu "File Browser" item with checkmark when visible
+- ✅ FileviewColors in all 14 themes (fg, bg, header, selection, dir, symlink, expand)
+- ✅ 17 tests covering sorting, lazy loading, selection, expansion, depth, open file tracking
+
+### Implemented (Release Pipeline)
+- ✅ GoReleaser config (`.goreleaser.yaml`): linux/darwin/windows × amd64/arm64
+- ✅ Version injected at build time via `-ldflags` (`var version = "dev"` placeholder)
+- ✅ GitHub Actions CI workflow: tests + build on ubuntu and windows on every push/PR
+- ✅ GitHub Actions release workflow: triggered by `v*.*.*` tag, uses `GITHUB_TOKEN` (no PAT needed)
+- ✅ `install.sh`: curl-pipe installer for Linux/macOS with SHA256 verification
+- ✅ WinGet manifest process documented in `docs/RELEASES_IMPLEMENTATION_PLAN.md`
 
 ### Future/Optional
 - Keybinding customization (config-file-only, no UI)
@@ -370,7 +390,7 @@ internal/
 - Unit tests for core components (buffer, editor, search, undo)
 - UI tests with fake screen implementation
 - Coverage tracking in place
-- **185+ tests covering**:
+- **216+ tests covering**:
   - Non-overlapping search matches (TestFindNextNoOverlapping, TestFindNextTwoNonOverlapping)
   - Replace All starting from file beginning (TestReplaceAllFromBeginning)
   - Text highlighting during search (TestSearchHighlightsText)
@@ -390,6 +410,8 @@ internal/
   - Syntax highlighting (20 tests: token types, language detection, caching, Chroma integration)
   - Autosave system (28 tests: storage, manager, recovery, lifecycle)
   - Linter integration (15 tests: built-in configs, output parsing, real go vet execution)
+  - Theme system (31 tests: ParseColor, ConvertThemeSpec, GetTheme, GetCurrentTheme, switching, custom theme round-trip)
+  - File tree (17 tests: sorting, lazy loading, expansion, selection persistence, depth, open file tracking)
 
 ### Technical Details
 
@@ -455,6 +477,7 @@ Each element has `fg` (foreground) and `bg` (background) properties.
 - **message**: `info_fg`, `info_bg`, `warning_fg`, `warning_bg`, `error_fg`, `error_bg`
 - **syntax**: `keyword_fg/bg`, `string_fg/bg`, `comment_fg/bg`, `number_fg/bg`, `operator_fg/bg`, `function_fg/bg`, `type_fg/bg`, `variable_fg/bg`, `constant_fg/bg`, `preproc_fg/bg`, `builtin_fg/bg`, `punctuation_fg/bg`
 - **diagnostic**: `error_fg`, `error_bg`, `warning_fg`, `warning_bg`, `info_fg`, `info_bg`, `hint_fg`, `hint_bg`
+- **fileview**: `fg`, `bg`, `header_fg`, `header_bg`, `selection_fg`, `selection_bg`, `dir_fg`, `symlink_fg`, `expand_fg`
 
 **Color Format:**
 - Named colors: `"black"`, `"red"`, `"green"`, `"blue"`, `"white"`, etc.
@@ -618,7 +641,10 @@ Project is fully functional with all core features complete:
 - ✅ External formatter integration (Ctrl+Shift+F) with 20+ built-in language defaults
 - ✅ External linter integration (Ctrl+Shift+L) with 10 built-in language defaults
 - ✅ Diagnostic navigation (F8/Shift+F8) with gutter markers and status bar display
-- ✅ Comprehensive test coverage (185+ tests, all passing)
+- ✅ File tree browser (Ctrl+B) with lazy loading, selection persistence, symlink display
+- ✅ --config CLI flag for alternate config file location
+- ✅ Release pipeline: GoReleaser + GitHub Actions CI/release + install.sh
+- ✅ Comprehensive test coverage (216+ tests, all passing)
 
 Focus areas:
 - Additional features as requested
@@ -634,4 +660,4 @@ Focus areas:
 
 ---
 
-Last Updated: January 2025
+Last Updated: February 2026

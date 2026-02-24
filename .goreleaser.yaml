@@ -1,0 +1,80 @@
+# .goreleaser.yaml
+version: 2
+
+project_name: cooledit
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: cooledit
+    main: ./cmd/cooledit
+    binary: cooledit
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: cooledit-archive
+    builds:
+      - cooledit
+    name_template: "cooledit_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+release:
+  github:
+    owner: tomcoolpxl
+    name: cooledit
+  draft: false
+  prerelease: auto
+  name_template: "cooledit {{ .Version }}"
+  footer: |
+    ## Install
+
+    **Linux/macOS**
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
+    ```
+
+    **Windows**
+    ```
+    winget install cooledit.cooledit
+    ```
+
+    **Verify checksum**
+    ```sh
+    sha256sum -c checksums.txt
+    ```
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
