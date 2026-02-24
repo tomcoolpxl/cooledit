@@ -23,15 +23,16 @@ import (
 )
 
 // Parser patterns for different linter output formats.
+// The filename group uses (?:[a-zA-Z]:)?[^:]+ to handle Windows paths like C:\path\to\file.go
 var (
 	// defaultPattern matches: file:line:col: message or file:line: message
-	defaultPattern = regexp.MustCompile(`^([^:]+):(\d+):(?:(\d+):)?\s*(.+)$`)
+	defaultPattern = regexp.MustCompile(`^((?:[a-zA-Z]:)?[^:]+):(\d+):(?:(\d+):)?\s*(.+)$`)
 
 	// gccPattern matches: file:line:col: severity: message
-	gccPattern = regexp.MustCompile(`^([^:]+):(\d+):(\d+):\s*(error|warning|note|info):\s*(.+)$`)
+	gccPattern = regexp.MustCompile(`^((?:[a-zA-Z]:)?[^:]+):(\d+):(\d+):\s*(error|warning|note|info):\s*(.+)$`)
 
 	// goVetPattern matches: file:line:col: message (go vet output)
-	goVetPattern = regexp.MustCompile(`^([^:]+):(\d+):(\d+):\s*(.+)$`)
+	goVetPattern = regexp.MustCompile(`^((?:[a-zA-Z]:)?[^:]+):(\d+):(\d+):\s*(.+)$`)
 )
 
 // ParseDefault parses linter output in the default format: file:line:col: message
