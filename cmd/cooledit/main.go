@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"cooledit/internal/app"
 	"cooledit/internal/config"
@@ -58,7 +59,15 @@ func main() {
 	var err error
 
 	if *configPath != "" {
-		cfg, err = config.LoadFrom(*configPath)
+		// Override ConfigPath so Save() also targets the custom file
+		customPath := *configPath
+		config.ConfigPath = func() (string, error) {
+			if err := os.MkdirAll(filepath.Dir(customPath), 0755); err != nil {
+				return "", err
+			}
+			return customPath, nil
+		}
+		cfg, err = config.LoadFrom(customPath)
 		if err != nil {
 			log.Fatalf("Error: Failed to load config from %s: %v", *configPath, err)
 		}

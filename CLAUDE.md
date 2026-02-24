@@ -118,7 +118,7 @@ internal/
 - ✅ Highlight spans full line width including gutter/line numbers
 
 ### Planned (Remaining)
-- ⏳ Add --config CLI flag for alternate config file location
+- ✅ Add --config CLI flag for alternate config file location
 - ⏳ Add tests for theme system (ParseColor, theme loading, switching)
 
 ### Future/Optional
