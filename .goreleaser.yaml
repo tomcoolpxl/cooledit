@@ -39,6 +39,28 @@ archives:
       - LICENSE
       - README.md
 
+nfpms:
+  - id: cooledit-packages
+    package_name: cooledit
+    builds:
+      - cooledit
+    vendor: Tom Cool
+    homepage: https://github.com/tomcoolpxl/cooledit
+    maintainer: Tom Cool
+    description: A terminal-based text editor inspired by nano, with better UI and keyboard shortcuts.
+    license: GPL-3.0
+    formats:
+      - deb
+      - rpm
+      - apk
+      - archlinux
+    bindir: /usr/bin
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/cooledit/LICENSE
+      - src: README.md
+        dst: /usr/share/doc/cooledit/README.md
+
 checksum:
   name_template: "checksums.txt"
   algorithm: sha256
@@ -59,9 +81,7 @@ release:
     ```
 
     **Windows**
-    ```
-    winget install cooledit.cooledit
-    ```
+    Download the `.zip` from the [releases page](https://github.com/tomcoolpxl/cooledit/releases).
 
     **Verify checksum**
     ```sh
