@@ -60,6 +60,21 @@ The npm package downloads the matching release binary from GitHub Releases durin
 installation. It currently supports Linux, macOS, and Windows on `x64` and
 `arm64`.
 
+If npm global installs require `sudo`, switch npm to a user-owned prefix instead:
+
+```sh
+mkdir -p ~/.local/bin
+npm config set prefix ~/.local
+export PATH="$HOME/.local/bin:$PATH"
+npm install -g cooledit
+```
+
+To make it permanent for future shells, add the same line to your shell startup file:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 ### Windows
 
 ```
