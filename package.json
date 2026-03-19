@@ -1,0 +1,44 @@
+{
+  "name": "@tomcoolpxl/cooledit",
+  "version": "0.5.1",
+  "description": "A terminal-based text editor inspired by nano, with better UI and keyboard shortcuts.",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/tomcoolpxl/cooledit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomcoolpxl/cooledit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tomcoolpxl/cooledit/issues"
+  },
+  "bin": {
+    "cooledit": "npm/cooledit.js"
+  },
+  "files": [
+    "npm/cooledit.js",
+    "npm/install.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "node npm/install.js",
+    "test:npm": "node --check npm/cooledit.js && node --check npm/install.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "tar": "^7.4.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "cli",
+    "editor",
+    "terminal",
+    "text-editor",
+    "go"
+  ]
+}

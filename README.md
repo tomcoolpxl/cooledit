@@ -43,12 +43,22 @@ curl -fsSL https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh
 Install a specific version:
 
 ```sh
-COOLEDIT_VERSION=v0.8.0 curl -fsSL \
+COOLEDIT_VERSION=vX.Y.Z curl -fsSL \
   https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
 ```
 
 The script installs to `~/.local/bin` (non-root) or `/usr/local/bin` (root) and
 verifies the SHA256 checksum automatically.
+
+### npm
+
+```sh
+npm install -g cooledit
+```
+
+The npm package downloads the matching release binary from GitHub Releases during
+installation. It currently supports Linux, macOS, and Windows on `x64` and
+`arm64`.
 
 ### Windows
 
