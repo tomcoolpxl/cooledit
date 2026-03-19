@@ -32,23 +32,9 @@ A terminal-based text editor for Linux, macOS and Windows. Similar to nano but w
 - External formatter integration (Ctrl+Shift+F) with built-in support for 20+ languages
 - External linter integration (Ctrl+Shift+L) with diagnostics navigation (F8/Shift+F8)
 
+---
+
 ## Installation
-
-### Linux / macOS
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
-```
-
-Install a specific version:
-
-```sh
-COOLEDIT_VERSION=vX.Y.Z curl -fsSL \
-  https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
-```
-
-The script installs to `~/.local/bin` (non-root) or `/usr/local/bin` (root) and
-verifies the SHA256 checksum automatically.
 
 ### npm
 
@@ -75,9 +61,25 @@ To make it permanent for future shells, add the same line to your shell startup 
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+### Linux / macOS
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
+```
+
+Install a specific version:
+
+```sh
+COOLEDIT_VERSION=vX.Y.Z curl -fsSL \
+  https://raw.githubusercontent.com/tomcoolpxl/cooledit/main/install.sh | sh
+```
+
+The script installs to `~/.local/bin` (non-root) or `/usr/local/bin` (root) and
+verifies the SHA256 checksum automatically.
+
 ### Windows
 
-```
+```sh
 winget install cooledit.cooledit
 ```
 
@@ -129,11 +131,13 @@ cooledit --help
 ## Keyboard Shortcuts
 
 ### File Operations
+
 - `Ctrl+S` - Save
 - `Ctrl+Shift+S` - Save as
 - `Ctrl+Q` - Quit
 
 ### Editing
+
 - `Ctrl+Z` - Undo
 - `Ctrl+Y` - Redo
 - `Ctrl+X` - Cut (current line if no selection)
@@ -154,6 +158,7 @@ cooledit --help
 - `Backspace` - Delete one character
 
 ### Search
+
 - `Ctrl+F` - Enter unified search mode (incremental search with real-time results)
 - `Alt+C` - Toggle case sensitivity (in search mode)
 - `Alt+W` - Toggle whole word matching (in search mode)
@@ -166,6 +171,7 @@ cooledit --help
 - `Ctrl+G` - Go to line
 
 ### Navigation
+
 - `Arrow keys` - Move cursor
 - `Shift+Arrow keys` - Select text
 - `Ctrl+Left` / `Ctrl+Right` - Jump by word
@@ -178,6 +184,7 @@ cooledit --help
 - `Ctrl+B` - Toggle file browser
 
 ### View
+
 - `Ctrl+L` - Toggle line numbers
 - `Ctrl+W` - Toggle word wrap
 - `Ctrl+Shift+W` - Toggle whitespace display
@@ -188,7 +195,9 @@ cooledit --help
 - Additional toggles via View menu: current line highlight, scrollbar, trim whitespace on save, remember cursor position
 
 ### Menu Shortcuts (when menu is open)
+
 Press the underlined letter to activate menu items:
+
 - File: **S**ave, Save **A**s, **Q**uit
 - Edit: **U**ndo, **R**edo, Cu**t**, **C**opy, **P**aste, Select All (**G**rab All)
 - Search: **F**ind/Replace, Find **N**ext, Find **P**rev
@@ -197,6 +206,7 @@ Press the underlined letter to activate menu items:
 ## Configuration
 
 Config file is auto-created at:
+
 - Linux/macOS: `~/.config/cooledit/config.toml`
 - Windows: `%APPDATA%\cooledit\config.toml`
 
@@ -257,6 +267,7 @@ Custom themes can be defined in config file using `[themes.custom_name]` section
 Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 
 ### Searching
+
 - Type to search - matches appear immediately as you type (all letters and characters are typed)
 - Search highlights all matches in the viewport
 - Status bar shows match count (e.g., "Match 3 of 15")
@@ -266,20 +277,24 @@ Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 - `Backspace` - Delete character from query (or exit if query is empty)
 
 ### Options
+
 - `Alt+C` - Toggle case sensitivity (indicator shows "Match Case" or "Ignore Case")
 - `Alt+W` - Toggle whole word matching (indicator shows "Whole Word")
 - Search preferences persist across searches within the session
 
 ### Replacing
+
 - `Ctrl+R` - Replace current match (prompts for replacement text)
 - `Ctrl+H` - Replace all matches (shows confirmation dialog with match count)
 - Replace-all is undoable as a single operation
 
 ### Exiting
+
 - `Escape` - Exit search mode and return to normal editing
 - Query is saved to history for next search
 
 ### Features
+
 - Pre-fills search from current selection (if text is selected)
 - Real-time match highlighting (current match vs other matches)
 - Visual error state when no matches found (red status bar)
@@ -298,6 +313,7 @@ Press `Ctrl+F` to enter unified search mode with real-time incremental search:
 Cooledit automatically saves backup copies of your work to prevent data loss.
 
 ### How it Works
+
 - Autosave triggers after 2 seconds of inactivity (configurable)
 - Backups are stored in a dedicated directory:
   - Windows: `%APPDATA%\cooledit\autosave\`
@@ -305,12 +321,15 @@ Cooledit automatically saves backup copies of your work to prevent data loss.
   - macOS: `~/Library/Application Support/cooledit/autosave/`
 
 ### Recovery
+
 If cooledit finds an autosave backup when opening a file, it shows a recovery prompt:
+
 - **[R]ecover** - Load the autosave content (marks file as modified)
 - **[O]pen original** - Load the original file (keeps autosave for later)
 - **[D]iscard** - Delete the autosave and load original file
 
 ### Lifecycle
+
 - Autosave is **cleared** when you save with Ctrl+S
 - Autosave is **kept** if you quit without saving (for future recovery)
 - Toggle autosave via View → Autosave menu
@@ -354,6 +373,7 @@ args = ["--stdin-input-file", ".hs"]
 ```
 
 ### Features
+
 - Format is undoable with `Ctrl+Z`
 - 5-second timeout prevents hangs
 - Error messages shown in status bar
@@ -407,6 +427,7 @@ args = ["--format", "emacs"]
 ```
 
 ### Features
+
 - Diagnostics cleared automatically when you edit the file
 - 10-second timeout prevents hangs
 - Error messages shown in status bar
