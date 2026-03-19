@@ -1,4 +1,4 @@
-# Claude Context - cooledit Project
+# Context - cooledit Project
 
 ## Project Overview
 
