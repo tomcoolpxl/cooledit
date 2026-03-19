@@ -16,9 +16,47 @@
 package ui
 
 import (
+	"cooledit/internal/buildinfo"
 	"cooledit/internal/term"
+	"strings"
 	"testing"
 )
+
+func rowString(screen *FakeScreen, y int) string {
+	var b strings.Builder
+	for x := 0; x < screen.w; x++ {
+		r := screen.Cell(x, y)
+		if r == 0 {
+			r = ' '
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+func screenContains(screen *FakeScreen, needle string) bool {
+	for y := 0; y < screen.h; y++ {
+		if strings.Contains(rowString(screen, y), needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func TestAboutScreenShowsVersion(t *testing.T) {
+	ui, screen := newTestUI(80, 24)
+	ui.mode = ModeAbout
+
+	if ui.version != buildinfo.Version {
+		t.Fatalf("ui version = %q, want %q", ui.version, buildinfo.Version)
+	}
+
+	draw(ui)
+
+	if !screenContains(screen, "Version "+buildinfo.Version) {
+		t.Fatalf("about screen should show version, but did not")
+	}
+}
 
 func TestSearchHighlighting(t *testing.T) {
 	ui, screen := newTestUI(80, 24)

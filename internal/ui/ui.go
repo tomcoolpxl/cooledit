@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"cooledit/internal/autosave"
+	"cooledit/internal/buildinfo"
 	"cooledit/internal/config"
 	"cooledit/internal/core"
 	"cooledit/internal/fileio"
@@ -189,7 +190,7 @@ const (
 	ModeHelp
 	ModeAbout
 	ModeMenu
-	ModeSearch      // Unified incremental search mode
+	ModeSearch // Unified incremental search mode
 	ModeVimCommand
 	ModeRecovery    // Autosave recovery prompt
 	ModeVerbatimHex // Unicode hex input (Ctrl+Shift+U)
@@ -262,7 +263,8 @@ type UI struct {
 	showScrollbar        bool
 
 	// Theme
-	theme *theme.Theme
+	theme   *theme.Theme
+	version string
 
 	// Syntax highlighting
 	syntaxHighlighting bool
@@ -326,6 +328,7 @@ func New(screen term.Screen, editor *core.Editor, cfg *config.Config) *UI {
 		}(),
 		config:          cfg,
 		theme:           cfg.GetCurrentTheme(),
+		version:         buildinfo.Version,
 		bracketMatcher:  core.NewBracketMatcher(),
 		searchHistory:   NewSearchHistory(20), // Remember last 20 searches
 		showDiagnostics: cfg.Editor.ShowDiagnostics,

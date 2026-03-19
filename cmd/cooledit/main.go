@@ -22,12 +22,11 @@ import (
 	"path/filepath"
 
 	"cooledit/internal/app"
+	"cooledit/internal/buildinfo"
 	"cooledit/internal/config"
 
 	flag "github.com/spf13/pflag"
 )
-
-var version = "dev" // overridden at build time via -ldflags
 
 func main() {
 	// Define flags
@@ -46,7 +45,7 @@ func main() {
 
 	// Handle version flag
 	if *showVersion {
-		fmt.Printf("cooledit version %s\n", version)
+		fmt.Printf("cooledit version %s\n", buildinfo.Version)
 		fmt.Printf("Copyright (C) 2026 Tom Cool\n")
 		fmt.Printf("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n")
 		fmt.Printf("This is free software: you are free to change and redistribute it.\n")

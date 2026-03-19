@@ -1499,6 +1499,7 @@ func (u *UI) drawAbout(w, h int) {
 	lines := []string{
 		"",
 		"  cooledit",
+		"  Version " + u.version,
 		"",
 		"  A terminal text editor",
 		"",
