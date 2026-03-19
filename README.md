@@ -53,7 +53,7 @@ verifies the SHA256 checksum automatically.
 ### npm
 
 ```sh
-npm install -g cooledit
+npm install -g @tomcoolpxl/cooledit
 ```
 
 The npm package downloads the matching release binary from GitHub Releases during
@@ -66,7 +66,7 @@ If npm global installs require `sudo`, switch npm to a user-owned prefix instead
 mkdir -p ~/.local/bin
 npm config set prefix ~/.local
 export PATH="$HOME/.local/bin:$PATH"
-npm install -g cooledit
+npm install -g @tomcoolpxl/cooledit
 ```
 
 To make it permanent for future shells, add the same line to your shell startup file:
